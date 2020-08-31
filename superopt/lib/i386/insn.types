@@ -1,0 +1,899 @@
+#define DATA_TRANSFER_FROM_MEM1(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(%exvr0.1d),%exvr0.0B #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(%exvr0.1d)[1] : POLYc;\
+  --;\
+  exvr0.0B[1] : C0d(%exvr0.1d)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(%exvr0.1d),%exvr0.0b #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(%exvr0.1d)[1] : POLYc;\
+  --;\
+  exvr0.0b[1] : C0d(%exvr0.1d)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,1),%exvr0.0b #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,1)[1] : POLYc;\
+  --;\
+  exvr0.0b[1] : C0d(,%exvr0.1d,1)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,1),%exvr0.0B #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,1)[1] : POLYc;\
+  --;\
+  exvr0.0B[1] : C0d(,%exvr0.1d,1)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,2),%exvr0.0b #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,2)[1] : POLYc;\
+  --;\
+  exvr0.0b[1] : C0d(,%exvr0.1d,2)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,2),%exvr0.0B #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,2)[1] : POLYc;\
+  --;\
+  exvr0.0B[1] : C0d(,%exvr0.1d,2)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,4),%exvr0.0b #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,4)[1] : POLYc;\
+  --;\
+  exvr0.0b[1] : C0d(,%exvr0.1d,4)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,4),%exvr0.0B #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,4)[1] : POLYc;\
+  --;\
+  exvr0.0B[1] : C0d(,%exvr0.1d,4)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,8),%exvr0.0b #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,8)[1] : POLYc;\
+  --;\
+  exvr0.0b[1] : C0d(,%exvr0.1d,8)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,8),%exvr0.0B #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,8)[1] : POLYc;\
+  --;\
+  exvr0.0B[1] : C0d(,%exvr0.1d,8)[1];\
+  ==
+
+#define DATA_TRANSFER_FROM_MEM2(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(%exvr0.1d),%exvr0.0w #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(%exvr0.1d)[1] : POLYc;\
+  C0d*1+1/umask/32(%exvr0.1d)[1] : POLYc;\
+  --;\
+  exvr0.0w[2] : C0d(%exvr0.1d)[1]-C0d*1+1/umask/32(%exvr0.1d)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,1),%exvr0.0w #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,1)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,1)[1] : POLYc;\
+  --;\
+  exvr0.0w[2] : C0d(,%exvr0.1d,1)[1]-C0d*1+1/umask/32(,%exvr0.1d,1)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,2),%exvr0.0w #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,2)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,2)[1] : POLYc;\
+  --;\
+  exvr0.0w[2] : C0d(,%exvr0.1d,2)[1]-C0d*1+1/umask/32(,%exvr0.1d,2)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,4),%exvr0.0w #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,4)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,4)[1] : POLYc;\
+  --;\
+  exvr0.0w[2] : C0d(,%exvr0.1d,4)[1]-C0d*1+1/umask/32(,%exvr0.1d,4)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,8),%exvr0.0w #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,8)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,8)[1] : POLYc;\
+  --;\
+  exvr0.0w[2] : C0d(,%exvr0.1d,8)[1]-C0d*1+1/umask/32(,%exvr0.1d,8)[1];\
+  ==
+
+#define DATA_TRANSFER_FROM_MEM4(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(%exvr0.1d),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(%exvr0.1d)[1] : POLYc;\
+  C0d*1+1/umask/32(%exvr0.1d)[1] : POLYc;\
+  C0d*1+2/umask/32(%exvr0.1d)[1] : POLYc;\
+  C0d*1+3/umask/32(%exvr0.1d)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(%exvr0.1d)[1]-C0d*1+1/umask/32(%exvr0.1d)[1]-C0d*1+2/umask/32(%exvr0.1d)[1]-C0d*1+3/umask/32(%exvr0.1d)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,1),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,1)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,1)[1] : POLYc;\
+  C0d*1+2/umask/32(,%exvr0.1d,1)[1] : POLYc;\
+  C0d*1+3/umask/32(,%exvr0.1d,1)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,1)[1]-C0d*1+1/umask/32(,%exvr0.1d,1)[1]-C0d*1+2/umask/32(,%exvr0.1d,1)[1]-C0d*1+3/umask/32(,%exvr0.1d,1)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,2),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,2)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,2)[1] : POLYc;\
+  C0d*1+2/umask/32(,%exvr0.1d,2)[1] : POLYc;\
+  C0d*1+3/umask/32(,%exvr0.1d,2)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,2)[1]-C0d*1+1/umask/32(,%exvr0.1d,2)[1]-C0d*1+2/umask/32(,%exvr0.1d,2)[1]-C0d*1+3/umask/32(,%exvr0.1d,2)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,4),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,4)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,4)[1] : POLYc;\
+  C0d*1+2/umask/32(,%exvr0.1d,4)[1] : POLYc;\
+  C0d*1+3/umask/32(,%exvr0.1d,4)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,4)[1]-C0d*1+1/umask/32(,%exvr0.1d,4)[1]-C0d*1+2/umask/32(,%exvr0.1d,4)[1]-C0d*1+3/umask/32(,%exvr0.1d,4)[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,8),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,8)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,8)[1] : POLYc;\
+  C0d*1+2/umask/32(,%exvr0.1d,8)[1] : POLYc;\
+  C0d*1+3/umask/32(,%exvr0.1d,8)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,8)[1]-C0d*1+1/umask/32(,%exvr0.1d,8)[1]-C0d*1+2/umask/32(,%exvr0.1d,8)[1]-C0d*1+3/umask/32(,%exvr0.1d,8)[1];\
+  ==
+
+#define DATA_TRANSFER_FROM_MEM1_2(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(%exvr0.1d),%exvr0.0w #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(%exvr0.1d)[1] : POLYc;\
+  --;\
+  exvr0.0w[2] : C0d(%exvr0.1d)[1]-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,1),%exvr0.0w #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,1)[1] : POLYc;\
+  --;\
+  exvr0.0w[2] : C0d(,%exvr0.1d,1)[1]-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,2),%exvr0.0w #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,2)[1] : POLYc;\
+  --;\
+  exvr0.0w[2] : C0d(,%exvr0.1d,2)[1]-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,4),%exvr0.0w #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,4)[1] : POLYc;\
+  --;\
+  exvr0.0w[2] : C0d(,%exvr0.1d,4)[1]-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,8),%exvr0.0w #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,8)[1] : POLYc;\
+  --;\
+  exvr0.0w[2] : C0d(,%exvr0.1d,8)[1]-INT[N/N]c;\
+  ==
+
+#define DATA_TRANSFER_FROM_MEM1_4(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(%exvr0.1d),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(%exvr0.1d)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(%exvr0.1d)[1]-INT[N/N]c-INT[N/N]c-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,1),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,1)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,1)[1]-INT[N/N]c-INT[N/N]c-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,2),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,2)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,2)[1]-INT[N/N]c-INT[N/N]c-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,4),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,4)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,4)[1]-INT[N/N]c-INT[N/N]c-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,8),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,8)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,8)[1]-INT[N/N]c-INT[N/N]c-INT[N/N]c;\
+  ==
+
+#define DATA_TRANSFER_FROM_MEM2_4(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(%exvr0.1d),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(%exvr0.1d)[1] : POLYc;\
+  C0d*1+1/umask/32(%exvr0.1d)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(%exvr0.1d)[1]-C0d*1+1/umask/32(%exvr0.1d)[1]-INT[N/N]c-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,1),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,1)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,1)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,1)[1]-C0d*1+1/umask/32(,%exvr0.1d,1)[1]-INT[N/N]c-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,2),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,2)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,2)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,2)[1]-C0d*1+1/umask/32(,%exvr0.1d,2)[1]-INT[N/N]c-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,4),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,4)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,4)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,4)[1]-C0d*1+1/umask/32(,%exvr0.1d,4)[1]-INT[N/N]c-INT[N/N]c;\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr3.0:C0d(,%exvr0.1d,8),%exvr0.0d #;\
+  --;\
+  exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C;\
+  $C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C;\
+  C0d(,%exvr0.1d,8)[1] : POLYc;\
+  C0d*1+1/umask/32(,%exvr0.1d,8)[1] : POLYc;\
+  --;\
+  exvr0.0d[4] : C0d(,%exvr0.1d,8)[1]-C0d*1+1/umask/32(,%exvr0.1d,8)[1]-INT[N/N]c-INT[N/N]c;\
+  ==
+
+ENTRY:
+.i0: setae %exvr3.0:C0d(%exvr0.0d,%exvr0.1d,1) #,%exvr4.0
+--
+exvr4.0[4] : BOOLc-POLYC-POLYC-POLYC
+exvr0.0[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C
+exvr0.1[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C
+$C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C
+--
+C0d(%exvr0.0d,%exvr0.1d,1)[1] : BOOLc
+==
+
+ENTRY:
+.i0: movl %exvr0.0d,%exvr0.1d #
+--
+exvr0.0[4] : POLYc-POLYc-POLYc-POLYc
+--
+exvr0.1[4] : exvr0.0[4]
+==
+
+ENTRY:
+.i0: bswap %exvr0.0d #
+--
+exvr0.0d[4] : POLYc-POLYc-POLYc-POLYc
+--
+exvr0.0d[4] : exvr0.0d3[1]-exvr0.0d2[1]-exvr0.0d1[1]-exvr0.0d0[1]
+==
+
+ENTRY:
+.i0: clc  #%exvr4.0
+--
+--
+exvr4.0[4] : BOOLc-POLYC-POLYC-POLYC
+==
+
+ENTRY:
+.i0: stc  #%exvr4.0
+--
+--
+exvr4.0[4] : BOOLc-POLYC-POLYC-POLYC
+==
+
+ENTRY:
+.i0: cmc  #%exvr4.0
+--
+exvr4.0[4] : BOOLc-POLYC-POLYC-POLYC
+--
+==
+
+ENTRY:
+.i0: cltd  #%exvr0.1d,%exvr0.0d
+--
+exvr0.1[4] : INT[P/P]C-INT[P/P]C-INT[P/P]C-INT[P/P]C
+--
+exvr0.0[4] : INT[N/N]c-INT[N/N]c-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: cwtd  #%exvr0.1w,%exvr0.0w
+--
+exvr0.1w[2] : INT[P/P]C-INT[P/P]C
+--
+exvr0.0w[2] : INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: cwtl  #,%exvr0.0w
+--
+exvr0.0w[2] : INT[P/P]C-INT[P/P]C
+--
+exvr0.0d[4] : exvr0.0w[2]-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: incl %exvr0.0d #,%exvr5.0,%exvr4.0
+--
+exvr0.0[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C
+--
+exvr4.0[4] : BOOLc-BOOLc-BOOLc-BOOLc
+exvr5.0[4] : BOOLc-BOOLc-BOOLc-BOOLc
+==
+
+ENTRY:
+.i0: movsbw %exvr0.1B,%exvr0.0w #
+--
+exvr0.1B[1] : POLYc
+--
+exvr0.0w[2] : exvr0.1B[1]-INT[N/N]c
+==
+
+ENTRY:
+.i0: sarw $C1d*1+0/umask/8,%exvr3.0:C0d(%exvr0.0d,%exvr0.1d,4) #,%exvr5.0,%exvr4.0
+--
+$C1d[4] : INT[N/N]C-POLYC-POLYC-POLYC
+$C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C
+exvr0.0[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C
+exvr0.1[4] : INT[0/4]C-INT[1/4]C-INT[2/4]C-INT[3/4]C
+C0d(%exvr0.0d,%exvr0.1d,4)[2] : INT[0/2]C-INT[1/2]C
+--
+exvr4.0[4] : BOOLc-BOOLc-BOOLc-BOOLc
+exvr5.0[4] : BOOLc-BOOLc-BOOLc-BOOLc
+==
+
+ENTRY:
+.i0: xaddb %exvr0.2B,%exvr3.0:C0d(%exvr0.0d,%exvr0.1d,1) #,%exvr5.0,%exvr4.0
+--
+exvr0.2B[1] : INT[0/1]c
+exvr0.0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C
+exvr0.1d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C
+$C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-INTADDR[2/4]C-INTADDR[3/4]C 
+C0d(%exvr0.0d,%exvr0.1d,1)[1] : INT[0/1]c
+--
+exvr4.0[4] : BOOLc-BOOLc-BOOLc-BOOLc
+exvr5.0[4] : BOOLc-BOOLc-BOOLc-BOOLc
+==
+
+#define CMOV_UNSIGNED(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr0.1d,%exvr0.0d #,%exvr4.0;\
+  --;\
+  exvr4.0[4] : BOOLC-POLYC-POLYC-POLYC;\
+  exvr0.0[4] : POLYc-POLYc-POLYc-POLYc;\
+  --;\
+  exvr0.1[4] : exvr0.0[4];\
+  ==
+
+#define CMOV_SIGNED(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr0.1d,%exvr0.0d #,%exvr5.0;\
+  --;\
+  exvr5.0[4] : BOOLC-BOOLC-POLYC-POLYC;\
+  exvr0.0[4] : POLYc-POLYc-POLYc-POLYc;\
+  --;\
+  exvr0.1[4] : exvr0.0[4];\
+  ==
+
+#define CMOV_BOTH(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr0.1d,%exvr0.0d #,%exvr5.0,%exvr4.0;\
+  --;\
+  exvr4.0[4] : BOOLC-POLYC-POLYC-POLYC;\
+  exvr5.0[4] : BOOLC-BOOLC-POLYC-POLYC;\
+  exvr0.0[4] : POLYc-POLYc-POLYc-POLYc;\
+  --;\
+  exvr0.1[4] : exvr0.0[4];\
+  ==
+
+CMOV_UNSIGNED(cmova)
+CMOV_UNSIGNED(cmovae)
+CMOV_UNSIGNED(cmovb)
+CMOV_UNSIGNED(cmovbe)
+CMOV_UNSIGNED(cmove)
+CMOV_UNSIGNED(cmovne)
+CMOV_UNSIGNED(cmovp)
+CMOV_UNSIGNED(cmovnp)
+
+CMOV_SIGNED(cmovge)
+CMOV_SIGNED(cmovl)
+CMOV_SIGNED(cmovo)
+CMOV_SIGNED(cmovno)
+CMOV_SIGNED(cmovs)
+CMOV_SIGNED(cmovns)
+
+CMOV_BOTH(cmovg)
+CMOV_BOTH(cmovle)
+
+ENTRY:
+.i0: crc32b %exvr0.1B,%exvr0.0d #
+--
+exvr0.1B[1] : POLYC
+--
+exvr0.0d[4] : INT[N/N]c-INT[N/N]c-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: crc32b %exvr0.1b,%exvr0.0d #
+--
+exvr0.1b[1] : POLYC
+--
+exvr0.0d[4] : INT[N/N]c-INT[N/N]c-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: crc32l %exvr0.1d,%exvr0.0d #
+--
+exvr0.1d[4] : POLYC-POLYC-POLYC-POLYC
+--
+exvr0.0d[4] : INT[N/N]c-INT[N/N]c-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: crc32w %exvr0.1w,%exvr0.0d #
+--
+exvr0.1w[2] : POLYC-POLYC
+--
+exvr0.0d[4] : INT[N/N]c-INT[N/N]c-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: lahf  #%exvr0.0B,%exvr5.0,%exvr4.0
+--
+exvr4.0b[1] : POLYc
+--
+exvr0.0B[1] : exvr4.0b[1]
+==
+
+ENTRY:
+.i0: movb $C0d*1+0/umask/8,%exvr0.0B #
+--
+$C0d*1+0/umask/8[1] : POLYc
+--
+exvr0.0B[1] : $C0d[1]
+==
+
+ENTRY:
+.i0: movb $C0d*1+0/umask/8,%exvr0.0b #
+--
+$C0d*1+0/umask/8[1] : POLYc
+--
+exvr0.0B[1] : $C0d[1]
+==
+
+ENTRY:
+.i0: movw $C0d*1+0/umask/16,%exvr0.0w #
+--
+$C0d*1+0/umask/16[2] : POLYc-POLYc
+--
+exvr0.0w[2] : $C0d[2]
+==
+
+ENTRY:
+.i0: movl $C0d,%exvr0.0d #
+--
+$C0d[4] : POLYc-POLYc-POLYc-POLYc
+--
+exvr0.0d[4] : $C0d[4]
+==
+
+ENTRY:
+.i0: movb %exvr0.1b,%exvr0.0b #
+--
+exvr0.1b[1] : POLYc
+--
+exvr0.0b[1] : exvr0.1b[1]
+==
+
+ENTRY:
+.i0: movb %exvr0.1B,%exvr0.0b #
+--
+exvr0.1B[1] : POLYc
+--
+exvr0.0b[1] : exvr0.1B[1]
+==
+
+ENTRY:
+.i0: movb %exvr0.1b,%exvr0.0B #
+--
+exvr0.1b[1] : POLYc
+--
+exvr0.0B[1] : exvr0.1b[1]
+==
+
+ENTRY:
+.i0: movb %exvr0.1B,%exvr0.0B #
+--
+exvr0.1B[1] : POLYc
+--
+exvr0.0B[1] : exvr0.1B[1]
+==
+
+ENTRY:
+.i0: movw %exvr0.1w,%exvr0.0w #
+--
+exvr0.1w[2] : POLYc-POLYc
+--
+exvr0.0w[2] : exvr0.1w[2]
+==
+
+ENTRY:
+.i0: movd %exvr1.0,%exvr0.0d #
+--
+exvr1.0[4] : POLYc-POLYc-POLYc-POLYc
+--
+exvr0.0d[4] : exvr1.0[4]
+==
+
+ENTRY:
+.i0: movsbl %exvr0.1B,%exvr0.0d #
+--
+exvr0.1B[1] : POLYc
+--
+exvr0.0d[4] : exvr0.1B[1]-INT[N/N]c-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: movsbl %exvr0.1b,%exvr0.0d #
+--
+exvr0.1b[1] : POLYc
+--
+exvr0.0d[4] : exvr0.1b[1]-INT[N/N]c-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: movsbw %exvr0.1B,%exvr0.0w #
+--
+exvr0.1B[1] : POLYc
+--
+exvr0.0w[2] : exvr0.1B[1]-INT[N/N]c
+==
+
+ENTRY:
+.i0: movsbw %exvr0.1b,%exvr0.0w #
+--
+exvr0.1b[1] : POLYc
+--
+exvr0.0w[2] : exvr0.1b[1]-INT[N/N]c
+==
+
+ENTRY:
+.i0: movswl %exvr0.1w,%exvr0.0d #
+--
+exvr0.1w[2] : POLYc-POLYc
+--
+exvr0.0d[4] : exvr0.1w[2]-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: movzbl %exvr0.1B,%exvr0.0d #
+--
+exvr0.1B[1] : POLYc
+--
+exvr0.0d[4] : exvr0.1B[1]-INT[N/N]c-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: movzbl %exvr0.1b,%exvr0.0d #
+--
+exvr0.1b[1] : POLYc
+--
+exvr0.0d[4] : exvr0.1b[1]-INT[N/N]c-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: movzbw %exvr0.1B,%exvr0.0w #
+--
+exvr0.1B[1] : POLYc
+--
+exvr0.0w[2] : exvr0.1B[1]-INT[N/N]c
+==
+
+ENTRY:
+.i0: movzbw %exvr0.1b,%exvr0.0w #
+--
+exvr0.1b[1] : POLYc
+--
+exvr0.0w[2] : exvr0.1b[1]-INT[N/N]c
+==
+
+ENTRY:
+.i0: movzwl %exvr0.1w,%exvr0.0d #
+--
+exvr0.1w[2] : POLYc-POLYc
+--
+exvr0.0d[4] : exvr0.1w[2]-INT[N/N]c-INT[N/N]c
+==
+
+ENTRY:
+.i0: notb %exvr0.0b #
+--
+exvr0.0b[1] : BOOLC
+--
+==
+
+ENTRY:
+.i0: notb %exvr0.0B #
+--
+exvr0.0b[1] : BOOLC
+--
+==
+
+ENTRY:
+.i0: notw %exvr0.0w #
+--
+exvr0.0w[2] : BOOLC-BOOLC
+--
+==
+
+ENTRY:
+.i0: notl %exvr0.0d #
+--
+exvr0.0d[4] : BOOLC-BOOLC-BOOLC-BOOLC
+--
+==
+
+ENTRY:
+.i0: psubb %exvr1.1,%exvr1.0 #
+--
+exvr1.0[8] : INT[0/8]C-INT[1/8]C-INT[2/8]C-INT[3/8]C-INT[4/8]C-INT[5/8]C-INT[6/8]C-INT[7/8]C
+exvr1.1[8] : INT[0/8]c-INT[1/8]c-INT[2/8]c-INT[3/8]c-INT[4/8]c-INT[5/8]c-INT[6/8]c-INT[7/8]c
+--
+==
+
+ENTRY:
+.i0: sahf  #%exvr0.0B,%exvr5.0,%exvr4.0
+--
+exvr0.0B[1] : POLYc
+--
+exvr4.0b[1] : exvr0.0B[1]
+==
+
+#define SETcc_UNSIGNED(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr0.0B #,%exvr4.0;\
+  --;\
+  exvr4.0b[1] : BOOLc;\
+  --;\
+  exvr0.0B[1] : exvr4.0b[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr0.0b #,%exvr4.0;\
+  --;\
+  exvr4.0b[1] : BOOLc;\
+  --;\
+  exvr0.0b[1] : exvr4.0b[1];\
+  ==
+
+#define SETcc_BOTH(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr0.0B #,%exvr5.0,%exvr4.0;\
+  --;\
+  exvr4.0b[1] : BOOLc;\
+  exvr5.0b[1] : BOOLc;\
+  --;\
+  exvr0.0B[1] : exvr4.0b[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr0.0b #,%exvr5.0,%exvr4.0;\
+  --;\
+  exvr4.0b[1] : BOOLc;\
+  exvr5.0b[1] : BOOLc;\
+  --;\
+  exvr0.0b[1] : exvr4.0b[1];\
+  ==
+
+#define SETcc_SIGNED(opcode) \
+  ENTRY:;\
+  .i0: opcode %exvr0.0B #,%exvr5.0;\
+  --;\
+  exvr5.0b[1] : BOOLc;\
+  --;\
+  exvr0.0B[1] : exvr5.0b[1];\
+  ==;\
+  ENTRY:;\
+  .i0: opcode %exvr0.0b #,%exvr5.0;\
+  --;\
+  exvr5.0b[1] : BOOLc;\
+  --;\
+  exvr0.0b[1] : exvr5.0b[1];\
+  ==
+
+SETcc_UNSIGNED(seta)
+SETcc_UNSIGNED(setbe)
+SETcc_UNSIGNED(setae)
+SETcc_UNSIGNED(setb)
+SETcc_UNSIGNED(sete)
+SETcc_UNSIGNED(setne)
+SETcc_UNSIGNED(setp)
+SETcc_UNSIGNED(setnp)
+
+SETcc_BOTH(setg)
+SETcc_BOTH(setle)
+
+SETcc_SIGNED(setge)
+SETcc_SIGNED(setl)
+SETcc_SIGNED(seto)
+SETcc_SIGNED(setno)
+SETcc_SIGNED(sets)
+SETcc_SIGNED(setns)
+
+ENTRY:
+.i0: xchgb %exvr0.1b,%exvr0.0b #
+--
+exvr0.0b[1] : POLYc
+exvr0.1b[1] : POLYc
+--
+exvr0.0b[1] : exvr0.1b[1]
+exvr0.1b[1] : exvr0.0b[1]
+==
+
+ENTRY:
+.i0: xchgb %exvr0.1B,%exvr0.0b #
+--
+exvr0.0b[1] : POLYc
+exvr0.1B[1] : POLYc
+--
+exvr0.0b[1] : exvr0.1B[1]
+exvr0.1B[1] : exvr0.0b[1]
+==
+
+ENTRY:
+.i0: xchgb %exvr0.1b,%exvr0.0B #
+--
+exvr0.0B[1] : POLYc
+exvr0.1b[1] : POLYc
+--
+exvr0.0B[1] : exvr0.1b[1]
+exvr0.1b[1] : exvr0.0B[1]
+==
+
+ENTRY:
+.i0: xchgb %exvr0.1B,%exvr0.0B #
+--
+exvr0.0B[1] : POLYc
+exvr0.1B[1] : POLYc
+--
+exvr0.0B[1] : exvr0.1B[1]
+exvr0.1B[1] : exvr0.0B[1]
+==
+
+ENTRY:
+.i0: xchgw %exvr0.1w,%exvr0.0w #
+--
+exvr0.0w[2] : POLYc-POLYc
+exvr0.1w[2] : POLYc-POLYc
+--
+exvr0.0w[2] : exvr0.1w[2]
+exvr0.1w[2] : exvr0.0w[2]
+==
+
+ENTRY:
+.i0: xchgl %exvr0.1w,%exvr0.0w #
+--
+exvr0.0d[4] : POLYc-POLYc-POLYc-POLYc
+exvr0.1d[4] : POLYc-POLYc-POLYc-POLYc
+--
+exvr0.0d[4] : exvr0.1d[4]
+exvr0.1d[4] : exvr0.0d[4]
+==
+
+DATA_TRANSFER_FROM_MEM1(movb)
+DATA_TRANSFER_FROM_MEM2(movw)
+DATA_TRANSFER_FROM_MEM4(movl)
+DATA_TRANSFER_FROM_MEM1_4(movsbl)
+DATA_TRANSFER_FROM_MEM1_4(movzbl)
+DATA_TRANSFER_FROM_MEM1_2(movsbw)
+DATA_TRANSFER_FROM_MEM1_2(movzbw)
+DATA_TRANSFER_FROM_MEM2_4(movswl)
+DATA_TRANSFER_FROM_MEM2_4(movzwl)

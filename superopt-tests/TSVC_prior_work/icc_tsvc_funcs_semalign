@@ -1,0 +1,29 @@
+# 25 out of 28 passing
+s000
+# s1112 Non Bisimilar
+# s112
+s121
+# s122
+s1221
+s1251
+s127
+s1281
+s1351
+s162
+s173
+s176
+s2244
+# s243 Non Bisimilar
+s251
+s3251
+# s351 Loop re-rolling
+s452
+s453
+vpv
+vpvpv
+vpvts
+vpvtv
+vtv
+vtvtv
+sum1d
+vdotr

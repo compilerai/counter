@@ -1,0 +1,143 @@
+#./superopt/build/etfg-i386/typecheck --tregs 1 --t test/fb.trans.tab.memlocs
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.1 : BV:32
+2 : 7 : INT
+3 : 0 : INT
+4 : bvextract(1, 2, 3) : BV:8
+5 : 24 : INT
+6 : bvzero_ext(4, 5) : BV:32
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+zext8:1
+--
+live : exr0.1[0xff], exr0.0[0xffffffff],#
+memlive : true
+--
+in_tmap:
+exvr0.1 : MEMLOC0x0
+exvr0.0 : exvr0.0S
+out_tmap.0:
+exvr0.1 : MEMLOC0x0
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movzbl %exvr3.2w:C_SYMBOL0,%exvr0.0d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.1 : BV:32
+2 : 15 : INT
+3 : 0 : INT
+4 : bvextract(1, 2, 3) : BV:16
+5 : 16 : INT
+6 : bvzero_ext(4, 5) : BV:32
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+zext16:1
+--
+live : exr0.1[0xffff], exr0.0[0xffffffff],#
+memlive : true
+--
+in_tmap:
+exvr0.0 : exvr0.0D
+exvr0.1 : MEMLOC0x0
+out_tmap.0:
+exvr0.0 : exvr0.0D
+exvr0.1 : MEMLOC0x0
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movzwl %exvr3.2w:C_SYMBOL0,%exvr0.0d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.1 : BV:32
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+move32:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+in_tmap:
+exvr0.1 : exvr0.0D
+exvr0.0 : MEMLOC0x0
+out_tmap.0:
+exvr0.1 : exvr0.0D
+exvr0.0 : MEMLOC0x0
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.0d,%exvr3.2w:C_SYMBOL0 #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.1 : BV:32
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+move32:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+in_tmap:
+exvr0.1 : MEMLOC0x1
+exvr0.0 : MEMLOC0x0
+out_tmap.0:
+exvr0.1 : MEMLOC0x1
+exvr0.0 : MEMLOC0x0
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr3.2w:C_SYMBOL1,%exvr0.0d #
+.i0: movl %exvr0.0d,%exvr3.2w:C_SYMBOL0 #
+.i1: jmp .NEXTPC0x0 #
+==

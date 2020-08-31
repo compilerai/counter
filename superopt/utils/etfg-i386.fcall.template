@@ -1,0 +1,99 @@
+#ENTRY:
+#=etfg_insn
+#=tfg_edge
+#L0%1%100001 => L0%1%100002
+#=tfg_edge_EdgeCond:
+#1 : 1 : BOOL
+#=tfg_edge_StateTo:
+#=src.exreg.0.0
+#1 : call.0.reg : FUNCTION[MEMLABEL,MEMLABEL,ARRAY[BV:32 -> BV:8],BV:32,REGID,ARRAY[BV:32 -> BV:8] -> BV:32]
+#2 : mlvar.llvm.0 : MEMLABEL
+#3 : mlvar.llvm.1 : MEMLABEL
+#4 : input.src.llvm-mem : ARRAY[BV:32 -> BV:8]
+#5 : nextpc_const.1 : BV:32
+#6 : 1 : REGID
+#PATTERN_FUNCTION_CALL_LINES_REG1
+#=src.llvm-mem
+#1 : call.0.mem : FUNCTION[MEMLABEL,MEMLABEL,ARRAY[BV:32 -> BV:8],BV:32,REGID,ARRAY[BV:32 -> BV:8] -> ARRAY[BV:32 -> BV:8]]
+#2 : mlvar.llvm.0 : MEMLABEL
+#3 : mlvar.llvm.1 : MEMLABEL
+#4 : input.src.llvm-mem : ARRAY[BV:32 -> BV:8]
+#5 : nextpc_const.1 : BV:32
+#6 : 0 : REGID
+#PATTERN_FUNCTION_CALL_LINES_MEM1
+#=pcrel_val
+#0
+#=pcrel_tag
+#tag_var
+#=pcrel_val
+#1
+#=pcrel_tag
+#tag_var
+#=comment
+#call_r_opt:0
+#--
+#PATTERN_LIVE_REGS_INCLUDING_R0
+#memlive : false
+#--
+#in_tmap:
+#PATTERN_TRANSMAP_ENTRIES1
+#out_tmap.0:
+#exvr0.0 : exvr0.0S
+#PATTERN_TRANSMAP_ENTRIES1
+#out_tmap.1:
+#exvr0.0 : exvr0.0S
+#PATTERN_TRANSMAP_ENTRIES1
+#--
+#fixed_reg_mappings
+#0 : 4 : 4
+#--
+#PATTERN_PUSH_ARGS_LINES
+#.i10000: calll .NEXTPC0x0 #,%exvr0.4d,%exvr4.2,%exvr0.2d,%exvr0.1d,%exvr0.0d
+#PATTERN_POP_ARGS_LINES
+#.i20001: jmp .NEXTPC0x1 #
+#==
+#
+#ENTRY:
+#=etfg_insn
+#=tfg_edge
+#L0%1%100001 => L0%1%100002
+#=tfg_edge_EdgeCond:
+#1 : 1 : BOOL
+#=tfg_edge_StateTo:
+#=src.llvm-mem
+#1 : call.0.mem : FUNCTION[MEMLABEL,MEMLABEL,ARRAY[BV:32 -> BV:8],BV:32,REGID,ARRAY[BV:32 -> BV:8] -> ARRAY[BV:32 -> BV:8]]
+#2 : mlvar.llvm.0 : MEMLABEL
+#3 : mlvar.llvm.1 : MEMLABEL
+#4 : input.src.llvm-mem : ARRAY[BV:32 -> BV:8]
+#5 : nextpc_const.1 : BV:32
+#6 : 0 : REGID
+#PATTERN_FUNCTION_CALL_LINES_MEM0
+#=pcrel_val
+#0
+#=pcrel_tag
+#tag_var
+#=pcrel_val
+#1
+#=pcrel_tag
+#tag_var
+#=comment
+#call_opt:0
+#--
+#PATTERN_LIVE_REGS_EXCLUDING_R0
+#memlive : false
+#--
+#in_tmap:
+#PATTERN_TRANSMAP_ENTRIES0
+#out_tmap.0:
+#PATTERN_TRANSMAP_ENTRIES0
+#out_tmap.1:
+#PATTERN_TRANSMAP_ENTRIES0
+#--
+#fixed_reg_mappings
+#0 : 4 : 4
+#--
+#PATTERN_PUSH_ARGS_LINES
+#.i10000: calll .NEXTPC0x0 #,%exvr0.4d,%exvr4.2,%exvr0.2d,%exvr0.1d,%exvr0.0d
+#PATTERN_POP_ARGS_LINES
+#.i20001: jmp .NEXTPC0x1 #
+#==

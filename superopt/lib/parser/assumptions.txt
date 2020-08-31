@@ -1,0 +1,7 @@
+Z3 parser
+
+1. For "ite" statements we assume that each statement will have all the input arguments specified, i.e. if arity is 3 then all 3 variables are assigned in the boolean expression.  
+
+2. bool expression inside ite will either be set of assignments or a constant that evaluates to a bool expr. It cannot be a mixture of both. 
+
+

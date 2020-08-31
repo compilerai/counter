@@ -1,0 +1,49 @@
+ENTRY:
+.i0: add %exvr0.0d,%exvr0.1d,%exvr0.2d #
+--
+exvr0.1d[4] : INT[3/4]c-INT[2/4]c-INT[1/4]c-INT[0/4]c
+exvr0.2d[4] : INT[3/4]c-INT[2/4]c-INT[1/4]c-INT[0/4]c
+--
+exvr0.0d[4] : exvr0.1d[4]
+==
+
+ENTRY:
+.i0: mr %exvr0.0d,%exvr0.1d #
+--
+--
+exvr0.0d[4] : exvr0.1d[4]
+==
+
+ENTRY:
+.i0: lwz %exvr0.0d,C0d*1+0/umask/16(%exvr0.1d) #
+--
+exvr0.1d[4] : INTADDR[3/4]C-INTADDR[2/4]C-INTADDR[1/4]C-INTADDR[0/4]C
+$C0d[4] : INTADDR[0/4]C-INTADDR[1/4]C-POLYC-POLYC
+C0d*1+0/mask/16(%exvr0.1d)[1] : POLYc
+C0d*1+1/mask/16(%exvr0.1d)[1] : POLYc
+C0d*1+2/mask/16(%exvr0.1d)[1] : POLYc
+C0d*1+3/mask/16(%exvr0.1d)[1] : POLYc
+--
+exvr0.0d[4] : C0d*1+0/mask/16(%exvr0.1d)[1]-C0d*1+1/mask/16(%exvr0.1d)[1]-C0d*1+2/mask/16(%exvr0.1d)[1]-C0d*1+3/mask/16(%exvr0.1d)[1]
+==
+
+ENTRY:
+.i0: b .NEXTPC0x0 #
+--
+--
+==
+
+ENTRY:
+.i0: addco. %exvr0.0d,%exvr0.1d,%exvr0.2d #,%exvr2.0,%exvr3.0,%exvr6.0,%exvr8.0,%exvr7.0
+--
+exvr0.1[4] : INT[3/4]c-INT[2/4]c-INT[1/4]c-INT[0/4]c
+exvr0.2[4] : INT[3/4]c-INT[2/4]c-INT[1/4]c-INT[0/4]c
+exvr7.0[1] : INT[0/1]c
+exvr8.0[1] : BOOLc
+--
+exvr0.0[4] : exvr0.1[4]
+exvr2.0[1] : BOOLc
+exvr3.0[1] : BOOLc
+exvr6.0[1] : BOOLc
+exvr8.0[1] : BOOLc
+==

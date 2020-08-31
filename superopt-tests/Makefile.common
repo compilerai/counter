@@ -1,0 +1,197 @@
+# rules for building all compilers executables
+
+# GCC
+
+%.gcc.eqchecker.O0.i386.o: %.c
+	$(GCC_I386) -c $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) -O0 $< -o $@
+eqchecker_helper.gcc.eqchecker.O0.i386.o: eqchecker_helper.c
+	$(GCC_I386) -c $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) -O0 $< -o $@
+%.gcc.eqchecker.O0.i386: %.gcc.eqchecker.O0.i386.o eqchecker_helper.gcc.eqchecker.O0.i386.o
+	$(GCC_I386) $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) $(LINKER_SCRIPT_I386_FLAG) -O0 $^ -o $@ $(LIBS)
+
+%.gcc.eqchecker.O2.i386.o: %.c
+	$(GCC_I386) -c $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) -O2 $< -o $@
+eqchecker_helper.gcc.eqchecker.O2.i386.o: eqchecker_helper.c
+	$(GCC_I386) -c $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) -O2 $< -o $@
+%.gcc.eqchecker.O2.i386: %.gcc.eqchecker.O2.i386.o eqchecker_helper.gcc.eqchecker.O2.i386.o
+	$(GCC_I386) $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) $(LINKER_SCRIPT_I386_FLAG) -O2 $^ -o $@ $(LIBS)
+
+%.gcc.eqchecker.O3.i386.o: %.c
+	$(GCC_I386) -c $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) -O3 $< -o $@
+eqchecker_helper.gcc.eqchecker.O3.i386.o: eqchecker_helper.c
+	$(GCC_I386) -c $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) -O3 $< -o $@
+%.gcc.eqchecker.O3.i386: %.gcc.eqchecker.O3.i386.o eqchecker_helper.gcc.eqchecker.O3.i386.o
+	$(GCC_I386) $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) $(LINKER_SCRIPT_I386_FLAG) -O3 $^ -o $@ $(LIBS)
+
+%.gcc.O0.i386: %.c
+	$(GCC_I386) $(CFLAGS) $(GCC_I386_FLAGS) -O0 $< -o $@
+%.gcc.O2.i386: %.c
+	$(GCC_I386) $(CFLAGS) $(GCC_I386_FLAGS) -O2 $< -o $@
+%.gcc.O3.i386: %.c
+	$(GCC_I386) $(CFLAGS) $(GCC_I386_FLAGS) -O3 $< -o $@
+
+# CLANG
+
+%.clang.eqchecker.O0.i386.o: %.c
+	$(GCC_I386) -c $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) -O0 $< -o $@
+eqchecker_helper.clang.eqchecker.O0.i386.o: eqchecker_helper.c
+	$(GCC_I386) -c $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) -O0 $< -o $@
+%.clang.eqchecker.O0.i386: %.clang.eqchecker.O0.i386.o eqchecker_helper.clang.eqchecker.O0.i386.o
+	$(GCC_I386) $(CFLAGS) $(GCC_I386_EQCHECKER_FLAGS) $(LINKER_SCRIPT_I386_FLAG) -O0 $^ -o $@ $(LIBS)
+
+%.clang.eqchecker.O2.i386.o: %.c
+	$(CLANG_I386) -c $(CFLAGS) $(CLANG_I386_EQCHECKER_FLAGS) -O2 $< -o $@
+eqchecker_helper.clang.eqchecker.O2.i386.o: eqchecker_helper.c
+	$(CLANG_I386) -c $(CFLAGS) $(CLANG_I386_EQCHECKER_FLAGS) -O2 $< -o $@
+%.clang.eqchecker.O2.i386: %.clang.eqchecker.O2.i386.o eqchecker_helper.clang.eqchecker.O2.i386.o
+	$(CLANG_I386) $(CFLAGS) $(CLANG_I386_EQCHECKER_FLAGS) $(LINKER_SCRIPT_I386_FLAG) -O2 $^ -o $@ $(LIBS)
+
+%.clang.eqchecker.O3.i386.o: %.c
+	$(CLANG_I386) -c $(CFLAGS) $(CLANG_I386_EQCHECKER_FLAGS) -O3 $< -o $@
+eqchecker_helper.clang.eqchecker.O3.i386.o: eqchecker_helper.c
+	$(CLANG_I386) -c $(CFLAGS) $(CLANG_I386_EQCHECKER_FLAGS) -O3 $< -o $@
+%.clang.eqchecker.O3.i386: %.clang.eqchecker.O3.i386.o eqchecker_helper.clang.eqchecker.O3.i386.o
+	$(CLANG_I386) --verbose -Wl,--verbose $(CFLAGS) $(CLANG_I386_EQCHECKER_FLAGS) $(LINKER_SCRIPT_I386_FLAG) $^ -O3 -o $@ $(LIBS)
+
+%.clang.O0.i386: %.c
+	$(CLANG_I386) $(CFLAGS) $(CLANG_I386_FLAGS) -O0 $< -o $@
+%.clang.O2.i386: %.c
+	$(CLANG_I386) $(CFLAGS) $(CLANG_I386_FLAGS) -O2 $< -o $@
+%.clang.O3.i386: %.c
+	$(CLANG_I386) $(CFLAGS) $(CLANG_I386_FLAGS) -O3 $< -o $@
+
+# ICC
+
+%.icc.eqchecker.O0.i386.o: %.c
+	$(ICC_I386) -c $(CFLAGS) $(ICC_I386_EQCHECKER_FLAGS) -O0 $< -o $@
+eqchecker_helper.icc.eqchecker.O0.i386.o: eqchecker_helper.c
+	$(ICC_I386) -c $(CFLAGS) $(ICC_I386_EQCHECKER_FLAGS) -O0 $< -o $@
+%.icc.eqchecker.O0.i386: %.icc.eqchecker.O0.i386.o eqchecker_helper.icc.eqchecker.O0.i386.o
+	$(ICC_I386) $(CFLAGS) $(ICC_I386_EQCHECKER_FLAGS) $(LINKER_SCRIPT_I386_FLAG) -O0 $^ -o $@ $(LIBS)
+
+%.icc.eqchecker.O2.i386.o: %.c
+	$(ICC_I386) -c $(CFLAGS) $(ICC_I386_EQCHECKER_FLAGS) -O2 $< -o $@
+eqchecker_helper.icc.eqchecker.O2.i386.o: eqchecker_helper.c
+	$(ICC_I386) -c $(CFLAGS) $(ICC_I386_EQCHECKER_FLAGS) -O2 $< -o $@
+%.icc.eqchecker.O2.i386: %.icc.eqchecker.O2.i386.o eqchecker_helper.icc.eqchecker.O2.i386.o
+	$(ICC_I386) $(CFLAGS) $(ICC_I386_EQCHECKER_FLAGS) $(LINKER_SCRIPT_I386_FLAG) -O2 $^ -o $@ $(LIBS)
+
+%.icc.eqchecker.O3.i386.o: %.c
+	$(ICC_I386) -c $(CFLAGS) $(ICC_I386_EQCHECKER_FLAGS) -O3 $< -o $@
+eqchecker_helper.icc.eqchecker.O3.i386.o: eqchecker_helper.c
+	$(ICC_I386) -c $(CFLAGS) $(ICC_I386_EQCHECKER_FLAGS) -O3 $< -o $@
+%.icc.eqchecker.O3.i386: %.icc.eqchecker.O3.i386.o eqchecker_helper.icc.eqchecker.O3.i386.o
+	$(ICC_I386) $(CFLAGS) $(ICC_I386_EQCHECKER_FLAGS) $(LINKER_SCRIPT_I386_FLAG) -O3 $^ -o $@ $(LIBS)
+
+%.icc.O0.i386: %.c
+	$(ICC_I386) $(CFLAGS) $(ICC_I386_FLAGS) -O0 $< -o $@
+%.icc.O2.i386: %.c
+	$(ICC_I386) $(CFLAGS) $(ICC_I386_FLAGS) -O2 $< -o $@
+%.icc.O3.i386: %.c
+	$(ICC_I386) $(CFLAGS) $(ICC_I386_FLAGS) -O3 $< -o $@
+
+
+# CCOMP
+
+%.ccomp.eqchecker.O2.i386.o: %.c
+	$(CCOMP_I386) -c $(CCOMP_CFLAGS) $(LINKER_SCRIPT_I386_FLAG) -O2 $< -o $@
+eqchecker_helper.ccomp.eqchecker.O2.i386.o: eqchecker_helper.c
+	$(CCOMP_I386) -c $(CCOMP_CFLAGS) -O2 $< -o $@
+%.ccomp.eqchecker.O2.i386: %.ccomp.eqchecker.O2.i386.o eqchecker_helper.ccomp.eqchecker.O2.i386.o
+	$(CCOMP_I386) $(CCOMP_CFLAGS) $(LINKER_SCRIPT_I386_FLAG) -O2 $^ -o $@ $(LIBS)
+
+%.ccomp.O0.i386.o: %.c
+	$(CCOMP_I386) -c $(CCOMP_CFLAGS) $(LINKER_SCRIPT_I386_FLAG) -O0 $< -o $@
+eqchecker_helper.ccomp.O0.i386.o: eqchecker_helper.c
+	$(CCOMP_I386) -c $(CCOMP_CFLAGS) $(LINKER_SCRIPT_I386_FLAG) -O0 $< -o $@
+%.ccomp.O0.i386: %.ccomp.O0.i386.o eqchecker_helper.ccomp.O0.i386.o
+	$(CCOMP_I386) $(CCOMP_CFLAGS) $(LINKER_SCRIPT_I386_FLAG) -O0 $^ -o $@ $(LIBS)
+
+%.ccomp.O2.i386.o: %.c
+	$(CCOMP_I386) -c $(CCOMP_CFLAGS) $(LINKER_SCRIPT_I386_FLAG) -O2 $< -o $@
+eqchecker_helper.ccomp.O2.i386.o: eqchecker_helper.c
+	$(CCOMP_I386) -c $(CCOMP_CFLAGS) $(LINKER_SCRIPT_I386_FLAG) -O2 $< -o $@
+%.ccomp.O2.i386: %.ccomp.O2.i386.o eqchecker_helper.ccomp.O2.i386.o
+	$(CCOMP_I386) $(CCOMP_CFLAGS) $(LINKER_SCRIPT_I386_FLAG) -O2 $^ -o $@ $(LIBS)
+
+%.ccomp.O0.i386: %.c
+	$(CCOMP_I386) $(CCOMP_CFLAGS) -O0 $< -o $@
+%.ccomp.O2.i386: %.c
+	$(CCOMP_I386) $(CCOMP_CFLAGS) -O2 $< -o $@
+%.ccomp.O3.i386: %.c
+	$(CCOMP_I386) $(CCOMP_CFLAGS) -O3 $< -o $@
+
+# LLVM BC
+
+%.c.O0.eqchecker.bc: %.c
+	CLANG_REVERSE_ARGS=1 $(CLANG_I386) $(EQCHECKER_DEFINES) -Xclang -disable-O0-optnone $(INCLUDES) -m32 -O3 -Xclang -disable-llvm-passes -emit-llvm $^ -c -o $@.tmp
+	$(LLVM_OPT) -mem2reg -strip-debug -o $@ $@.tmp
+
+%.c.O0.bc: %.c
+	$(CLANG_I386) $(CFLAGS) -Xclang -disable-O0-optnone $(INCLUDES) -m32 -O3 -Xclang -disable-llvm-passes -emit-llvm $^ -c -o $@.tmp
+	$(LLVM_OPT) -mem2reg -strip-debug -die -o $@ $@.tmp
+
+%.bc.eqchecker.O0: %.c.O0.bc eqchecker_helper.c.O0.bc
+	$(LLVM_LINK) $^ -o $@
+
+%.bc.eqchecker.O2: %.bc.eqchecker.O0
+	$(LLVM_OPT) -O2 -o $@ $<
+
+%.bc.eqchecker.O3: %.bc.eqchecker.O0
+	$(LLVM_OPT) -O3 -o $@ $<
+
+#%.bc.O3: %.bc.O0
+#	$(LLVM_OPT) -O3 -o $@ $<
+
+#see http://lists.llvm.org/pipermail/llvm-dev/2017-April/111989.html for the sequence of commands used to generate bc.O3 below
+%.bc.O0: %.c
+	$(CLANG_I386) $(CFLAGS) -Xclang -disable-llvm-passes $(INCLUDES) -m32 -O3 -emit-llvm $^ -c -o $@ #the O3 flag is for clang-side optimizations; in particular, we want CodeGenTBAA to run.  The disable-llvm-passes ensures that no LLVM optimizations are run
+%.bc.O2: %.bc.O0
+	$(LLVM_OPT) $(LLVM_OPT_FLAGS_O2) -o $@ $<
+%.bc.O3: %.bc.O0
+	$(LLVM_OPT) $(LLVM_OPT_FLAGS_O3) -o $@ $<
+
+%.bc.O3.cg: %.bc.O3
+	$(MYLLC) -O3 $< -o $<.cg.tmp
+	rm -f $<.cg.tmp
+	$(MYLLVM_AS) $@.ll -o $@
+
+# Executable files generated using LLC (should be identical as clang; here, just to check)
+%.llc.O0.i386: %.bc.O0
+	$(LLC) -O0 -filetype=obj $< -o $@.tmp.o
+	$(CLANG_I386) -O0 $@.tmp.o $(LIBS) -o $@
+
+%.llc.O2.i386: %.bc.O0
+	$(LLVM_OPT) $(LLVM_OPT_FLAGS_O2) -o $@.tmp $<
+	$(LLC) -O2 -filetype=obj $@.tmp -o $@.tmp.o
+	$(CLANG_I386) -O2 $@.tmp.o $(LIBS) -o $@
+
+%.llc.O3.i386: %.bc.O0
+	$(LLVM_OPT) $(LLVM_OPT_FLAGS_O3) -o $@.tmp $<
+	$(LLC) -O3 -filetype=obj $@.tmp -o $@.tmp.o
+	$(CLANG_I386) -O3 $@.tmp.o $(LIBS) -o $@
+
+# LLVM BC text
+
+%.ll: %
+	$(LLVM_DIS) < $< > $@
+
+# objdump
+
+%.s: %
+	$(OBJDUMP) -dx $< > $@
+
+# .s files
+
+%.as.eqchecker.O0.i386.o: %.s
+	$(GCC_I386) -c $< -o $@
+
+%.as.eqchecker.O0.i386: %.as.eqchecker.O0.i386.o
+	cp $< $@
+	# no-op for now as `main' may not be present
+
+# LLVM LL
+
+%.ll.bc.eqchecker.O0: %.ll
+	$(LLVM_OPT) -mem2reg -strip-debug $< -o $@
+	# no linking

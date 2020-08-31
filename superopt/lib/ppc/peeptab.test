@@ -1,0 +1,700 @@
+ENTRY:
+.i0: mr %exvr0.0d, %exvr0.1d #
+.i1: mr %exvr0.1d, %exvr0.2d #
+.i1: mr %exvr0.2d, %exvr0.0d #
+.i2: b .NEXTPC0x0 #
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff],;
+--
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+--
+.i0: xchgl %exvr0.2d, %exvr0.1d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+#ENTRY:
+#.i0: mr %exvr0.0d, %exvr0.1d #
+#.i1: mr %exvr0.1d, %exvr0.0d #
+#.i2: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#--
+#.i0: movl %exvr0.1d, %exvr0.0d #
+#.i1: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: addi %exvr0.0d, 0, C0d*1+0/umask/16 #
+#.i1: addi %exvr0.0d, %exvr0.0d, C1d*1+0/umask/16 #
+#.i2: extsh %exvr0.0d, %exvr0.0d #
+#.i3: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#--
+#.i0: movl $C0d+1*C1d, %exvr0.0d #
+#.i1: movswl %exvr0.0w, %exvr0.0d #
+#.i2: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: mulli %exvr0.0d,%exvr0.1d,C0d*1+0/umask/16 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#--
+#.i0: imull $C0d*1+0/mask/16,%exvr0.1d,%exvr0.0d #,%exvr5.0,%exvr4.0
+#.i1: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: eieio #
+#.i1: b .NEXTPC0x0 #
+#--
+#live :;
+#--
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+##ENTRY:
+##.i0: lbz %exvr0.0d,C0d*1+0/umask/16(%exvr0.1d) #
+##.i1: b .NEXTPC0x0 #
+##--
+##live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+##--
+##exvr0.0 : exvr0.0
+##exvr0.1 : exvr0.1
+##--
+##.i0: jmp .NEXTPC0x0 #
+##==
+#
+##ENTRY:
+##.i0: lwz %exvr0.0,0(%exvr0.1) #
+##.i1: b .NEXTPC0x0 #
+##--
+##live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+##--
+##exvr0.0 : exvr0.0
+##exvr0.1 : exvr0.1
+##--
+##.i0: jmp .NEXTPC0x0 #
+##==
+##
+##ENTRY:
+##.i0: bcl 0x8,4*%exvr2.0+eq,.NEXTPC0x0 #,%exvr4.0,%exvr5.0
+##.i1: b .NEXTPC0x1 #
+##--
+##live : exr2.0[0x2], exr4.0[0xffffffff], exr5.0[0xffffffff],; exr2.0[0x2], exr4.0[0xffffffff], exr5.0[0xffffffff],;
+##--
+##exvr2.0 : exvr4.0
+##exvr4.0 : exvr0.0
+##exvr5.0 : exvr0.1
+##--
+##.i0: jmp .NEXTPC0x0 #
+##==
+#
+#ENTRY:
+#.i0: dcbt 0,%exvr0.0d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x8],; exr2.0[0x8],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jl .NEXTPC0x0 #,%exvr5.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+eq,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x2],; exr2.0[0x2],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: je .NEXTPC0x0 #,%exvr4.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x8],; exr2.0[0x8],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jge .NEXTPC0x0 #,%exvr5.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+gt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x4],; exr2.0[0x4],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jle .NEXTPC0x0 #,%exvr5.0,%exvr4.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x8],; exr2.0[0x8],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: jae .NEXTPC0x0 #,%exvr4.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+gt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x4],; exr2.0[0x4],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: jbe .NEXTPC0x0 #,%exvr4.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#ENTRY:
+#.i0: lbzx %exvr0.0d,%exvr0.1d,%exvr0.2d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff], exr0.2[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#exvr0.2 : exvr0.2
+#--
+#.i0: movzbl %exvr3.3:0x0(%exvr0.1d,%exvr0.2d,1),%exvr0.0d #
+#.i1: jmp .NEXTPC0x0 #
+#==
+#ENTRY:
+#.i0: extsb %exvr0.1d,%exvr0.0d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#--
+#.i0: movsbl %exvr0.0b,%exvr0.1d #
+#.i1: jmp .NEXTPC0x0 #
+#==
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+gt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x4],; exr2.0[0x4],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jg .NEXTPC0x0 #,%exvr5.0,%exvr4.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#ENTRY:
+#.i0: lbzx %exvr0.0d,0,%exvr0.1d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#--
+#.i0: movzbl %exvr3.0:0x0(%exvr0.1d),%exvr0.0d #
+#.i1: jmp .NEXTPC0x0 #
+#==
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x8],; exr2.0[0x8],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: jb .NEXTPC0x0 #,%exvr4.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#ENTRY:
+#.i0: dcbt 0,%exvr0.0d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: dcbtst %exvr0.0d,%exvr0.1d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.1[0xffffffff],;
+#--
+#exvr0.1 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: lbzx %exvr0.0d,0,%exvr0.1d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#--
+#.i0: movzbl %exvr3.0:0x0(%exvr0.1d),%exvr0.0d #
+#.i1: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x8],; exr2.0[0x8],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: jb .NEXTPC0x0 #,%exvr4.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+gt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x4],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+eq,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x2],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+gt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x4],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x8],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: lwbrx %exvr0.0d,0,%exvr0.1d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#--
+#.i0: movl %exvr3.0:0x0(%exvr0.1d),%exvr0.0d #
+#.i1: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+gt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x4],; exr2.0[0x4],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: ja .NEXTPC0x0 #,%exvr4.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#
+#ENTRY:
+#.i0: mr %exvr0.1d,%exvr0.0d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#--
+#.i0: cmpl %exvr0.0d,%exvr0.0d #,%exvr5.0,%exvr4.0
+#.i1: movl %exvr0.0d,%exvr0.1d #
+#.i2: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+gt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x4],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+eq,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x2],;
+#--
+#exvr2.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+gt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x4],;
+#--
+#exvr2.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+eq,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x2],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+eq,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x2],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: lhbrx %exvr0.0d,0,%exvr0.1d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#--
+#.i0: movzwl %exvr3.0:0x0(%exvr0.1d),%exvr0.0d #
+#.i1: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: add %exvr0.0d,%exvr0.1d,%exvr0.2d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff], exr0.2[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#exvr0.2 : exvr0.2
+#--
+#.i0: leal %exvr3.0:0x0(%exvr0.1d,%exvr0.2d,1),%exvr0.0d #
+#.i1: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x8],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: dcbtst 0,%exvr0.0d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+gt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x4],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x8],; exr2.0[0x8],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jl .NEXTPC0x0 #,%exvr5.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#
+#ENTRY:
+#.i0: neg %exvr0.0d,%exvr0.1d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff], exr0.1[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#exvr0.1 : exvr0.1
+#--
+#.i0: movl %exvr0.1d,%exvr0.0d #
+#.i1: negl %exvr0.0d #,%exvr5.0,%exvr4.0
+#.i2: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x8],;
+#--
+#exvr2.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x8],;
+#--
+#exvr2.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: dcbt %exvr0.0d,%exvr0.1d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.1[0xffffffff],;
+#--
+#exvr0.1 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: dcbst %exvr0.0d,%exvr0.1d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.1[0xffffffff],;
+#--
+#exvr0.1 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: dcbst 0,%exvr0.0d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: dcbz 0,%exvr0.0d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x8],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+eq,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x2],; exr2.0[0x2],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: je .NEXTPC0x0 #,%exvr4.0
+#.i1: movl $0x8,%exvr0.0d #
+#.i2: jmp .NEXTPC0x1 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+eq,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x2],; exr2.0[0x2],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: je .NEXTPC0x0 #,%exvr4.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+eq,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x2],;
+#--
+#exvr2.0 : exvr4.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+gt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x4],;
+#--
+#exvr2.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: dcbz %exvr0.0d,%exvr0.1d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.1[0xffffffff],;
+#--
+#exvr0.1 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x1 #
+#--
+#live : exr2.0[0x8],; exr2.0[0x8],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jge .NEXTPC0x0 #,%exvr5.0
+#.i1: jmp .NEXTPC0x1 #
+#==
+#
+#ENTRY:
+#.i0: dcbf 0,%exvr0.0d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.0[0xffffffff],;
+#--
+#exvr0.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: dcbf %exvr0.0d,%exvr0.1d #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr0.1[0xffffffff],;
+#--
+#exvr0.1 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0x4,4*%exvr2.0+eq,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x2],;
+#--
+#exvr2.0 : exvr0.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==
+#
+#ENTRY:
+#.i0: bc 0xc,4*%exvr2.0+lt,.NEXTPC0x0 #
+#.i1: b .NEXTPC0x0 #
+#--
+#live : exr2.0[0x8],;
+#--
+#exvr2.0 : exvr5.0
+#--
+#.i0: jmp .NEXTPC0x0 #
+#==

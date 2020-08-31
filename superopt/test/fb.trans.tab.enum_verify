@@ -1,0 +1,3047 @@
+#./peepgen -p fb.trans.tab.enum_verify -enumv
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.0.0 => L0.1.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+main:0
+--
+live :#
+memlive : true
+--
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.100002 => E1.0.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+exit0:3
+--
+live :#
+memlive : true
+--
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L1.1.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+branch:1
+--
+live :#
+memlive : true
+--
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 7 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:8
+9 : 24 : INT
+10 : bvzero_ext(8, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+zext8:1
+--
+live : exr0.1[0xff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr0.1S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movzbl %exvr0.0b,%exvr0.1d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 15 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:16
+9 : 16 : INT
+10 : bvzero_ext(8, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+zext16:1
+--
+live : exr0.1[0xffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movzwl %exvr0.1w,%exvr0.0d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 7 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:8
+9 : 24 : INT
+10 : bvsign_ext(8, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+sext8:1
+--
+live : exr0.1[0xff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr0.1S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movsbl %exvr0.0b,%exvr0.1d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 15 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:16
+9 : 16 : INT
+10 : bvsign_ext(8, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+sext16:1
+--
+live : exr0.1[0xffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movswl %exvr0.1w,%exvr0.0d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : bvconcat(4, 8) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+move32:1
+--
+live : exr0.1[0x1], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.0d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 0 : INT
+7 : bvextract(5, 6, 6) : BV:1
+8 : 1 : BV:1
+9 : eq(7, 8) : BOOL
+10 : 0 : BV:1
+11 : ite(9, 8, 10) : BV:1
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+move1:1
+--
+live : exr0.1[0x1], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movb %exvr0.1b,%exvr0.0b #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvadd(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+add_i32:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: leal %exvr3.0w:0x0(%exvr0.1d,%exvr0.2d,1),%exvr0.0d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.llvm-mem : ARRAY[BV:32 -> BV:8]
+6 : mlvar.llvm.0 : MEMLABEL
+7 : input.src.exreg.0.1 : BV:64
+8 : 31 : INT
+9 : 0 : INT
+10 : bvextract(7, 8, 9) : BV:32
+11 : 4 : INT
+12 : 0 : BOOL
+13 : select(5, 6, 10, 11, 12) : BV:32
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+load4:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr3.0w:0x0(%exvr0.1d),%exvr0.0d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 16 : INT
+4 : bvextract(1, 2, 3) : BV:48
+5 : input.src.llvm-mem : ARRAY[BV:32 -> BV:8]
+6 : mlvar.llvm.0 : MEMLABEL
+7 : input.src.exreg.0.1 : BV:64
+8 : 31 : INT
+9 : 0 : INT
+10 : bvextract(7, 8, 9) : BV:32
+11 : 2 : INT
+12 : 0 : BOOL
+13 : select(5, 6, 10, 11, 12) : BV:16
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+load2:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movzwl %exvr3.0w:0x0(%exvr0.1d),%exvr0.0d #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 8 : INT
+4 : bvextract(1, 2, 3) : BV:56
+5 : input.src.llvm-mem : ARRAY[BV:32 -> BV:8]
+6 : mlvar.llvm.0 : MEMLABEL
+7 : input.src.exreg.0.1 : BV:64
+8 : 31 : INT
+9 : 0 : INT
+10 : bvextract(7, 8, 9) : BV:32
+11 : 1 : INT
+12 : 0 : BOOL
+13 : select(5, 6, 10, 11, 12) : BV:8
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+load1:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movb %exvr3.0w:0x0(%exvr0.1d),%exvr0.0b #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : const.0 : BV:32
+6 : input.src.exreg.0.1 : BV:64
+7 : 31 : INT
+8 : 0 : INT
+9 : bvextract(6, 7, 8) : BV:32
+10 : bvult(5, 9) : BOOL
+11 : 1 : BV:1
+12 : 0 : BV:1
+13 : ite(10, 11, 12) : BV:1
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_ult_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl $C0,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: seta %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvult(8, 10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_ult:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setb %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : const.0 : BV:32
+6 : input.src.exreg.0.1 : BV:64
+7 : 31 : INT
+8 : 0 : INT
+9 : bvextract(6, 7, 8) : BV:32
+10 : bvule(5, 9) : BOOL
+11 : 1 : BV:1
+12 : 0 : BV:1
+13 : ite(10, 11, 12) : BV:1
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_ule_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl $C0,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setae %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvule(8, 10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_ule:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setbe %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : const.0 : BV:32
+10 : bvugt(8, 9) : BOOL
+11 : 1 : BV:1
+12 : 0 : BV:1
+13 : ite(10, 11, 12) : BV:1
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_ugt_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl $C0,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: seta %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvugt(8, 10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_ugt:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.2D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.1D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setb %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : const.0 : BV:32
+6 : input.src.exreg.0.1 : BV:64
+7 : 31 : INT
+8 : 0 : INT
+9 : bvextract(6, 7, 8) : BV:32
+10 : bvuge(5, 9) : BOOL
+11 : 1 : BV:1
+12 : 0 : BV:1
+13 : ite(10, 11, 12) : BV:1
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_uge_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl $C0,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setbe %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvuge(8, 10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_uge:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setae %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : const.0 : BV:32
+6 : input.src.exreg.0.1 : BV:64
+7 : 31 : INT
+8 : 0 : INT
+9 : bvextract(6, 7, 8) : BV:32
+10 : bvslt(5, 9) : BOOL
+11 : 1 : BV:1
+12 : 0 : BV:1
+13 : ite(10, 11, 12) : BV:1
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_slt_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl $C0,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setg %exvr0.0b #,%exvr5.0,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvslt(8, 10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_slt:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setl %exvr0.0b #,%exvr5.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : const.0 : BV:32
+6 : input.src.exreg.0.1 : BV:64
+7 : 31 : INT
+8 : 0 : INT
+9 : bvextract(6, 7, 8) : BV:32
+10 : bvsle(5, 9) : BOOL
+11 : 1 : BV:1
+12 : 0 : BV:1
+13 : ite(10, 11, 12) : BV:1
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_sle_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl $C0,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setge %exvr0.0b #,%exvr5.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvsle(8, 10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_sle:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setle %exvr0.0b #,%exvr5.0,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : const.0 : BV:32
+6 : input.src.exreg.0.1 : BV:64
+7 : 31 : INT
+8 : 0 : INT
+9 : bvextract(6, 7, 8) : BV:32
+10 : bvsgt(5, 9) : BOOL
+11 : 1 : BV:1
+12 : 0 : BV:1
+13 : ite(10, 11, 12) : BV:1
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_sgt_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl $C0,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setl %exvr0.0b #,%exvr5.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvsgt(8, 10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_sgt:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setg %exvr0.0b #,%exvr5.0,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : const.0 : BV:32
+6 : input.src.exreg.0.1 : BV:64
+7 : 31 : INT
+8 : 0 : INT
+9 : bvextract(6, 7, 8) : BV:32
+10 : bvsge(5, 9) : BOOL
+11 : 1 : BV:1
+12 : 0 : BV:1
+13 : ite(10, 11, 12) : BV:1
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_sge_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl $C0,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setle %exvr0.0b #,%exvr5.0,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvsge(8, 10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_sge:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setge %exvr0.0b #,%exvr5.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : const.0 : BV:32
+10 : eq(8, 9) : BOOL
+11 : not(10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_ne_i:1
+--
+live : exr0.1[0xff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl $C0,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setne %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : eq(8, 10) : BOOL
+12 : not(11) : BOOL
+13 : 1 : BV:1
+14 : 0 : BV:1
+15 : ite(12, 13, 14) : BV:1
+16 : bvconcat(4, 15) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_ne:1
+--
+live : exr0.1[0xff], exr0.0[0x1], exr0.2[0xff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: setne %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : const.0 : BV:32
+10 : eq(8, 9) : BOOL
+11 : 1 : BV:1
+12 : 0 : BV:1
+13 : ite(10, 11, 12) : BV:1
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_eq_i:1
+--
+live : exr0.1[0xff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl $C0,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: sete %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : eq(8, 10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_eq:1
+--
+live : exr0.1[0xff], exr0.0[0x1], exr0.2[0xff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i1: sete %exvr0.0b #,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.llvm-mem
+1 : input.src.llvm-mem : ARRAY[BV:32 -> BV:8]
+2 : mlvar.llvm.0 : MEMLABEL
+3 : input.src.exreg.0.0 : BV:64
+4 : 31 : INT
+5 : 0 : INT
+6 : bvextract(3, 4, 5) : BV:32
+7 : input.src.exreg.0.1 : BV:64
+8 : bvextract(7, 4, 5) : BV:32
+9 : 4 : INT
+10 : 0 : BOOL
+11 : store(1, 2, 6, 8, 9, 10) : ARRAY[BV:32 -> BV:8]
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+store4:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr3.0w:0x0(%exvr0.0d) #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.llvm-mem
+1 : input.src.llvm-mem : ARRAY[BV:32 -> BV:8]
+2 : mlvar.llvm.0 : MEMLABEL
+3 : input.src.exreg.0.0 : BV:64
+4 : 31 : INT
+5 : 0 : INT
+6 : bvextract(3, 4, 5) : BV:32
+7 : input.src.exreg.0.1 : BV:64
+8 : 15 : INT
+9 : bvextract(7, 8, 5) : BV:16
+10 : 2 : INT
+11 : 0 : BOOL
+12 : store(1, 2, 6, 9, 10, 11) : ARRAY[BV:32 -> BV:8]
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+store2:1
+--
+live : exr0.1[0xffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movw %exvr0.1w,%exvr3.0w:0x0(%exvr0.0d) #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.llvm-mem
+1 : input.src.llvm-mem : ARRAY[BV:32 -> BV:8]
+2 : mlvar.llvm.0 : MEMLABEL
+3 : input.src.exreg.0.0 : BV:64
+4 : 31 : INT
+5 : 0 : INT
+6 : bvextract(3, 4, 5) : BV:32
+7 : input.src.exreg.0.1 : BV:64
+8 : 7 : INT
+9 : bvextract(7, 8, 5) : BV:8
+10 : 1 : INT
+11 : 0 : BOOL
+12 : store(1, 2, 6, 9, 10, 11) : ARRAY[BV:32 -> BV:8]
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+store1:1
+--
+live : exr0.1[0xff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr0.1D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movb %exvr0.0b,%exvr3.0w:0x0(%exvr0.1d) #
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-shiftcount-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : input.src.exreg.0.0 : BV:64
+2 : 31 : INT
+3 : 0 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : 32 : INT
+6 : isshiftcount(4, 5) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.1
+1 : input.src.exreg.0.1 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : const.0 : BV:32
+6 : input.src.exreg.0.0 : BV:64
+7 : 31 : INT
+8 : 0 : INT
+9 : bvextract(6, 7, 8) : BV:32
+10 : bvshl(5, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+shl_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.0S
+exvr0.0 : exvr0.1D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl $C0,%exvr0.0d #
+.i1: shll %exvr0.1b,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : const.0 : BV:32
+6 : input.src.exreg.0.1 : BV:64
+7 : 31 : INT
+8 : 0 : INT
+9 : bvextract(6, 7, 8) : BV:32
+10 : bvmul(5, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+mul_i32_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: imull $C0,%exvr0.1d,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i1: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L3.1.0
+=tfg_edge_EdgeCond:
+1 : input.src.exreg.0.0 : BV:64
+2 : 0 : INT
+3 : bvextract(1, 2, 2) : BV:1
+4 : 1 : BV:1
+5 : eq(3, 4) : BOOL
+6 : not(5) : BOOL
+=tfg_edge_StateTo:
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=tfg_edge
+L0.1.0 => L1.1.0
+=tfg_edge_EdgeCond:
+1 : input.src.exreg.0.0 : BV:64
+2 : 0 : INT
+3 : bvextract(1, 2, 2) : BV:1
+4 : 1 : BV:1
+5 : eq(3, 4) : BOOL
+=tfg_edge_StateTo:
+=pcrel_val
+1
+=pcrel_tag
+tag_var
+=comment
+cbranch:1
+--
+live : exr0.0[0x1],# exr0.0[0x1],#
+memlive : true
+--
+exvr0.0 : exvr0.0D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: cmpb $0x0,%exvr0.0b #,%exvr5.0,%exvr4.0
+.i1: je .NEXTPC0x0 #,%exvr4.0
+.i2: jmp .NEXTPC0x1 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 0 : INT
+7 : bvextract(5, 6, 6) : BV:1
+8 : 1 : BV:1
+9 : eq(7, 8) : BOOL
+10 : 0 : BV:1
+11 : ite(9, 8, 10) : BV:1
+12 : 31 : INT
+13 : bvzero_ext(11, 12) : BV:32
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+zext1:1
+--
+live : exr0.1[0x1], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.2S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.0d #
+.i1: andl $0x1,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i2: movl %exvr0.1d,%exvr0.2d #
+.i3: movl %exvr0.0d,%exvr0.1d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 0 : INT
+7 : bvextract(5, 6, 6) : BV:1
+8 : 1 : BV:1
+9 : eq(7, 8) : BOOL
+10 : 1 : BOOL
+11 : xor(9, 10) : BOOL
+12 : 0 : BV:1
+13 : ite(11, 8, 12) : BV:1
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+xor1:1
+--
+live : exr0.1[0xff], exr0.0[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr0.1S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.0d,%exvr0.2d #
+.i1: xorb $0x1,%exvr0.0b #,%exvr5.0,%exvr4.0
+.i2: movb %exvr0.0b,%exvr0.1b #
+.i3: movl %exvr0.2d,%exvr0.0d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 0 : INT
+7 : bvextract(5, 6, 6) : BV:1
+8 : 1 : BV:1
+9 : eq(7, 8) : BOOL
+10 : input.src.exreg.0.2 : BV:64
+11 : bvextract(10, 6, 6) : BV:1
+12 : eq(11, 8) : BOOL
+13 : xor(9, 12) : BOOL
+14 : 0 : BV:1
+15 : ite(13, 8, 14) : BV:1
+16 : bvconcat(4, 15) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+xor:1
+--
+live : exr0.1[0x1], exr0.0[0x1], exr0.2[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr0.1S
+exvr0.2 : exvr0.3D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.0d,%exvr0.2d #
+.i1: xorl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i2: movb %exvr0.0b,%exvr0.1b #
+.i3: movl %exvr0.2d,%exvr0.0d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 0 : INT
+7 : bvextract(5, 6, 6) : BV:1
+8 : 1 : BV:1
+9 : eq(7, 8) : BOOL
+10 : input.src.exreg.0.2 : BV:64
+11 : 31 : INT
+12 : bvextract(10, 11, 6) : BV:32
+13 : input.src.exreg.0.3 : BV:64
+14 : bvextract(13, 11, 6) : BV:32
+15 : ite(9, 12, 14) : BV:32
+16 : bvconcat(4, 15) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+ternary_op:1
+--
+live : exr0.3[0xffffffff], exr0.1[0x1], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.3 : exvr0.3D
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr0.1S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: testl $0x1,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i1: je .i4 #,%exvr4.0
+.i2: movl %exvr0.2d,%exvr0.1d #
+.i3: jmp .NEXTPC0x0 #
+.i4: movl %exvr0.3d,%exvr0.1d #
+.i5: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvsub(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+sub_i32:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.3S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.0d #
+.i1: subl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i2: movl %exvr0.1d,%exvr0.3d #
+.i3: movl %exvr0.0d,%exvr0.1d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 0 : INT
+7 : bvextract(5, 6, 6) : BV:1
+8 : 1 : BV:1
+9 : eq(7, 8) : BOOL
+10 : input.src.exreg.0.2 : BV:64
+11 : bvextract(10, 6, 6) : BV:1
+12 : eq(11, 8) : BOOL
+13 : or(9, 12) : BOOL
+14 : 0 : BV:1
+15 : ite(13, 8, 14) : BV:1
+16 : bvconcat(4, 15) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+or:1
+--
+live : exr0.1[0x1], exr0.0[0x1], exr0.2[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr0.1S
+exvr0.2 : exvr0.3D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.0d,%exvr0.2d #
+.i1: orl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i2: movb %exvr0.0b,%exvr0.1b #
+.i3: movl %exvr0.2d,%exvr0.0d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.1 => L0.1.2
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : const.0 : BV:32
+12 : bvmul(10, 11) : BV:32
+13 : bvadd(8, 12) : BV:32
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+gep:2
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.2D
+exvr0.0 : exvr0.0S
+exvr0.2 : exvr0.1D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: imull $C0,%exvr0.1d,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i1: addl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i2: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : 4294967295 : BV:32
+10 : bvxor(8, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+bvxor1:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.2S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.0d #
+.i1: notl %exvr0.1d #
+.i2: movl %exvr0.1d,%exvr0.2d #
+.i3: movl %exvr0.0d,%exvr0.1d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvxor(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+bvxor:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.3S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.0d #
+.i1: xorl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i2: movl %exvr0.1d,%exvr0.3d #
+.i3: movl %exvr0.0d,%exvr0.1d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvor(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+bvor:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.3S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.0d #
+.i1: orl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i2: movl %exvr0.1d,%exvr0.3d #
+.i3: movl %exvr0.0d,%exvr0.1d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvand(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+bvand:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.3S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.0d #
+.i1: andl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i2: movl %exvr0.1d,%exvr0.3d #
+.i3: movl %exvr0.0d,%exvr0.1d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 0 : INT
+7 : bvextract(5, 6, 6) : BV:1
+8 : 1 : BV:1
+9 : eq(7, 8) : BOOL
+10 : input.src.exreg.0.2 : BV:64
+11 : bvextract(10, 6, 6) : BV:1
+12 : eq(11, 8) : BOOL
+13 : and(9, 12) : BOOL
+14 : 0 : BV:1
+15 : ite(13, 8, 14) : BV:1
+16 : bvconcat(4, 15) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+and:1
+--
+live : exr0.1[0x1], exr0.0[0x1], exr0.2[0x1],#
+memlive : true
+--
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr0.1S
+exvr0.2 : exvr0.3D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.0d,%exvr0.2d #
+.i1: andl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i2: movb %exvr0.0b,%exvr0.1b #
+.i3: movl %exvr0.2d,%exvr0.0d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 0 : INT
+7 : bvextract(5, 6, 6) : BV:1
+8 : 1 : BV:1
+9 : eq(7, 8) : BOOL
+10 : 0 : BV:1
+11 : ite(9, 8, 10) : BV:1
+12 : 31 : INT
+13 : bvsign_ext(11, 12) : BV:32
+14 : bvconcat(4, 13) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+sext1:1
+--
+live : exr0.1[0x1], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.2S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.0d #
+.i1: shll $0x1f,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i2: sarl $0x1f,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i3: movl %exvr0.1d,%exvr0.2d #
+.i4: movl %exvr0.0d,%exvr0.1d #
+.i5: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-shiftcount-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : input.src.exreg.0.0 : BV:64
+2 : 31 : INT
+3 : 0 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : 32 : INT
+6 : isshiftcount(4, 5) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.1
+1 : input.src.exreg.0.1 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.2 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.0 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvshl(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+shl:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.3S
+exvr0.0 : exvr0.0D
+exvr0.2 : exvr0.1D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.2d #
+.i1: movl %exvr0.1d,%exvr0.3d #
+.i2: movb %exvr0.0b,%exvr0.1b #
+.i3: shll %exvr0.1b,%exvr0.3d #,%exvr5.0,%exvr4.0
+.i4: movl %exvr0.2d,%exvr0.1d #
+.i5: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvmul(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+mul_i32:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.1D
+exvr0.0 : exvr0.3S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.0d #
+.i1: imull %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i2: movl %exvr0.1d,%exvr0.3d #
+.i3: movl %exvr0.0d,%exvr0.1d #
+.i4: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-shiftcount-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : input.src.exreg.0.0 : BV:64
+2 : 31 : INT
+3 : 0 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : 32 : INT
+6 : isshiftcount(4, 5) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.1
+1 : input.src.exreg.0.1 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.2 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.0 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvlshr(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+lshr:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.3S
+exvr0.0 : exvr0.0D
+exvr0.2 : exvr0.1D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.2d #
+.i1: movl %exvr0.1d,%exvr0.3d #
+.i2: movb %exvr0.0b,%exvr0.1b #
+.i3: shrl %exvr0.1b,%exvr0.3d #,%exvr5.0,%exvr4.0
+.i4: movl %exvr0.2d,%exvr0.1d #
+.i5: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 7 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:8
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:8
+11 : eq(8, 10) : BOOL
+12 : not(11) : BOOL
+13 : 1 : BV:1
+14 : 0 : BV:1
+15 : ite(12, 13, 14) : BV:1
+16 : bvconcat(4, 15) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_ne8:1
+--
+live : exr0.1[0xff], exr0.0[0x1], exr0.2[0xff],#
+memlive : true
+--
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr0.1S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.0d,%exvr0.3d #
+.i1: movzbl %exvr0.2b,%exvr0.1d #
+.i2: movzbl %exvr0.0b,%exvr0.0d #
+.i3: cmpl %exvr0.1d,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i4: setne %exvr0.1b #,%exvr4.0
+.i5: movl %exvr0.3d,%exvr0.0d #
+.i6: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:63
+5 : input.src.exreg.0.1 : BV:64
+6 : 7 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:8
+9 : input.src.exreg.0.2 : BV:64
+10 : bvextract(9, 6, 7) : BV:8
+11 : eq(8, 10) : BOOL
+12 : 1 : BV:1
+13 : 0 : BV:1
+14 : ite(11, 12, 13) : BV:1
+15 : bvconcat(4, 14) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_eq8:1
+--
+live : exr0.1[0xff], exr0.0[0x1], exr0.2[0xff],#
+memlive : true
+--
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr0.1S
+exvr0.2 : exvr0.2D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.0d,%exvr0.3d #
+.i1: movzbl %exvr0.2b,%exvr0.1d #
+.i2: movzbl %exvr0.0b,%exvr0.0d #
+.i3: cmpl %exvr0.1d,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i4: sete %exvr0.1b #,%exvr4.0
+.i5: movl %exvr0.3d,%exvr0.0d #
+.i6: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-shiftcount-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : input.src.exreg.0.0 : BV:64
+2 : 31 : INT
+3 : 0 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : 32 : INT
+6 : isshiftcount(4, 5) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.1
+1 : input.src.exreg.0.1 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.2 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.0 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvashr(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+ashr:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.3S
+exvr0.0 : exvr0.0D
+exvr0.2 : exvr0.1D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.1d,%exvr0.2d #
+.i1: movl %exvr0.1d,%exvr0.3d #
+.i2: movb %exvr0.0b,%exvr0.1b #
+.i3: sarl %exvr0.1b,%exvr0.3d #,%exvr5.0,%exvr4.0
+.i4: movl %exvr0.2d,%exvr0.1d #
+.i5: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-divbyzero-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : input.src.exreg.0.0 : BV:64
+2 : 31 : INT
+3 : 0 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : 0 : BV:32
+6 : eq(4, 5) : BOOL
+7 : not(6) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.1
+1 : input.src.exreg.0.1 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.2 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.0 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvudiv(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+udiv_i32:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.0S
+exvr0.0 : exvr0.2D
+exvr0.2 : exvr0.5D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.2d,%exvr0.1d #
+.i1: pushl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i2: movl %exvr0.2d,%exvr0.3d #
+.i3: xorl %exvr0.2d,%exvr0.2d #,%exvr5.0,%exvr4.0
+.i4: movl %exvr0.5d,%exvr0.0d #
+.i5: divl %exvr0.3d #,%exvr0.0d,%exvr0.2d,%exvr5.0,%exvr4.0
+.i6: popl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i7: movl %exvr0.1d,%exvr0.2d #
+.i8: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-divbyzero-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : const.0 : BV:32
+2 : 0 : BV:32
+3 : eq(1, 2) : BOOL
+4 : not(3) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : const.0 : BV:32
+10 : bvudiv(8, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+udiv_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.5D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.2d,%exvr0.1d #
+.i1: pushl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i2: movl $C0,%exvr0.3d #
+.i3: movl %exvr0.5d,%exvr0.0d #
+.i4: movl $0x0,%exvr0.2d #
+.i5: divl %exvr0.3d #,%exvr0.0d,%exvr0.2d,%exvr5.0,%exvr4.0
+.i6: popl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i7: movl %exvr0.1d,%exvr0.2d #
+.i8: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-divbyzero-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : input.src.exreg.0.0 : BV:64
+2 : 31 : INT
+3 : 0 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : 0 : BV:32
+6 : eq(4, 5) : BOOL
+7 : not(6) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.1
+1 : input.src.exreg.0.1 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.2 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.0 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvsdiv(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+sdiv_i32:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.0S
+exvr0.0 : exvr0.2D
+exvr0.2 : exvr0.5D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.2d,%exvr0.1d #
+.i1: pushl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i2: movl %exvr0.2d,%exvr0.3d #
+.i3: movl %exvr0.5d,%exvr0.0d #
+.i4: cltd  #%exvr0.0d,%exvr0.2d
+.i5: idivl %exvr0.3d #,%exvr0.0d,%exvr0.2d,%exvr5.0,%exvr4.0
+.i6: popl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i7: movl %exvr0.1d,%exvr0.2d #
+.i8: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-divbyzero-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : const.0 : BV:32
+2 : 0 : BV:32
+3 : eq(1, 2) : BOOL
+4 : not(3) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : const.0 : BV:32
+10 : bvsdiv(8, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+sdiv_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.5D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.2d,%exvr0.1d #
+.i1: pushl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i2: movl $C0,%exvr0.3d #
+.i3: movl %exvr0.5d,%exvr0.0d #
+.i4: cltd  #%exvr0.0d,%exvr0.2d
+.i5: idivl %exvr0.3d #,%exvr0.0d,%exvr0.2d,%exvr5.0,%exvr4.0
+.i6: popl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i7: movl %exvr0.1d,%exvr0.2d #
+.i8: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-divbyzero-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : input.src.exreg.0.0 : BV:64
+2 : 31 : INT
+3 : 0 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : 0 : BV:32
+6 : eq(4, 5) : BOOL
+7 : not(6) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.1
+1 : input.src.exreg.0.1 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.2 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.0 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvurem(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+urem_i32:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.0S
+exvr0.0 : exvr0.2D
+exvr0.2 : exvr0.5D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.2d,%exvr0.1d #
+.i1: pushl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i2: movl %exvr0.2d,%exvr0.3d #
+.i3: xorl %exvr0.2d,%exvr0.2d #,%exvr5.0,%exvr4.0
+.i4: movl %exvr0.5d,%exvr0.0d #
+.i5: divl %exvr0.3d #,%exvr0.0d,%exvr0.2d,%exvr5.0,%exvr4.0
+.i6: movl %exvr0.2d,%exvr0.0d #
+.i7: popl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i8: movl %exvr0.1d,%exvr0.2d #
+.i9: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-divbyzero-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : const.0 : BV:32
+2 : 0 : BV:32
+3 : eq(1, 2) : BOOL
+4 : not(3) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : const.0 : BV:32
+10 : bvurem(8, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+urem_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.5D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.2d,%exvr0.1d #
+.i1: pushl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i2: movl $C0,%exvr0.3d #
+.i3: movl %exvr0.5d,%exvr0.0d #
+.i4: movl $0x0,%exvr0.2d #
+.i5: divl %exvr0.3d #,%exvr0.0d,%exvr0.2d,%exvr5.0,%exvr4.0
+.i6: movl %exvr0.2d,%exvr0.0d #
+.i7: popl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i8: movl %exvr0.1d,%exvr0.2d #
+.i9: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-divbyzero-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : input.src.exreg.0.0 : BV:64
+2 : 31 : INT
+3 : 0 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : 0 : BV:32
+6 : eq(4, 5) : BOOL
+7 : not(6) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.1
+1 : input.src.exreg.0.1 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.2 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : input.src.exreg.0.0 : BV:64
+10 : bvextract(9, 6, 7) : BV:32
+11 : bvsrem(8, 10) : BV:32
+12 : bvconcat(4, 11) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+srem_i32:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff], exr0.2[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.0S
+exvr0.0 : exvr0.2D
+exvr0.2 : exvr0.5D
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.2d,%exvr0.1d #
+.i1: pushl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i2: movl %exvr0.2d,%exvr0.3d #
+.i3: movl %exvr0.5d,%exvr0.0d #
+.i4: cltd  #%exvr0.0d,%exvr0.2d
+.i5: idivl %exvr0.3d #,%exvr0.0d,%exvr0.2d,%exvr5.0,%exvr4.0
+.i6: movl %exvr0.2d,%exvr0.0d #
+.i7: popl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i8: movl %exvr0.1d,%exvr0.2d #
+.i9: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+=etfg_insn
+=precondition.0
+=Comment
+undef-behaviour-divbyzero-assume
+=Status
+A
+=LocalSprelAssumptions:
+=Guard
+(epsilon)
+=LhsExpr
+1 : const.0 : BV:32
+2 : 0 : BV:32
+3 : eq(1, 2) : BOOL
+4 : not(3) : BOOL
+=RhsExpr
+1 : 1 : BOOL
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:64
+2 : 63 : INT
+3 : 32 : INT
+4 : bvextract(1, 2, 3) : BV:32
+5 : input.src.exreg.0.1 : BV:64
+6 : 31 : INT
+7 : 0 : INT
+8 : bvextract(5, 6, 7) : BV:32
+9 : const.0 : BV:32
+10 : bvsrem(8, 9) : BV:32
+11 : bvconcat(4, 10) : BV:64
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+srem_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.1 : exvr0.5D
+exvr0.0 : exvr0.0S
+--
+fixed_reg_mappings
+0 : 4 : 4
+--
+.i0: movl %exvr0.2d,%exvr0.1d #
+.i1: pushl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i2: movl $C0,%exvr0.3d #
+.i3: movl %exvr0.5d,%exvr0.0d #
+.i4: cltd  #%exvr0.0d,%exvr0.2d
+.i5: idivl %exvr0.3d #,%exvr0.0d,%exvr0.2d,%exvr5.0,%exvr4.0
+.i6: movl %exvr0.2d,%exvr0.0d #
+.i7: popl %exvr0.3d #,%exvr0.4d,%exvr3.2
+.i8: movl %exvr0.1d,%exvr0.2d #
+.i9: jmp .NEXTPC0x0 #
+==

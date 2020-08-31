@@ -1,0 +1,64 @@
+# 60 Vec
+# 38 passing
+# 22 failing
+#   20 NB (out of scope)
+#   2 QT -- s279, s278 
+
+s1111
+s1115
+s113
+s114
+# s115 Non Bisimilar
+s1161
+s119
+s1213
+s124
+# s1244 Non Bisimilar
+s125
+s1279
+s128
+s131
+s132
+s1421
+# s171 Non Bisimilar
+s174
+# s2102 Non Bisimilar
+# s211 Non Bisimilar
+# s2111 Non Bisimilar
+# s212 Non Bisimilar
+# s221 Non Bisimilar
+# s222 Non Bisimilar
+# s2233 Non Bisimilar
+# s2251 Non Bisimilar
+# s2275 Non Bisimilar
+# s233 Non Bisimilar
+# s235 Non Bisimilar
+# s241 Non Bisimilar
+# s242 Non Bisimilar
+# s244 Non Bisimilar
+s253
+s254
+# s261 Non Bisimilar
+s271
+s2710
+s2711
+s2712
+s272
+s273
+s274
+s276
+# s278 SMT query timeout
+# s279 SMT query timeout
+s293
+s311
+s3111
+s319
+#s331 Non Bisimilar
+s4115
+s421
+s423
+s441
+s443
+# s471 Non Bisimilar
+va
+vif

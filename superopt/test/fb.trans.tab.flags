@@ -1,0 +1,41 @@
+ENTRY:
+=etfg_insn
+=tfg_edge
+L0.1.0 => L0.2.0
+=tfg_edge_EdgeCond:
+1 : 1 : BOOL
+=tfg_edge_StateTo:
+=src.exreg.0.0
+1 : input.src.exreg.0.0 : BV:32
+2 : 31 : INT
+3 : 1 : INT
+4 : bvextract(1, 2, 3) : BV:31
+5 : const.0 : BV:32
+6 : input.src.exreg.0.1 : BV:32
+7 : bvult(5, 6) : BOOL
+8 : 1 : BV:1
+9 : 0 : BV:1
+10 : ite(7, 8, 9) : BV:1
+11 : bvconcat(4, 10) : BV:32
+=pcrel_val
+0
+=pcrel_tag
+tag_var
+=comment
+icmp_ult_i:1
+--
+live : exr0.1[0xffffffff], exr0.0[0x1],#
+memlive : true
+--
+in_tmap:
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr9.0D
+out_tmap.0:
+exvr0.1 : exvr0.0D
+exvr0.0 : exvr9.0D
+--
+fixed_reg_mappings
+--
+.i0: cmpl $C0,%exvr0.0d #,%exvr4.0,%exvr5.0,%exvr6.0,%exvr7.0,%exvr8.0,%exvr9.0,%exvr10.0,%exvr11.0,%exvr12.0,%exvr13.0,%exvr14.0
+.i2: jmp .NEXTPC0x0 #
+==

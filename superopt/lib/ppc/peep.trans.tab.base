@@ -1,0 +1,74 @@
+ENTRY:
+.i0: rlwimi %exvr0.1d,%exvr0.0d,C0*1+0/umask/5,C1*1+0/umask/5,C2*1+0/umask/5 #
+.i1: b .NEXTPC0x0 #
+--
+live : exr0.0[0xffffffff],exr0.1[0xffffffff],#
+memlive : true
+--
+exvr0.0 : M0x20000000
+exvr0.1 : M0x20000004
+--
+.i0: movl %exvr3.0:C_EXVREG0.0*4+536870912/mask/32,%exvr0.0d #
+.i1: roll $C0*1+0/umask/5,%exvr0.0d #,%exvr5.0,%exvr4.0
+     movl $C2*-1+31/masktill/C1*-1+31,%exvr0.1d #
+.i2: andl %exvr0.1d,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i3: movl %exvr3.0:C_EXVREG0.1*4+536870912/mask/32,%exvr0.2d #
+     notl %exvr0.1d #,%exvr5.0,%exvr4.0
+.i4: andl %exvr0.1d,%exvr0.2d #,%exvr5.0,%exvr4.0
+.i5: orl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i6: movl %exvr0.0d,%exvr3.0:C_EXVREG0.1*4+536870912/mask/32 #
+.i7: jmp .i8 #
+.i8: jmp .NEXTPC0x0 #
+==
+
+ENTRY:
+.i0: rlwimi. %exvr0.1d,%exvr0.0d,C0*1+0/umask/5,C1*1+0/umask/5,C2*1+0/umask/5 #,%exvr2.0,%exvr3.0,%exvr8.0
+.i1: b .NEXTPC0x0 #
+--
+live : exr0.0[0xffffffff],exr0.1[0xffffffff],exr2.0[0xf],exr3.0[0x1],exr8.0[0x1],#
+memlive : true
+--
+exvr0.0 : M0x20000000
+exvr0.1 : M0x20000004
+exvr2.0 : M0x20000108
+exvr3.0 : M0x20000138
+exvr8.0 : M0x2000012c
+--
+.i0: movl %exvr3.0:C_EXVREG3.0*4+536871176/umask/32,%exvr0.0d #
+.i1: orl %exvr3.0:C_EXVREG3.0*4+536871224/umask/32,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i2: movl %exvr0.0d,%exvr3.0:C_EXVREG3.0*4+536871176/umask/32 #
+.i3: movl %exvr3.0:C_EXVREG0.0*4+536870912/mask/32,%exvr0.1d #
+.i4: roll $C0*1+0/umask/5,%exvr0.1d #,%exvr5.0,%exvr4.0
+     movl $C2*-1+31/masktill/C1*-1+31,%exvr0.2d #
+.i5: andl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i6: movl %exvr3.0:C_EXVREG0.1*4+536870912/mask/32,%exvr0.3d #
+     notl %exvr0.2d #,%exvr5.0,%exvr4.0
+.i7: andl %exvr0.2d,%exvr0.3d #,%exvr5.0,%exvr4.0
+.i8: orl %exvr0.3d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i9: movl %exvr0.1d,%exvr3.0:C_EXVREG0.1*4+536870912/mask/32 #
+.i10: movl %exvr3.0:0x2000012c,%exvr0.3d #
+.i11: testl %exvr0.1d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i12: setl %exvr0.2b #,%exvr5.0
+.i13: movzbl %exvr0.2b,%exvr0.2d #
+.i14: shll $0x3,%exvr0.2d #,%exvr5.0,%exvr4.0
+.i15: orl %exvr0.2d,%exvr0.3d #,%exvr5.0,%exvr4.0
+.i16: testl %exvr0.1d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i17: setg %exvr0.2b #,%exvr5.0,%exvr4.0
+.i18: movzbl %exvr0.2b,%exvr0.2d #
+.i19: shll $0x2,%exvr0.2d #,%exvr5.0,%exvr4.0
+.i20: orl %exvr0.2d,%exvr0.3d #,%exvr5.0,%exvr4.0
+.i21: testl %exvr0.1d,%exvr0.1d #,%exvr5.0,%exvr4.0
+.i22: sete %exvr0.2b #,%exvr4.0
+.i23: movzbl %exvr0.2b,%exvr0.2d #
+.i24: shll $0x1,%exvr0.2d #,%exvr5.0,%exvr4.0
+.i25: orl %exvr0.2d,%exvr0.3d #,%exvr5.0,%exvr4.0
+.i26: movl %exvr0.3d,%exvr3.0:0x20000108 #
+.i27: jmp .i28 #
+.i28: movl %exvr3.0:C_EXVREG3.0*4+536871176/umask/32,%exvr0.0d #
+.i29: movl %exvr0.0d,%exvr0.3d #
+.i30: andl $0xfffffffe,%exvr0.0d #,%exvr5.0,%exvr4.0
+.i31: andl $0x1,%exvr0.3d #,%exvr5.0,%exvr4.0
+.i32: movl %exvr0.0d,%exvr3.0:C_EXVREG3.0*4+536871176/umask/32 #
+.i33: movl %exvr0.3d,%exvr3.0:C_EXVREG3.0*4+536871224/umask/32 #
+.i34: jmp .NEXTPC0x0 #
+==

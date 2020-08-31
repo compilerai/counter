@@ -1,0 +1,2660 @@
+#include "config.h"
+#include "ppc/regs.h"
+#include "src_env.h"
+#include "fb.trans.tab"
+# constraints representation:
+# A=eax, B=ebx, C=ecx, D=edx, S=esp, T=ebp, I=esi, J=edi
+
+#define lr      vr32
+#define ctr     vr33
+#define crf0    vr34
+#define crf1    vr35
+#define crf2    vr36
+#define crf3    vr37
+#define crf4    vr38
+#define crf5    vr39
+#define crf6    vr40
+#define crf7    vr41
+#define xer_ov  vr42
+#define xer_ca  vr43
+#define xer_so  vr44
+#define xer_bc  vr45
+#define xer_cmp vr46
+
+#define lrd     vr32d
+#define ctrd    vr33d
+#define crf0d   vr34d
+#define crf1d   vr35d
+#define crf2d   vr36d
+#define crf3d   vr37d
+#define crf4d   vr38d
+#define crf5d   vr39d
+#define crf6d   vr40d
+#define crf7d   vr41d
+#define xer_ovd vr42d
+#define xer_cad vr43d
+#define xer_sod vr44d
+#define xer_bcd vr45d
+#define xer_cmpd vr46d
+
+#include "config.h"
+#include "peep.trans.tab.base"
+
+#if 0
+
+ENTRY:
+.i0: li %vr0d,C0d*1+0/umask/16 #
+.i1: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  --
+  live : r0[0xffffffff],
+  --
+.i0: movl $C0d*1+0/mask/16,%vr0d #
+.i2: jmp .NEXTPC0x0 #
+  ==
+
+ENTRY:
+.i0: lis %vr0d,C0d*1+0/umask/16 #
+.i1: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  --
+  live : r0[0xffffffff],
+  --
+.i0: movl $C0d*65536+0/mask/32,%vr0d #
+.i2: jmp .NEXTPC0x0 #
+  ==
+
+ENTRY:
+.i0: bclr 0x4,4*%exvr1.0+gt #,%exvr3.0
+.i1: b .NEXTPC0x1 #
+  --
+  exvr1.0 : exvr4.0
+  exvr3.0 : vr0
+  --
+  live : exr1.0[0xffffffff], exr3.0[0xffffffff], # exr1.0[0xffffffff], exr3.0[0xffffffff],#
+  --
+.i0: jg .i2 #,%exvr4.0,%exvr3.0
+.i1: jmp *%vr0d #
+.i2: jmp .NEXTPC0x1 #
+  ==
+
+ENTRY:
+.i0: blr #,%exvr3.0
+  --
+  exvr3.0 : vr0
+  --
+  live : exr3.0[0xffffffff],
+  --
+.i0: jmp *%vr0d #
+  ==
+
+ENTRY:
+.i0: addi %vr0d,%vr1d,C0d*1+0/umask/16 #
+.i1: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  vr1 : vr1
+  --
+  live : r0[0xffffffff], r1[0xffffffff],
+  --
+.i0: leal C0d*1+0/mask/16(%vr1d),%vr0d #
+.i1: jmp .NEXTPC0x0 #
+  ==
+
+ENTRY:
+.i0: cmpw %exvr1.0,%vr0d,%vr1d #,%exvr2.0,%exvr7.0
+.i1: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  vr1 : vr1
+  exvr1.0 : exvr4.0
+  exvr2.0 : M
+  exvr7.0 : M
+  --
+  live : r0[0xffffffff], r1[0xffffffff], exr1.0[0xf], exr7.0[0x1],
+  --
+.i0: cmpl %vr1d,%vr0d #,%exvr4.0,%exvr3.0
+.i1: jmp .NEXTPC0x0 #
+  ==
+
+ENTRY:
+.i0: mr %vr1d,%vr0d #
+.i1: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  vr1 : vr1
+  --
+  live : r0[0xffffffff], r1[0xffffffff],
+  --
+.i0: movl %vr0d,%vr1d #
+.i1: jmp .NEXTPC0x0 #
+  ==
+
+ENTRY:
+.i0: addc %vr0d,%vr0d,%vr1d #,%exvr6.0
+.i1: adde %vr2d,%vr2d,%vr3d #,%exvr6.0
+.i2: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  vr1 : vr1
+  vr2 : vr2
+  vr3 : vr3
+  exvr6.0 : M
+  --
+  live : r0[0xffffffff], r1[0xffffffff], r2[0xffffffff], r3[0xffffffff], exr6.0[0x1],
+  --
+.i0: addl %vr1d,%vr0d #,%exvr4.0,%exvr3.0
+.i1: adcl %vr3d,%vr2d #,%exvr4.0,%exvr3.0
+.i2: setc SRC_ENV_ADDR + 0x134 #,%exvr3.0
+.i3: jmp .NEXTPC0x0 #
+  ==
+
+ENTRY:
+.i0: addc %vr0d,%vr0d,%vr1d #,%exvr6.0
+.i1: adde %vr2d,%vr2d,%vr3d #,%exvr6.0
+.i2: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  vr1 : vr1
+  vr2 : vr2
+  vr3 : vr3
+  exvr6.0 : M
+  --
+  live : r0[0xffffffff], r1[0xffffffff], r2[0xffffffff], r3[0xffffffff],
+  --
+.i0: addl %vr1d,%vr0d #,%exvr4.0,%exvr3.0
+.i1: adcl %vr3d,%vr2d #,%exvr4.0,%exvr3.0
+.i2: jmp .NEXTPC0x0 #
+  ==
+
+ENTRY:
+.i0: srawi %vr0d,%vr0d,C0d*1+0/umask/5 #,%exvr6.0
+.i1: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  exvr6.0 : M
+  --
+  live : r0[0xffffffff],
+  --
+.i0: sarl $C0d*1+0/umask/8,%vr0d #,%exvr4.0,%exvr3.0
+.i1: jmp .NEXTPC0x0 #
+  ==
+
+ENTRY:
+.i0: srawi %vr0d,%vr1d,C0d*1+0/umask/5 #,%exvr6.0
+.i1: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  vr1 : vr1
+  exvr6.0 : M
+  --
+  live : r0[0xffffffff], r1[0xffffffff],
+  --
+.i0: movl %vr1d, %vr0d #
+.i0: sarl $C0d*1+0/umask/8,%vr0d #,%exvr4.0,%exvr3.0
+.i1: jmp .NEXTPC0x0 #
+  ==
+
+ENTRY:
+.i0: bc 0x4,4*%exvr1.0+lt,.NEXTPC0x0 #
+.i1: b .NEXTPC0x1 #
+  --
+  exvr1.0 : exvr4.0
+  --
+  live : exr1.0[0xf], # exr1.0[0xf], #
+  --
+.i0: jge .NEXTPC0x0 #,%exvr4.0
+.i1: jmp .NEXTPC0x1 #
+  ==
+
+ENTRY:
+.i0: cmpwi %exvr1.0,%vr0d,C0d*1+0/umask/16 #,%exvr2.0,%exvr7.0
+.i1: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  exvr1.0 : exvr4.0
+  exvr2.0 : M
+  exvr7.0 : M
+  --
+  live : r0[0xffffffff], exr1.0[0xf], exr7.0[0x1],
+  --
+.i0: cmpl $C0d*1+0/mask/16, %vr0d #,%exvr4.0,%exvr3.0
+.i1: jmp .NEXTPC0x0 #
+  ==
+
+ENTRY:
+.i0: bl .NEXTPC0x0 #,%exvr3.0
+.i1: b .NEXTPC0x1 #
+  --
+  exvr3.0 : vr0
+  --
+  live : exr3.0[0xffffffff], # exr3.0[0xffffffff], #
+  --
+.i0: mov $C_NEXTPC1d*1+0/mask/32, %vr0d #
+.i1: jmp .NEXTPC0 #
+  ==
+
+//#if 0
+
+ENTRY:
+.i0: lwz %vr0d,C0d*1+0/umask/16(0) #
+.i1: b .NEXTPC0x0 #
+  --
+  vr0 : vr0
+  vr1 : vr1
+  --
+  live : vr0[0xffffffff], vr1[0xffffffff]
+  --
+  movl C0d*1+0/mask/16(%vr1d), %vr0d
+  bswap %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  lwzu %vr0d,C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : R
+  vr1 : R
+  --
+  live : vr0, vr1
+  --
+  movl C0w(%vr1d), %vr0d
+  bswap %vr0d
+  addl $C0w, %vr1d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  lwz %vr0d, C0w(%vr1d)
+  stw %vr0d, C1w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : R
+  vr1 : R
+  --
+  live : vr1
+  --
+  movl C0w(%vr1d), %vr0d
+  movl %vr0d, C1w(%vr1d)
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  li %vr0d, 0x0
+  b .NEXTPC0
+  --
+  vr0 : R
+  --
+  live : vr0
+  --
+  xorl %vr0d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  li %vr0d, 0x0
+  b .NEXTPC0
+  --
+  vr0 : M
+  --
+  live : vr0
+  --
+  movl $0x0, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  li %vr0d, 0x0
+  stw %vr0d,C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : M
+  vr1 : R
+  --
+  live : vr1
+  --
+  movl $0x0, C0w(%vr1d)
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  add %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : R
+  vr1 : R
+  vr2 : R
+  --
+  live : vr0, vr1, vr2
+  --
+  lea 0x0(%vr1d, %vr2d, 1), %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  subf %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr2d, %vr0d
+  subl %vr1d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  subf %vr0d, %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  subl %vr1d, %vr0d
+  negl %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  subf. %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  crf0 : SFO
+  xer_ov : M
+  --
+  live : vr0, vr1, vr2, crf0, xer_ov
+  --
+  movl %vr2d, %vr0d
+  subl %vr1d, %vr0d
+  cmpl $0, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  subf. %vr0d, %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  crf0 : SFO
+  xer_ov : M
+  --
+  live : vr0, vr1, crf0, xer_ov
+  --
+  movl %vr1d, %tr0d
+  subl %vr0d, %tr0d
+  movl %tr0d, %vr0d
+  cmpl $0, %vr0d
+  jmp .NEXTPC0
+  ==
+
+# this entry seems to be doing more harm than good
+#ENTRY:
+#  mr %vr1d, %vr0d
+#  --
+#  vr0 : R,M
+#  vr1 : M,R
+#  --
+#  live : vr0
+#  --
+#  nop
+#  ==
+
+ENTRY:
+  xori %vr0d, %vr1d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  xorl $C0w, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  xor %vr0d, %vr0d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  xorl %vr0d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  addis %vr0d, %vr1d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  leal C0d/ls/16(%vr1d), %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  lbz %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  --
+  live : vr0, vr1
+  --
+  movzbl C0w(%vr1d), %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  lbzu %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  --
+  live : vr0,vr1
+  --
+  movzbl C0w(%vr1d), %vr0d
+  leal C0w(%vr1d), %vr1d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  lis %vr0d, C0w
+  addi %vr0d, %vr0d, C1w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  movl $C0d/ls/16/mask/C1d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  lis %vr0d, C0w
+  ori %vr0d, %vr0d, C1w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  movl $C0d/ls/16/umask/C1d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+# compares
+
+ENTRY:
+  cmplwi %vr0d, C0W
+  b .NEXTPC0
+  --
+  vr0 : RM
+  crf0 : UF
+  --
+  live : vr0, crf0
+  --
+  cmpl $C0W, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  cmplw %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  crf0 : UF
+  --
+  live : vr0, vr1, crf0
+  --
+  cmpl %vr1d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+#Rc XXX: need to set xer_ov in each of these, or use 2-instruction versions
+#where xer_ov is not live
+ENTRY:
+  mr. %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  crf0 : SFO
+  xer_ov : M
+  --
+  live : vr0, vr1, crf0, xer_ov
+  --
+  movl %vr1d, %vr0d
+  cmpl $0x0, %vr0d
+  jmp .NEXTPC0
+  ==
+
+#XXX: remove cmpl
+ENTRY:
+  andi. %vr0d, %vr1d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  crf0 : SFO
+  xer_ov : M
+  --
+  live : vr0, vr1, crf0, xer_ov
+  --
+  movl %vr1d, %vr0d
+  andl $C0w, %vr0d
+  cmpl $0x0, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  andis. %vr0d, %vr1d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  crf0 : SFO
+  xer_ov : M
+  --
+  live : vr0, vr1, crf0, xer_ov
+  --
+  movl %vr1d, %vr0d
+  andl $C0d/ls/16, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  and %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %vr0d
+  andl %vr2d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  and %vr0d, %vr1d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  andl %vr1d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+#XXX: remove cmpl
+ENTRY:
+  and. %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  crf0 : SFO
+  xer_ov : M
+  --
+  live : vr0, vr1, vr2, crf0, xer_ov
+  --
+  movl %vr1d, %vr0d
+  andl %vr2d, %vr0d
+  cmpl $0x0, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  or. %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  crf0 : SFO
+  xer_ov : M
+  --
+  live : vr0, vr1, vr2, crf0, xer_ov
+  --
+  movl %vr1d, %vr0d
+  orl %vr2d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+# in the addic. entries, crf0 may mismatch x86 flags in case of overflow
+# (xer_ca getting set). hence using test instruction
+ENTRY:
+  addic. %vr0d, %vr0d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  crf0 : SFO
+  xer_ov : M
+  xer_ca : M
+  --
+  live : vr0, crf0, xer_ov
+  --
+  addl $C0w, %vr0d
+  test %vr0d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  addic. %vr0d, %vr1d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  crf0 : SFO
+  xer_ov : M
+  xer_ca : M
+  --
+  live : vr0, vr1, crf0, xer_ov
+  --
+  movl %vr1d, %vr0d
+  addl $C0w, %vr0d
+  test %vr0d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+
+
+# branches
+
+ENTRY:
+  blt .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : SF
+  --
+  live : crf0 ; crf0
+  --
+  jl .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  blt .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : UF
+  --
+  live : crf0 ; crf0
+  --
+  jb .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  blt .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : RM
+  --
+  live : crf0 ; crf0
+  --
+  cmpl $0x8, %crf0d
+  je .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  bgt .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : SF
+  --
+  live : crf0 ; crf0
+  --
+  jg .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  bgt .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : UF
+  --
+  live : crf0 ; crf0
+  --
+  ja .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  bgt .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : RM
+  --
+  live : crf0 ; crf0
+  --
+  testl $0x4, %crf0d
+  jne .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  bne .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : SF
+  --
+  live : crf0 ; crf0
+  --
+  jne .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  bne .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : UF
+  --
+  live : crf0 ; crf0
+  --
+  jne .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  bne .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : RM
+  --
+  live : crf0 ; crf0
+  --
+  testl $0x2, %crf0d
+  je .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  ble .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : SF
+  --
+  live : crf0 ; crf0
+  --
+  jle .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  ble .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : UF
+  --
+  live : crf0 ; crf0
+  --
+  jbe .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  ble .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : RM
+  --
+  live : crf0 ; crf0
+  --
+  testl $0x4, %crf0d
+  je .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  bge .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : UF
+  --
+  live : crf0 ; crf0
+  --
+  jae .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  bge .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : RM
+  --
+  live : crf0 ; crf0
+  --
+  testl $0x8, %crf0d
+  je .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  beq .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : SF
+  --
+  live : crf0 ; crf0
+  --
+  je .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  beq .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : UF
+  --
+  live : crf0 ; crf0
+  --
+  je .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  beq .NEXTPC0
+  b .NEXTPC1
+  --
+  crf0 : RM
+  --
+  live : crf0 ; crf0
+  --
+  testl $0x2, %crf0d
+  jne .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  ori %vr0d, %vr0d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  orl $C0w, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  ori %vr0d, %vr1d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  orl $C0w, %vr0d
+  jmp .NEXTPC0
+  ==
+
+
+ENTRY:
+  oris %vr0d, %vr1d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  orl $C0d/ls/16, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  oris %vr0d, %vr0d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  orl $C0d/ls/16, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  stwu %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  --
+  live : vr0, vr1
+  --
+  bswap %vr0d
+  mov %vr0d, C0w(%vr1d)
+  bswap %vr0d
+  addl $C0w, %vr1d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  stw %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  --
+  live : vr0, vr1
+  --
+  bswap %vr0d
+  mov %vr0d, C0w(%vr1d)
+  bswap %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  stw %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  --
+  live : vr1
+  --
+  bswap %vr0d
+  mov %vr0d, C0w(%vr1d)
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  stb %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : ABCD
+  vr1 : R
+  --
+  live : vr0, vr1
+  --
+  movb %vr0b, C0w(%vr1d)
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  sth %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : ABCD
+  vr1 : R
+  --
+  live : vr0, vr1
+  --
+  xchg %vr0B, %vr0b
+  movw %vr0w, C0w(%vr1d)
+  xchg %vr0B, %vr0b
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mflr %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  lr : RM
+  --
+  live : vr0, lr
+  --
+  mov %lrd, %vr0d
+  jmp .NEXTPC0
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mfcr %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  crf0 : M
+  crf1 : M
+  crf2 : M
+  crf3 : M
+  crf4 : M
+  crf5 : M
+  crf6 : M
+  crf7 : M
+  --
+  live : vr0, crf0, crf1, crf2, crf3, crf4, crf5, crf6, crf7
+  --
+  movl %crf7d, %vr0d
+  movl %crf6d, %tr0d
+  shll $0x4, %tr0d
+  orl %tr0d, %vr0d
+  movl %crf5d, %tr0d
+  shll $0x8, %tr0d
+  orl %tr0d, %vr0d
+  movl %crf4d, %tr0d
+  shll $0xc, %tr0d
+  orl %tr0d, %vr0d
+  movl %crf3d, %tr0d
+  shll $0x10, %tr0d
+  orl %tr0d, %vr0d
+  movl %crf2d, %tr0d
+  shll $0x14, %tr0d
+  orl %tr0d, %vr0d
+  movl %crf1d, %tr0d
+  shll $0x18, %tr0d
+  orl %tr0d, %vr0d
+  movl %crf0d, %tr0d
+  shll $0x1c, %tr0d
+  orl %tr0d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mfctr %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  ctr : RM
+  --
+  live : vr0, ctr
+  --
+  mov %ctrd, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mtlr %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  lr : RM
+  --
+  live : vr0, lr
+  --
+  mov %vr0d, %lrd
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mtctr %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  ctr : RM
+  --
+  live : vr0, ctr
+  --
+  mov %vr0d, %ctrd
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  addc %vr0d, %vr1d, %vr2d
+  adde %vr3d, %vr4d, %vr5d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  vr4 : RM
+  vr5 : RM
+  --
+  live : vr0, vr1, vr2, vr3, vr4, vr5
+  --
+  movl %vr2d, %vr0d
+  addl %vr1d, %vr0d
+  movl %vr5d, %vr3d
+  adcl %vr4d, %vr3d
+  jmp .NEXTPC0
+  ==
+
+
+ENTRY:
+  addic %vr0d, %vr0d, C0w
+  addze %vr1d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  xer_ca : M
+  --
+  live : vr0, vr1, xer_ca
+  --
+  addl $C0w, %vr0d
+  adcl $0x0, %vr1d
+  setc %xer_cad
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  addic %vr0d, %vr0d, C0w
+  addze %vr1d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  addl $C0w, %vr0d
+  adcl $0x0, %vr1d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  addic %vr0d, %vr1d, C0w
+  subfe %vr2d, %vr3d, %vr4d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  vr4 : RM
+  --
+  live : vr0, vr1, vr2, vr3, vr4
+  --
+  movl %vr1d, %vr0d
+  addl $C0w, %vr0d
+  movl %vr4d, %vr2d
+  sbbl %vr3d, %vr2d
+  decl %vr2d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  addic %vr0d, %vr1d, C0w
+  subfe %vr2d, %vr0d, %vr3d 
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  --
+  live : vr0, vr1, vr2, vr3
+  --
+  movl %vr1d, %vr0d
+  addl $C0w, %vr0d
+  movl %vr3d, %vr2d
+  movl %vr0d, %tr0d
+  notl %tr0d
+  adcl %tr0d, %vr2d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  addic %vr0d, %vr1d, C0w
+  subfe %vr2d, %vr0d, %vr3d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  --
+  live : vr1, vr2, vr3
+  --
+  movl %vr1d, %vr0d
+  addl $C0w, %vr0d
+  movl %vr3d, %vr2d
+  notl %vr0d
+  adcl %vr0d, %vr2d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  subfc %vr0d, %vr1d, %vr2d
+  subfe %vr3d, %vr4d, %vr5d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  vr4 : RM
+  vr5 : RM
+  --
+  live : vr0, vr1, vr2, vr3, vr4, vr5
+  --
+  movl %vr2d, %vr0d
+  subl %vr1d, %vr0d
+  movl %vr5d, %vr3d
+  sbbl %vr4d, %vr3d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  subfc %vr0d, %vr1d, %vr2d
+  subfe %vr3d, %vr4d, %vr3d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  vr4 : RM
+  --
+  live : vr0, vr1, vr2, vr3, vr4
+  --
+  movl %vr2d, %vr0d
+  subl %vr1d, %vr0d
+  sbbl %vr4d, %vr3d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  subfc %vr0d, %vr0d, %vr1d
+  subfe %vr2d, %vr2d, %vr3d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  --
+  live : vr0, vr1, vr2, vr3
+  --
+  movl %vr0d, %tr0d
+  movl %vr1d, %vr0d
+  subl %tr0d, %vr0d
+  movl %vr2d, %tr0d
+  movl %vr3d, %vr2d
+  sbbl %tr0d, %vr2d
+  jmp .NEXTPC0
+  ==
+
+# R1: this entry fails the execution test. it looks like the x86-carry-flag is
+# the negation of ppc-carry-flag
+#ENTRY:
+#  subfc %vr0d, %vr1d, %vr0d
+#  adde  %vr0d, %vr0d, %vr2d
+#  --
+#  vr0 : RM
+#  vr1 : RM
+#  vr2 : RM
+#  --
+#  live : vr0, vr1, vr2
+#  --
+#  subl %vr1d, %vr0d
+#  cmc
+#  adcl %vr2d, %vr0d
+#  ==
+
+ENTRY:
+  subfc %vr0d, %vr1d, %vr0d
+  subfe %vr0d, %vr0d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  subl %vr1d, %vr0d
+  sbbl %vr0d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+#This entry fails bzip2.O2
+#ENTRY:
+#  subfc 1,2,3
+#  subfe 1,1,1
+#  --
+#  vr0 : RM
+#  vr1 : RM
+#  --
+#  live : vr0, vr1
+#  --
+#  movl %vr2d, %vr0d
+#  subl %vr1d, %vr0d
+#  sbbl %vr0d, %vr0d
+#  ==
+
+ENTRY:
+  subfc %vr0d, %vr0d, %vr1d
+  subfe %vr2d, %vr3d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  --
+  live : vr0, vr2, vr3
+  --
+  xchg %vr0d, %vr1d
+  subl %vr1d, %vr0d
+  sbbl %vr3d, %vr2d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  addic %vr0d, %vr1d, C0w
+  addme %vr2d, %vr3d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  --
+  live : vr0, vr1, vr2, vr3
+  --
+  movl %vr1d, %vr0d
+  addl $C0w, %vr0d
+  movl %vr3d, %vr2d
+  adcl $-1, %vr2d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  b .NEXTPC0
+  --
+  --
+  live :
+  --
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  bcl 20,31,.NEXTPC0
+  b .NEXTPC1
+  --
+  lr : RM
+  --
+  live : lr
+  --
+  mov $.NEXTPC1, %lrd
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  srawi. %vr0d, %vr1d, C0S
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  crf0 : SFO
+  --
+  live : vr0, vr1, crf0
+  --
+  movl %vr1d, %vr0d
+  sarl $C0S, %vr0d
+  testl %vr0d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  sraw %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : C
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %vr0d
+  sarl %vr2b, %vr0d
+  jmp .NEXTPC0
+  ==
+ 
+ENTRY:
+  sraw %vr0d, %vr1d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  tr0 : C
+  --
+  live : vr0, vr1
+  --
+  movl %vr0d, %tr0d
+  movl %vr1d, %vr0d
+  sarl %tr0b, %vr0d
+  jmp .NEXTPC0
+  ==
+ 
+ENTRY:
+  bdnz .NEXTPC0
+  b .NEXTPC1
+  --
+  ctr : RM
+  --
+  live : ctr ; ctr
+  --
+  decl %ctrd
+  jne .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  bdz .NEXTPC0
+  b .NEXTPC1
+  --
+  ctr : RM
+  --
+  live : ctr ; ctr
+  --
+  decl %ctr
+  je .NEXTPC0
+  jmp .NEXTPC1
+  ==
+
+ENTRY:
+  rlwinm %vr0d, %vr1d, C0S, 0, C0d*-1+31/mask/5
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  shll $C0S, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  rlwinm %vr0d, %vr0d, C0S, 0, C0d*-1+31/mask/5
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  shll $C0S, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  rlwinm %vr0d, %vr1d, C0S, C0d*-1+32/mask/5, 31
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  shrl $C0d*-1+32/mask/5, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  rlwinm %vr0d, %vr0d, C0S, C0d*-1+32/mask/5, 31
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  shrl $C0d*-1+32/mask/5, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  rlwinm %vr0d, %vr1d, C0S, C1S, 31
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  rol $C0S, %vr0d
+  andl $C1d/rzerobits, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  rlwinm %vr0d, %vr1d, C0S, C1S, C2S
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  tr0 : ABCD
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  rol $C0S, %vr0d
+  movl $C1S, %tr0d
+  cmpl $C2S, %tr0d
+  setg %tr0b
+  movzbl %tr0b, %tr0d
+  negl %tr0d
+  xorl $C1d/rzerobits, %tr0d
+  xorl $C2d+1/rzerobits, %tr0d
+  andl %tr0d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  clrlwi %vr0d, %vr0d, C0S
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  andl $C0d/rzerobits, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  clrlwi %vr0d, %vr1d, C0S
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  andl $C0d/rzerobits, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  rlwinm %vr0d, %vr0d, 0, 0, C0S
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  andl $C0d+1/ronebits, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  rlwinm %vr0d, %vr1d, 0, 0, C0S
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  andl $C0d+1/ronebits, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mulhw %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : D
+  vr1 : RM
+  vr2 : RM
+  tr0 : A
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %tr0d
+  imul %vr2d
+  jmp .NEXTPC0
+  ==
+
+#ENTRY:
+#  lis	1,C0w
+#  ori	1,1,C1w
+#  lwz	2,C2w(3)
+#  mulhw	4,2,1
+#  --
+#  vr0 : M
+#  vr1 : M
+#  vr2 : RM
+#  vr3 : RM
+#  --
+#  live : vr2, vr3
+#  --
+#  movl C2w(vr2), %vr3d
+#  bswap %vr3d
+#  imul $C0w.C1w, %vr3d
+#  ==
+
+
+ENTRY:
+  or %vr0d, %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  orl %vr1d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  or %vr0d, %vr1d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  orl %vr1d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  or %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %vr0d
+  orl %vr2d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  stwx %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  vr2 : R
+  --
+  live : vr0,vr1,vr2
+  --
+  bswap %vr0d
+  movl %vr0d, (%vr1d,%vr2d,1)
+  bswap %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  lwzx %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  vr2 : R
+  --
+  live : vr0,vr1,vr2
+  --
+  movl (%vr1d,%vr2d,1), %vr0d
+  bswap %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  stbx %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : ABCD
+  vr1 : R
+  vr2 : R
+  --
+  live : vr0,vr1,vr2
+  --
+  movb %vr0b, (%vr1d,%vr2d,1)
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  lbzx %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  vr2 : R
+  --
+  live : vr0,vr1,vr2
+  --
+  movzbl (%vr1d,%vr2d,1), %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  sthx %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : ABCD
+  vr1 : R
+  vr2 : R
+  --
+  live : vr1,vr2
+  --
+  bswap %vr0d
+  shrl $16, %vr0d
+  movw %vr0w, (%vr1d,%vr2d,1)
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  sthx %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : ABCD
+  vr1 : R
+  vr2 : R
+  --
+  live : vr0, vr1,vr2
+  --
+  bswap %vr0d
+  ror $16, %vr0d
+  movw %vr0w, (%vr1d,%vr2d,1)
+  rol $16, %vr0d
+  bswap %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  sth %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : ABCD
+  vr1 : R
+  --
+  live : vr1
+  --
+  bswap %vr0d
+  shrl $16, %vr0d
+  movw %vr0w, C0w(%vr1d)
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  sth %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : ABCD
+  vr1 : R
+  --
+  live : vr0, vr1
+  --
+  bswap %vr0d
+  ror $16, %vr0d
+  movw %vr0w, C0w(%vr1d)
+  rol $16, %vr0d
+  bswap %vr0d
+  jmp .NEXTPC0
+  ==
+
+# Handle rA(opcode)==0 case
+#NEW_ENTRY:
+#  dcbz vr0, %vr1d
+#  --
+#  vr0 : RM
+#  vr1 : RM
+#  --
+#  live : vr0, vr1
+#  --
+#  movl 0x0, (%vr0d,%vr1d,1)
+#  ==
+
+ENTRY:
+  lhzx %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  vr2 : R
+  --
+  live : vr0,vr1,vr2
+  --
+  movzwl (%vr1d,%vr2d,1), %vr0d
+  bswap %vr0d
+  shrl $16, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  lhz %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  --
+  live : vr0, vr1
+  --
+  movzwl C0w(%vr1d), %vr0d
+  bswap %vr0d
+  shrl $16, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  xor %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %vr0d
+  xorl %vr2d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  xor %vr0d, %vr1d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  xorl %vr1d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  stwu %vr0d, C0w(%vr0d)
+  b .NEXTPC0
+  --
+  vr0 : R
+  --
+  live : vr0
+  --
+  movl %vr0d, %tr0d
+  bswap %tr0d
+  movl %tr0d, C0w(%vr0d)
+  addl $C0w, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  stw %vr0d, C0w(%vr0d)
+  b .NEXTPC0
+  --
+  vr0 : R
+  --
+  live : vr0
+  --
+  movl %vr0d, %tr0d
+  bswap %tr0d
+  movl %tr0d, C0w(%vr0d)
+  jmp .NEXTPC0
+  ==
+
+#commented for the same reason as R1
+ENTRY:
+  subfic %vr0d, %vr1d, C0w
+  adde %vr2d, %vr3d, %vr4d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  vr4 : RM
+  --
+  live : vr0, vr1, vr2, vr3, vr4
+  --
+  movl $C0w, %vr0d
+  subl %vr1d, %vr0d
+  movl %vr3d, %vr2d
+  cmc
+  adcl %vr4d, %vr2d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  subfic %vr0d, %vr1d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl $C0w, %vr0d
+  subl %vr1d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+#commented for the same reason as R1
+ENTRY:
+  subfic %vr0d, %vr1d, C0w
+  addme  %vr2d, %vr3d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  vr3 : RM
+  --
+  live : vr0, vr1, vr2, vr3
+  --
+  movl $C0w, %vr0d
+  subl %vr1d, %vr0d
+  movl %vr3d, %vr2d
+  cmc
+  adcl $-1, vr2
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  subfic %vr0d, %vr0d, C0w
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  negl %vr0d
+  addl $C0w, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  subfic %vr0d, %vr1d, 0x0
+  adde %vr2d, %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : RM
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %vr0d
+  xorl %vr2d, %vr2d
+  notl %vr0d
+  addl $0x1, %vr0d
+  adcl $0x0, %vr2d
+  jmp .NEXTPC0
+  ==
+
+NEW_ENTRY:
+  subfic %vr0d, %vr0d, 0x0
+  addze %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  notl %vr0d
+  addl $0x1, %vr0d
+  movl %vr1d, %vr0d
+  adcl $0x0, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  bctr
+  --
+  ctr : M
+  --
+  live : ctr
+  --
+  movl %ctr, %tr0d
+  leal .JUMPTABLE_ADDR(%tr0d), %tr0d
+  jmp *(%tr0d)
+  ==
+
+ENTRY:
+  blrl
+  b .NEXTPC0
+  --
+  lr : M
+  --
+  live : lr
+  --
+  movl %lrd, %tr0d
+  movl $.NEXTPC0, %lrd
+  leal .JUMPTABLE_ADDR(%tr0d), %tr0d
+  jmp *(%tr0d)
+  ==
+
+ENTRY:
+  bctrl
+  b .NEXTPC0
+  --
+  lr : RM
+  ctr : RM
+  --
+  live : ctr, lr
+  --
+  movl %ctr, %tr0d
+  movl $.NEXTPC0, %lrd
+  leal .JUMPTABLE_ADDR(%tr0d), %tr0d
+  jmp *(%tr0d)
+  ==
+
+
+ENTRY:
+  neg %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  negl %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mtcrf C0b, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  crf0 : M
+  crf1 : M
+  crf2 : M
+  crf3 : M
+  crf4 : M
+  crf5 : M
+  crf6 : M
+  crf7 : M
+  --
+  live : vr0, crf0, crf1, crf2, crf3, crf4, crf5, crf6, crf7
+  --
+  movl $C0b, %tr0d
+  movl %vr0d, %tr1d
+  .crf7: bt $0, %tr0d
+         jnc .crf6
+         movl %tr1d, %crf7d
+         andl $0xf, %crf7d
+  .crf6: shrl $4, %tr1d
+         bt $1, %tr0d
+         jnc .crf5
+         movl %tr1d, %crf6d
+         andl $0xf, %crf6d
+  .crf5: shrl $4, %tr1d
+         bt $2, %tr0d
+         jnc .crf4
+         movl %tr1d, %crf5d
+         andl $0xf, %crf5d
+  .crf4: shrl $4, %tr1d
+         bt $3, %tr0d
+         jnc .crf3
+         movl %tr1d, %crf4d
+         andl $0xf, %crf4d
+  .crf3: shrl $4, %tr1d
+         bt $4, %tr0d
+         jnc .crf2
+         movl %tr1d, %crf3d
+         andl $0xf, %crf3d
+  .crf2: shrl $4, %tr1d
+         bt $5, %tr0d
+         jnc .crf1
+         movl %tr1d, %crf2d
+         andl $0xf, %crf2d
+  .crf1: shrl $4, %tr1d
+         bt $6, %tr0d
+         jnc .crf0
+         movl %tr1d, %crf1d
+         andl $0xf, %crf1d
+  .crf0: shrl $4, %tr1d
+         bt $7, %tr0d
+         jnc .end
+         movl %tr1d, %crf0d
+         andl $0xf, %crf0d
+  .end: nop
+  jmp .NEXTPC0
+  ==
+
+#This does not currently work, because 3-operand instructions are not correctly
+#implemented yet
+#ENTRY:
+#  mulli	1,2,C0w
+#  --
+#  vr0 : RM
+#  vr1 : RM
+#  --
+#  live : vr0, vr1
+#  --
+#  imul $C0w, %vr1d, %vr0d
+#  ==
+
+ENTRY:
+  mulli	%vr0d, %vr1d, C0w
+  b .NEXTPC0
+  --
+  vr0 : A
+  vr1 : RM
+  tr0 : D
+  --
+  live : vr0, vr1
+  --
+  movl $C0w, %vr0d
+  imul %vr1d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mulli	%vr0d, %vr0d, C0w
+  b .NEXTPC0
+  --
+  vr0 : A
+  tr0 : D
+  --
+  live : vr0
+  --
+  movl $C0w, %tr0d
+  imul %tr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  srawi %vr0d, %vr1d, C0S
+  addze %vr0d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  sarl $C0S, %vr0d
+  shll $C0S, %vr0d
+  cmpl %vr1d, %vr0d
+  jle .all_zeros
+  sarl $C0S, %vr0d
+  incl %vr0d
+  jmp .end
+  .all_zeros: sarl $C0S, %vr0d
+  .end: nop
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  srawi %vr0d, %vr0d, C0S
+  addze %vr0d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  movl %vr0d, %tr0d
+  sarl $C0S, %tr0d
+  shll $C0S, %tr0d
+  cmpl %vr0d, %tr0d
+  jle .all_zeros
+  sarl $C0S, %vr0d
+  incl %vr0d
+  jmp .end
+  .all_zeros: sarl $C0S, %vr0d
+  .end: nop
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  not %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  notl %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  slw %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : C
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %vr0d
+  shll %vr2b, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  srw %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  vr2 : C
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %vr0d
+  shrl %vr2b, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  slw %vr0d, %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : C
+  --
+  live : vr0, vr1
+  --
+  shll %vr1b, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  srw %vr0d, %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : C
+  --
+  live : vr0, vr1
+  --
+  shrl %vr1b, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  srw %vr0d, %vr1d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : C
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %tr0d
+  shrl %vr0b, %tr0d
+  movl %tr0d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mulhwu %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : D
+  vr1 : RM
+  vr2 : RM
+  tr0 : A
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %tr0d
+  mul %vr2d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mulhwu %vr0d, %vr1d, %vr2d
+  mullw  %vr3d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : D
+  vr1 : RM
+  vr2 : RM
+  vr3 : A
+  --
+  live : vr0, vr1, vr2, vr3
+  --
+  movl %vr1d, %vr3d
+  mul %vr2d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mulhw %vr0d, %vr1d, %vr2d
+  mullw %vr3d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : D
+  vr1 : RM
+  vr2 : RM
+  vr3 : A
+  --
+  live : vr0, vr1, vr2, vr3
+  --
+  movl %vr1d, %vr3d
+  imul %vr2d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  slw %vr0d, %vr1d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  tr0 : C
+  --
+  live : vr0, vr1
+  --
+  movl %vr0d, %tr0d
+  movl %vr1d, %vr0d
+  shll %tr0b, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  slw %vr0d, %vr1d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : C
+  --
+  live : vr0
+  --
+  xchg %vr0d, %vr1d 
+  shll %vr1b, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  bnelr
+  b .NEXTPC0
+  --
+  lr : RM
+  crf0 : SF
+  --
+  live : lr, crf0 ; lr, crf0
+  --
+  je .end
+  movl %lrd, %tr0d
+  leal .JUMPTABLE_ADDR(%tr0d), %tr0d
+  jmp *(%tr0d)
+.end: jmp .NEXTPC0
+  ==
+
+ENTRY:
+  beqlr
+  b .NEXTPC0
+  --
+  lr : RM
+  crf0 : SF
+  --
+  live : lr, crf0 ; lr, crf0
+  --
+  jne .end
+  movl %lrd, %tr0d
+  leal .JUMPTABLE_ADDR(%tr0d), %tr0d
+  jmp *(%tr0d)
+.end: jmp .NEXTPC0
+  ==
+
+ENTRY:
+  bgelr
+  b .NEXTPC0
+  --
+  lr : RM
+  crf0 : SF
+  --
+  live : lr, crf0 ; lr, crf0
+  --
+  jl .end
+  movl %lrd, %tr0d
+  leal .JUMPTABLE_ADDR(%tr0d), %tr0d
+  jmp *(%tr0d)
+.end: jmp .NEXTPC0
+  ==
+
+ENTRY:
+  bltlr
+  b .NEXTPC0
+  --
+  lr : RM
+  crf0 : SF
+  --
+  live : lr, crf0 ; lr, crf0
+  --
+  jge .end
+  movl %lrd, %tr0d
+  leal .JUMPTABLE_ADDR(%tr0d), %tr0d
+  jmp *(%tr0d)
+.end: jmp .NEXTPC0
+  ==
+
+NEW_ENTRY:
+  bgtlr
+  b .NEXTPC0
+  --
+  lr : RM
+  crf0 : SF
+  --
+  live : lr, crf0 ; lr, crf0
+  --
+  jle .end
+  movl %lrd, %tr0d
+  leal .JUMPTABLE_ADDR(%tr0d), %tr0d
+  jmp *(%tr0d)
+.end: jmp .NEXTPC0
+  ==
+
+ENTRY:
+  cntlzw %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  bsr %vr1d, %vr0d
+  jnz .end
+  mov $-1, %vr0d
+.end: negl %vr0d
+  addl $31, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  lha %vr0d, C0w(%vr1d)
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : R
+  --
+  live : vr0, vr1
+  --
+  movzwl C0w(%vr1d), %vr0d
+  bswap %vr0d
+  sarl $16, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mullw %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : A
+  vr1 : RM
+  vr2 : RM
+  tr0 : D
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %vr0d
+  mul %vr2d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mullw %vr0d, %vr1d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : A
+  vr1 : RM
+  tr0 : D
+  --
+  live : vr0, vr1
+  --
+  mul %vr1d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  mullw %vr0d, %vr1d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : A
+  vr1 : D
+  --
+  live : vr0
+  --
+  mul %vr1d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  divw %vr0d, %vr1d, %vr2d
+  b .NEXTPC0
+  --
+  vr0 : A
+  vr1 : RM
+  vr2 : RM
+  tr0 : D
+  --
+  live : vr0, vr1, vr2
+  --
+  movl %vr1d, %vr0d
+  cltd
+  testl %vr2d, %vr2d
+  je .overflow
+  cmpl $0x80000000, %vr0d
+  jne .no_overflow
+  cmpl $-1, %vr2d
+  jne .no_overflow
+  .overflow: shrl $31, %vr0d
+             negl %vr0d
+             jmp .end
+  .no_overflow: idiv %vr2d
+  .end: nop
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  divw %vr0d, %vr1d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  tr0 : A
+  tr1 : D
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %tr0d
+  cltd
+  testl %vr0d, %vr0d
+  je .overflow
+  cmpl $0x80000000, %tr0d
+  jne .no_overflow
+  cmpl $-1, %vr0d
+  jne .no_overflow
+  .overflow: shrl $31, %tr0d
+             negl %tr0d
+             jmp .end
+  .no_overflow: idiv %vr0d
+  .end: movl %tr0d, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  extsh %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  shll $16, %vr0d
+  sarl $16, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  extsb %vr0d, %vr1d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  vr1 : RM
+  --
+  live : vr0, vr1
+  --
+  movl %vr1d, %vr0d
+  shll $24, %vr0d
+  sarl $24, %vr0d
+  jmp .NEXTPC0
+  ==
+
+ENTRY:
+  extsb %vr0d, %vr0d
+  b .NEXTPC0
+  --
+  vr0 : RM
+  --
+  live : vr0
+  --
+  shll $24, %vr0d
+  sarl $24, %vr0d
+  jmp .NEXTPC0
+  ==
+
+#XXX : this is  a false entry for timer debugging. this is not accurate as
+#      timer ticks may change between the two reads
+#ENTRY:
+#  mftbu 1
+#  mftb 2
+#  --
+#  vr0 : D
+#  vr1 : A
+#  --
+#  live : vr0, vr1
+#  --
+#  rdtsc
+#  ==
+
+#endif  /* if 0 */

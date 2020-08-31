@@ -1,0 +1,64 @@
+#include "src_env.h"
+
+ENTRY:
+.i0: jecxz .NEXTPC0x0 #, %exvr0.0d||
+.i1: jmp .NEXTPC0x1 #||
+--
+live : exr0.0[0xffffffff],# exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: cmpl $0x0, %exvr0.0d #, %exvr4.0||
+.i1: je .NEXTPC0x0 #, %exvr5.0, %exvr4.0||
+.i2: jmp .NEXTPC0x1 #||
+==
+
+ENTRY:
+.i0: jecxz .NEXTPC0x0 #, %exvr0.0d||
+.i1: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: jmp .NEXTPC0x0 #||
+==
+
+#The following entry is for the stylized use to determine current pc.
+ENTRY:
+.i0: call .NEXTPC0x0 #,%exvr0.3d,%exvr3.0,%exvr0.2d,%exvr0.1d,%exvr0.0d||
+.i1: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff],exr0.1[0xffffffff],exr0.2[0xffffffff],exr0.3[0xffffffff],exr3.0[0xffff],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr0.3 : exvr0.3
+exvr3.0 : exvr3.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: leal 0xfffffffc(%exvr0.3d),%exvr0.3d #||
+.i1: movl $C_NEXTPC0d,(%exvr0.3d) #||
+.i1: jmp .NEXTPC0x0 #||
+==

@@ -1,0 +1,17 @@
+# build superopt
+make -C $HOME/superopt
+
+# build llvm2tfg
+touch llvm2tfg/tools/eqchecker/main.cpp && make -C llvm2tfg-build
+
+# run llvm2tfg to construct etfg
+$HOME/llvm2tfg-build/bin/llvm2tfg -f show_move $HOME/smpbench-build/cint/ctests.bc.O0 -o $HOME/eqfiles/ctests.show_move.etfg
+
+# harvest function
+$HOME/superopt/build/harvest -functions_only -live_callee_save -allow_unsupported -no_canonicalize_imms -no_eliminate_unreachable_bbls -use_orig_regnames -function_name show_move -o $HOME/eqfiles/ctests.gcc.show_move.harvest -l $HOME/eqfiles/ctests.gcc.show_move.harvest.log $HOME/smpbench-build/cint/ctests.gcc48.O2.i386
+
+# construct .eq file from peeptab
+$HOME/superopt/build/eqgen -f show_move -tfg_llvm $HOME/eqfiles/ctests.show_move.etfg -l $HOME/eqfiles/ctests.gcc.show_move.harvest.log -o $HOME/eqfiles/ctests.gcc.show_move.tfg -e $HOME/smpbench-build/cint/ctests.gcc48.O2.i386 $HOME/eqfiles/ctests.gcc.show_move.harvest
+
+# run eq
+$HOME/superopt/build/eq show_move $HOME/eqfiles/ctests.show_move.etfg $HOME/eqfiles/ctests.gcc.show_move.tfg

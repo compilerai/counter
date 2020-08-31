@@ -1,0 +1,82 @@
+diff -ur yices-2.4.2/src/frontend/smt2/smt2_commands.c yices-2.4.2.patched/src/frontend/smt2/smt2_commands.c
+--- yices-2.4.2/src/frontend/smt2/smt2_commands.c	2015-12-12 04:29:14.000000000 +0530
++++ yices-2.4.2.patched/src/frontend/smt2/smt2_commands.c	2016-05-19 14:18:03.099716166 +0530
+@@ -16,6 +16,7 @@
+ #define EXPORTED __attribute__((visibility("default")))
+ #endif
+ 
++extern char const *parse_smt2_command_result;
+ 
+ #include <stdio.h>
+ #include <stdarg.h>
+@@ -1129,14 +1130,16 @@
+   case EF_STATUS_UNKNOWN:
+   case EF_STATUS_UNSAT:
+   case EF_STATUS_INTERRUPTED:
+-    fputs(ef_status2string[stat], stdout);
+-    fputc('\n', stdout);
+-    if (verbosity > 0) {
++    //fputs(ef_status2string[stat], stdout);
++    parse_smt2_command_result = ef_status2string[stat];
++    //fputs(__func__, stdout);
++    //fputc('\n', stdout);
++    /*if (verbosity > 0) {
+       if (stat == EF_STATUS_SAT) {
+         print_ef_solution(stdout, efsolver);
+         fputc('\n', stdout);
+       }
+-    }
++    }*/
+     fflush(stdout);
+     break;
+ 
+@@ -1556,7 +1559,9 @@
+  */
+ 
+ static void show_status(smt_status_t status) {
+-  print_out("%s\n", status2string[status]);
++  //print_out("%s\n", status2string[status]);
++  parse_smt2_command_result = status2string[status];
++  //fputs(__func__, stdout);
+ }
+ 
+ 
+@@ -2543,9 +2548,13 @@
+   g->frozen = true;
+ 
+   if (g->trivially_unsat) {
+-    print_out("unsat\n");
++    //print_out("unsat\n");
++    parse_smt2_command_result = "unsat";
++    //fputs(__func__, stdout);
+   } else if (g->assertions.size == 0) {
+-    print_out("sat\n");
++    //print_out("sat\n");
++    parse_smt2_command_result = "sat";
++    //fputs(__func__, stdout);
+   } else {
+     /*
+      * check for mislabeled benchmarks: some benchmarks
+diff -ur yices-2.4.2/src/frontend/smt2/smt2_parser.c yices-2.4.2.patched/src/frontend/smt2/smt2_parser.c
+--- yices-2.4.2/src/frontend/smt2/smt2_parser.c	2015-12-12 04:29:14.000000000 +0530
++++ yices-2.4.2.patched/src/frontend/smt2/smt2_parser.c	2016-05-19 13:51:23.759744807 +0530
+@@ -823,6 +823,7 @@
+   return 0;
+ }
+ 
++char const *parse_smt2_command_result = NULL;
+ 
+ int32_t parse_smt2_command(parser_t *parser) {
+   return smt2_parse(parser, c0);
+diff -ur yices-2.4.2/src/frontend/smt2/smt2_parser.h yices-2.4.2.patched/src/frontend/smt2/smt2_parser.h
+--- yices-2.4.2/src/frontend/smt2/smt2_parser.h	2015-12-12 04:29:14.000000000 +0530
++++ yices-2.4.2.patched/src/frontend/smt2/smt2_parser.h	2016-05-19 11:58:09.571866478 +0530
+@@ -22,4 +22,6 @@
+  */
+ extern int32_t parse_smt2_command(parser_t *parser);
+ 
++extern char const *parse_smt2_command_result;
++
+ #endif /* __SMT2_PARSER_H */
+
+

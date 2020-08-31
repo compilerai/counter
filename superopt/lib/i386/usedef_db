@@ -1,0 +1,108 @@
+#include "i386/usedef_db_generated"
+
+ENTRY:
+.i0: nop #||
+--
+
+--
+
+--
+
+--
+
+==
+
+ENTRY:
+.i0: movq %exvr3.0:C0,%exvr0.0q #||
+--
+
+--
+ exr0.0[0xffffffffffffffff],
+--
+C0[8]
+
+--
+
+==
+
+ENTRY:
+.i0: movq %exvr0.0q,%exvr3.0:C0 #||
+--
+ exr0.0[0xffffffffffffffff],
+--
+
+--
+
+--
+C0[8]
+
+==
+
+ENTRY:
+.i0: popq %exvr0.1q #,%exvr0.0d,%exvr3.0||
+--
+ exr0.0[0xffffffffffffffff],
+--
+ exr0.0[0xfffffffffffffffe], exr0.1[0xffffffffffffffff],
+--
+0x0(%exvr0.0)[8]
+
+--
+
+==
+
+ENTRY:
+.i0: pushq %exvr0.1q #,%exvr0.0d,%exvr3.0||
+--
+ exr0.0[0xffffffffffffffff], exr0.1[0xffffffffffffffff],
+--
+ exr0.0[0xfffffffffffffffe],
+--
+
+--
+0xfffffffffffffff8(%exvr0.0)[8]
+
+==
+
+
+ENTRY:
+.i0: popfq  #%exvr0.0d,%exvr3.0,%exvr5.0,%exvr4.0||
+--
+ exr0.0[0xffffffffffffffff],
+--
+ exr0.0[0xfffffffffffffffe], exr4.0[0xffffffff], exr5.0[0xffffffff],
+--
+0x0(%exvr0.0)[8]
+
+--
+
+==
+
+ENTRY:
+.i0: pushfq  #%exvr0.0d,%exvr3.0,%exvr5.0,%exvr4.0||
+--
+ exr0.0[0xffffffffffffffff], exr4.0[0xffffffff], exr5.0[0xffffffff],
+--
+ exr0.0[0xfffffffffffffffe],
+--
+
+--
+0xfffffffffffffff8(%exvr0.0)[8]
+
+==
+
+ENTRY:
+.i0: pushq %exvr3.1:C0 #,%exvr0.0d,%exvr3.0||
+--
+ exr0.0[0xffffffffffffffff],
+--
+ exr0.0[0xfffffffffffffffe],
+--
+C0[8]
+
+--
+0xfffffffffffffff8(%exvr0.0)[4]
+
+==
+
+

@@ -1,0 +1,17 @@
+# build superopt
+make -C $HOME/superopt
+
+# build llvm2tfg
+touch llvm2tfg/tools/eqchecker/main.cpp && make -C llvm2tfg-build
+
+# run llvm2tfg to construct etfg
+$HOME/llvm2tfg-build/bin/llvm2tfg -f display_ratio $HOME/specrun-build/spec2000/llvm-bc-O0/gzip -o $HOME/eqfiles/gzip.gcc.display_ratio.etfg
+
+# harvest function
+#$HOME/superopt/build/harvest -functions_only -live_callee_save -allow_unsupported -no_canonicalize_imms -no_eliminate_unreachable_bbls -use_orig_regnames -function_name display_ratio -o $HOME/eqfiles/gzip.gcc.display_ratio.harvest -l $HOME/eqfiles/gzip.gcc.display_ratio.harvest.log $HOME/specrun-build/spec2000/gcc48-i386-O2/gzip
+
+# construct .eq file from peeptab
+$HOME/superopt/build/eqgen -f display_ratio -tfg_llvm $HOME/eqfiles/gzip.gcc.display_ratio.etfg -l $HOME/eqfiles/gzip.gcc.display_ratio.harvest.log -o $HOME/eqfiles/gzip.gcc.display_ratio.tfg -e $HOME/specrun-build/spec2000/gcc48-i386-O2/gzip $HOME/eqfiles/gzip.gcc.display_ratio.harvest
+
+# run eq
+$HOME/superopt/build/eq display_ratio $HOME/eqfiles/gzip.gcc.display_ratio.etfg $HOME/eqfiles/gzip.gcc.display_ratio.tfg

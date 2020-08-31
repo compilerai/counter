@@ -1,0 +1,2819 @@
+#include "config.h"
+#include "i386/peep.trans.tab.base"
+#include "fb.trans.tab"
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i2: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.0d,%exvr0.2d #||
+.i4: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i5: jb .i7 #,%exvr4.0||
+.i6: jmp .NEXTPC0x0 #||
+.i7: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.2d #||
+.i8: movzbl %exvr3.1w:0x0(%exvr0.2d),%exvr0.0d #||
+.i9: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.2d #||
+.i10: movzbl %exvr3.1w:0x0(%exvr0.2d),%exvr0.2d #||
+.i11: cmpb %exvr0.2b,%exvr0.0b #,%exvr5.0,%exvr4.0||
+.i12: je .i15 #,%exvr4.0||
+.i13: movl $0x0,%exvr3.0w:0xfffffffc(%exvr0.1d) #||
+.i14: jmp .NEXTPC0x0 #||
+.i15: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i16: addl $0x1,%exvr3.0w:0xfffffff4(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i17: jmp .i0 #||
+--
+live : exr0.0[0xffffffff], exr0.1[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x57df],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i1: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #||
+.i2: shrl $0x2,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.1d,%exvr0.2d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i5: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.3d #||
+.i6: movl %exvr0.1d,%exvr0.4d #||
+.i7: movl %exvr0.3d,%exvr0.5d #||
+.i8: cld  #%exvr4.0||
+.i9: movl $0x0,%exvr0.1d #||
+.i10: cmpl %exvr0.2d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i11: repz cmpsl  #%exvr3.2w:0x0(%exvr0.5d),%exvr3.1w:0x0(%exvr0.4d),%exvr0.2d,%exvr5.0,%exvr4.0||
+.i12: sete %exvr0.1b #,%exvr4.0||
+.i13: movl %exvr0.5d,%exvr0.3d #||
+.i14: movl %exvr0.4d,%exvr0.2d #||
+.i15: movl %exvr0.1d,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i16: movl %exvr0.2d,%exvr3.0w:0xfffffff0(%exvr0.0d) #||
+.i17: movl %exvr0.3d,%exvr3.0w:0xffffffec(%exvr0.0d) #||
+.i18: cmpl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i19: jne .i40 #,%exvr4.0||
+.i20: jmp .i21 #||
+.i21: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.3d #||
+.i22: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i23: subl %exvr0.1d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i24: movl %exvr0.3d,%exvr0.1d #||
+.i25: cmpl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i26: jb .i28 #,%exvr4.0||
+.i27: jmp .i40 #||
+.i28: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i29: movzbl %exvr3.1w:0x0(%exvr0.1d),%exvr0.3d #||
+.i30: movl %exvr3.0w:0xffffffec(%exvr0.0d),%exvr0.1d #||
+.i31: movzbl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i32: cmpb %exvr0.1b,%exvr0.3b #,%exvr5.0,%exvr4.0||
+.i33: je .i35 #,%exvr4.0||
+.i34: jmp .i38 #||
+.i35: addl $0x1,%exvr3.0w:0xfffffff0(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i36: addl $0x1,%exvr3.0w:0xffffffec(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i37: jmp .i21 #||
+.i38: movl $0x0,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i39: jmp .i40 #||
+.i40: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.1d #||
+.i41: jmp .NEXTPC0x0 #||
+== array_cmpb_noiter
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i2: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.0d,%exvr0.2d #||
+.i4: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i5: jb .i7 #,%exvr4.0||
+.i6: jmp .NEXTPC0x0 #||
+.i7: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.2d #||
+.i8: movzbl %exvr3.1w:0x0(%exvr0.2d),%exvr0.0d #||
+.i9: movl %exvr3.0w:0xfffffff0(%exvr0.1d),%exvr0.2d #||
+.i10: movzbl %exvr3.1w:0x0(%exvr0.2d),%exvr0.2d #||
+.i11: cmpb %exvr0.2b,%exvr0.0b #,%exvr5.0,%exvr4.0||
+.i12: je .i15 #,%exvr4.0||
+.i13: movl $0x0,%exvr3.0w:0xfffffff8(%exvr0.1d) #||
+.i14: jmp .NEXTPC0x0 #||
+.i15: addl $0x1,%exvr3.0w:0xfffffff4(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i16: addl $0x1,%exvr3.0w:0xfffffff0(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i17: jmp .i0 #||
+--
+live : exr0.0[0xffffffff], exr0.1[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x5781],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x1,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i1: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #||
+.i2: shrl $0x2,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.1d,%exvr0.2d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i5: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.3d #||
+.i6: movl %exvr0.1d,%exvr0.4d #||
+.i7: movl %exvr0.3d,%exvr0.5d #||
+.i8: cld  #%exvr4.0||
+.i9: movl $0x0,%exvr0.1d #||
+.i10: cmpl %exvr0.2d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i11: repz cmpsl  #%exvr3.2w:0x0(%exvr0.5d),%exvr3.1w:0x0(%exvr0.4d),%exvr0.2d,%exvr5.0,%exvr4.0||
+.i12: sete %exvr0.1b #,%exvr4.0||
+.i13: movl %exvr0.5d,%exvr0.3d #||
+.i14: movl %exvr0.4d,%exvr0.2d #||
+.i15: movl %exvr0.1d,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i16: movl %exvr0.2d,%exvr3.0w:0xfffffff0(%exvr0.0d) #||
+.i17: movl %exvr0.3d,%exvr3.0w:0xffffffec(%exvr0.0d) #||
+.i18: cmpl $0x1,%exvr3.0w:0xfffffff8(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i19: jne .i40 #,%exvr4.0||
+.i20: jmp .i21 #||
+.i21: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.3d #||
+.i22: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i23: subl %exvr0.1d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i24: movl %exvr0.3d,%exvr0.1d #||
+.i25: cmpl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i26: jb .i28 #,%exvr4.0||
+.i27: jmp .i40 #||
+.i28: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i29: movzbl %exvr3.1w:0x0(%exvr0.1d),%exvr0.3d #||
+.i30: movl %exvr3.0w:0xffffffec(%exvr0.0d),%exvr0.1d #||
+.i31: movzbl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i32: cmpb %exvr0.1b,%exvr0.3b #,%exvr5.0,%exvr4.0||
+.i33: je .i35 #,%exvr4.0||
+.i34: jmp .i38 #||
+.i35: addl $0x1,%exvr3.0w:0xfffffff0(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i36: addl $0x1,%exvr3.0w:0xffffffec(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i37: jmp .i21 #||
+.i38: movl $0x0,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i39: jmp .i40 #||
+.i40: movl %exvr3.0w:0xfffffff8(%exvr0.0d),%exvr0.1d #||
+.i41: jmp .NEXTPC0x0 #||
+== array_cmpb
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jb .i4 #,%exvr4.0||
+.i3: jmp .NEXTPC0x0 #||
+.i4: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i5: leal %exvr3.1w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.2d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i7: addl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i8: movzwl %exvr3.1w:0x0(%exvr0.0d),%exvr0.2d #||
+.i9: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i10: leal %exvr3.1w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.3d #||
+.i11: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i12: addl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i13: movzwl %exvr3.1w:0x0(%exvr0.0d),%exvr0.0d #||
+.i14: cmpw %exvr0.0w,%exvr0.2w #,%exvr5.0,%exvr4.0||
+.i15: je .i18 #,%exvr4.0||
+.i16: movl $0x0,%exvr3.0w:0xfffffffc(%exvr0.1d) #||
+.i17: jmp .NEXTPC0x0 #||
+.i18: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i19: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x455],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i1: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #||
+.i2: shrl $0x1,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.1d,%exvr0.2d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i5: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.3d #||
+.i6: movl %exvr0.1d,%exvr0.4d #||
+.i7: movl %exvr0.3d,%exvr0.5d #||
+.i8: cld  #%exvr4.0||
+.i9: movl $0x0,%exvr0.1d #||
+.i10: cmpl %exvr0.2d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i11: repz cmpsl  #%exvr3.2w:0x0(%exvr0.5d),%exvr3.1w:0x0(%exvr0.4d),%exvr0.2d,%exvr5.0,%exvr4.0||
+.i12: sete %exvr0.1b #,%exvr4.0||
+.i13: movl %exvr0.1d,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i14: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #||
+.i15: andl $0xfffffffe,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i16: movl %exvr0.1d,%exvr3.0w:0xfffffff0(%exvr0.0d) #||
+.i17: cmpl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i18: jne .i41 #,%exvr4.0||
+.i19: jmp .i20 #||
+.i20: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i21: cmpl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i22: jb .i24 #,%exvr4.0||
+.i23: jmp .i41 #||
+.i24: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i25: leal %exvr3.1w:0x0(%exvr0.1d,%exvr0.1d,1),%exvr0.3d #||
+.i26: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i27: addl %exvr0.3d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i28: movzwl %exvr3.1w:0x0(%exvr0.1d),%exvr0.3d #||
+.i29: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i30: leal %exvr3.1w:0x0(%exvr0.1d,%exvr0.1d,1),%exvr0.2d #||
+.i31: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.1d #||
+.i32: addl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i33: movzwl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i34: cmpw %exvr0.1w,%exvr0.3w #,%exvr5.0,%exvr4.0||
+.i35: je .i37 #,%exvr4.0||
+.i36: jmp .i39 #||
+.i37: addl $0x1,%exvr3.0w:0xfffffff0(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i38: jmp .i20 #||
+.i39: movl $0x0,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i40: jmp .i41 #||
+.i41: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.1d #||
+.i42: jmp .NEXTPC0x0 #||
+== array_cmpw_noiter
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jb .i4 #,%exvr4.0||
+.i3: jmp .NEXTPC0x0 #||
+.i4: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.0d #||
+.i5: leal %exvr3.1w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.2d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i7: addl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i8: movzwl %exvr3.1w:0x0(%exvr0.0d),%exvr0.2d #||
+.i9: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.0d #||
+.i10: leal %exvr3.1w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.3d #||
+.i11: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i12: addl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i13: movzwl %exvr3.1w:0x0(%exvr0.0d),%exvr0.0d #||
+.i14: cmpw %exvr0.0w,%exvr0.2w #,%exvr5.0,%exvr4.0||
+.i15: je .i18 #,%exvr4.0||
+.i16: movl $0x0,%exvr3.0w:0xfffffff8(%exvr0.1d) #||
+.i17: jmp .NEXTPC0x0 #||
+.i18: addl $0x1,%exvr3.0w:0xfffffff4(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i19: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x401],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x1,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i1: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #||
+.i2: shrl $0x1,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.1d,%exvr0.2d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i5: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.3d #||
+.i6: movl %exvr0.1d,%exvr0.4d #||
+.i7: movl %exvr0.3d,%exvr0.5d #||
+.i8: cld  #%exvr4.0||
+.i9: movl $0x0,%exvr0.1d #||
+.i10: cmpl %exvr0.2d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i11: repz cmpsl  #%exvr3.2w:0x0(%exvr0.5d),%exvr3.1w:0x0(%exvr0.4d),%exvr0.2d,%exvr5.0,%exvr4.0||
+.i12: sete %exvr0.1b #,%exvr4.0||
+.i13: movl %exvr0.1d,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i14: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #||
+.i15: andl $0xfffffffe,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i16: movl %exvr0.1d,%exvr3.0w:0xfffffff0(%exvr0.0d) #||
+.i17: cmpl $0x1,%exvr3.0w:0xfffffff8(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i18: jne .i41 #,%exvr4.0||
+.i19: jmp .i20 #||
+.i20: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i21: cmpl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i22: jb .i24 #,%exvr4.0||
+.i23: jmp .i41 #||
+.i24: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i25: leal %exvr3.1w:0x0(%exvr0.1d,%exvr0.1d,1),%exvr0.3d #||
+.i26: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i27: addl %exvr0.3d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i28: movzwl %exvr3.1w:0x0(%exvr0.1d),%exvr0.3d #||
+.i29: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i30: leal %exvr3.1w:0x0(%exvr0.1d,%exvr0.1d,1),%exvr0.2d #||
+.i31: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.1d #||
+.i32: addl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i33: movzwl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i34: cmpw %exvr0.1w,%exvr0.3w #,%exvr5.0,%exvr4.0||
+.i35: je .i37 #,%exvr4.0||
+.i36: jmp .i39 #||
+.i37: addl $0x1,%exvr3.0w:0xfffffff0(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i38: jmp .i20 #||
+.i39: movl $0x0,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i40: jmp .i41 #||
+.i41: movl %exvr3.0w:0xfffffff8(%exvr0.0d),%exvr0.1d #||
+.i42: jmp .NEXTPC0x0 #||
+== 1 0 array_cmpw:small.gcc48.O0.i.8049bbe.20 # NEXTPC0x0 array_cmpw, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jb .i4 #,%exvr4.0||
+.i3: jmp .NEXTPC0x0 #||
+.i4: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i5: leal %exvr3.1w:0x0(,%exvr0.0d,4),%exvr0.2d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i7: addl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i8: movl %exvr3.1w:0x0(%exvr0.0d),%exvr0.2d #||
+.i9: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i10: leal %exvr3.1w:0x0(,%exvr0.0d,4),%exvr0.3d #||
+.i11: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i12: addl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i13: movl %exvr3.1w:0x0(%exvr0.0d),%exvr0.0d #||
+.i14: cmpl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i15: je .i18 #,%exvr4.0||
+.i16: movl $0x0,%exvr3.0w:0xfffffffc(%exvr0.1d) #||
+.i17: jmp .NEXTPC0x0 #||
+.i18: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i19: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x80000455],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr0.3 : exvr0.3
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i1: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i2: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.2d #||
+.i3: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.3d #||
+.i4: movl %exvr0.1d,%exvr0.4d #||
+.i5: movl %exvr0.2d,%exvr0.5d #||
+.i6: cld  #%exvr4.0||
+.i7: movl $0x0,%exvr0.1d #||
+.i8: cmpl %exvr0.3d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i9: repz cmpsl  #%exvr3.2w:0x0(%exvr0.5d),%exvr3.1w:0x0(%exvr0.4d),%exvr0.3d,%exvr5.0,%exvr4.0||
+.i10: sete %exvr0.1b #,%exvr4.0||
+.i11: movl %exvr0.1d,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i12: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.1d #||
+.i13: jmp .NEXTPC0x0 #||
+== 1 0 array_cmpl_noiter:small.gcc48.O0.i.8049efd.20 # NEXTPC0x0 array_cmpl_noiter, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jb .i4 #,%exvr4.0||
+.i3: jmp .NEXTPC0x0 #||
+.i4: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.0d #||
+.i5: leal %exvr3.1w:0x0(,%exvr0.0d,4),%exvr0.2d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i7: addl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i8: movl %exvr3.1w:0x0(%exvr0.0d),%exvr0.2d #||
+.i9: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.0d #||
+.i10: leal %exvr3.1w:0x0(,%exvr0.0d,4),%exvr0.3d #||
+.i11: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i12: addl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i13: movl %exvr3.1w:0x0(%exvr0.0d),%exvr0.0d #||
+.i14: cmpl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i15: je .i18 #,%exvr4.0||
+.i16: movl $0x0,%exvr3.0w:0xfffffff8(%exvr0.1d) #||
+.i17: jmp .NEXTPC0x0 #||
+.i18: addl $0x1,%exvr3.0w:0xfffffff4(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i19: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x80000401],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr0.3 : exvr0.3
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x1,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i1: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i2: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.2d #||
+.i3: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.3d #||
+.i4: movl %exvr0.1d,%exvr0.4d #||
+.i5: movl %exvr0.2d,%exvr0.5d #||
+.i6: cld  #%exvr4.0||
+.i7: movl $0x0,%exvr0.1d #||
+.i8: cmpl %exvr0.3d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i9: repz cmpsl  #%exvr3.2w:0x0(%exvr0.5d),%exvr3.1w:0x0(%exvr0.4d),%exvr0.3d,%exvr5.0,%exvr4.0||
+.i10: sete %exvr0.1b #,%exvr4.0||
+.i11: movl %exvr0.1d,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i12: movl %exvr3.0w:0xfffffff8(%exvr0.0d),%exvr0.1d #||
+.i13: jmp .NEXTPC0x0 #||
+== 1 0 array_cmpl:small.gcc48.O0.i.8049f5c.20 # NEXTPC0x0 array_cmpl, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i2: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.0d,%exvr0.2d #||
+.i4: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i5: jb .i7 #,%exvr4.0||
+.i6: jmp .NEXTPC0x0 #||
+.i7: movzbl %exvr3.0w:0xffffffec(%exvr0.1d),%exvr0.0d #||
+.i8: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.2d #||
+.i9: movb %exvr0.0b,%exvr3.1w:0x0(%exvr0.2d) #||
+.i10: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i11: jmp .i0 #||
+--
+live : exr0.0[0xffffffff], exr0.1[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x57d5],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i1: movb %exvr0.0b,%exvr3.0w:0xffffffe8(%exvr0.1d) #||
+.i2: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i3: shrl $0x2,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i4: movl %exvr0.0d,%exvr0.2d #||
+.i5: movzbl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i6: shll $0x18,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i7: movl %exvr0.0d,%exvr0.3d #||
+.i8: movzbl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i9: shll $0x10,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i10: orl %exvr0.0d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i11: movzbl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i12: shll $0x8,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i13: orl %exvr0.0d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i14: movzbl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i15: orl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i16: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.3d #||
+.i17: movl %exvr0.3d,%exvr0.4d #||
+.i18: cld  #%exvr4.0||
+.i19: repz stosl  #%exvr0.0d,%exvr3.1w:0x0(%exvr0.4d),%exvr0.2d,%exvr4.0||
+.i20: movl %exvr0.4d,%exvr0.0d #||
+.i21: movl %exvr0.0d,%exvr3.0w:0xfffffff8(%exvr0.1d) #||
+.i22: jmp .i23 #||
+.i23: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.3d #||
+.i24: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i25: subl %exvr0.0d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i26: movl %exvr0.3d,%exvr0.0d #||
+.i27: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i28: jb .i30 #,%exvr4.0||
+.i29: jmp .NEXTPC0x0 #||
+.i30: movzbl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.3d #||
+.i31: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i32: movb %exvr0.3b,%exvr3.2w:0x0(%exvr0.0d) #||
+.i33: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i34: jmp .i23 #||
+== 1 0 array_setb_noiter:small.gcc48.O0.i.804a019.10 # NEXTPC0x0 array_setb_noiter, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i2: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.0d,%exvr0.2d #||
+.i4: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i5: jb .i7 #,%exvr4.0||
+.i6: jmp .NEXTPC0x0 #||
+.i7: movzbl %exvr3.0w:0xffffffec(%exvr0.1d),%exvr0.0d #||
+.i8: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.2d #||
+.i9: movb %exvr0.0b,%exvr3.1w:0x0(%exvr0.2d) #||
+.i10: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i11: jmp .i0 #||
+--
+live : exr0.0[0xffffffff], exr0.1[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x5781],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i1: movb %exvr0.0b,%exvr3.0w:0xffffffe8(%exvr0.1d) #||
+.i2: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i3: shrl $0x2,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i4: movl %exvr0.0d,%exvr0.2d #||
+.i5: movzbl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i6: shll $0x18,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i7: movl %exvr0.0d,%exvr0.3d #||
+.i8: movzbl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i9: shll $0x10,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i10: orl %exvr0.0d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i11: movzbl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i12: shll $0x8,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i13: orl %exvr0.0d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i14: movzbl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i15: orl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i16: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.3d #||
+.i17: movl %exvr0.3d,%exvr0.4d #||
+.i18: cld  #%exvr4.0||
+.i19: repz stosl  #%exvr0.0d,%exvr3.1w:0x0(%exvr0.4d),%exvr0.2d,%exvr4.0||
+.i20: movl %exvr0.4d,%exvr0.0d #||
+.i21: movl %exvr0.0d,%exvr3.0w:0xfffffff8(%exvr0.1d) #||
+.i22: jmp .i23 #||
+.i23: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.3d #||
+.i24: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i25: subl %exvr0.0d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i26: movl %exvr0.3d,%exvr0.0d #||
+.i27: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i28: jb .i30 #,%exvr4.0||
+.i29: jmp .NEXTPC0x0 #||
+.i30: movzbl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.3d #||
+.i31: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i32: movb %exvr0.3b,%exvr3.2w:0x0(%exvr0.0d) #||
+.i33: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i34: jmp .i23 #||
+== 1 0 array_setb:small.gcc48.O0.i.804a059.10 # NEXTPC0x0 array_setb, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jb .i4 #,%exvr4.0||
+.i3: jmp .NEXTPC0x0 #||
+.i4: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i5: leal %exvr3.1w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.2d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i7: addl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i8: movzwl %exvr3.0w:0xffffffec(%exvr0.1d),%exvr0.0d #||
+.i9: movw %exvr0.0w,%exvr3.1w:0x0(%exvr0.2d) #||
+.i10: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i11: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x455],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i1: movw %exvr0.0w,%exvr3.0w:0xffffffe8(%exvr0.1d) #||
+.i2: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i3: shrl $0x1,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i4: movl %exvr0.0d,%exvr0.2d #||
+.i5: movzwl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i6: shll $0x10,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i7: movl %exvr0.0d,%exvr0.3d #||
+.i8: movzwl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i9: orl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i10: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.3d #||
+.i11: movl %exvr0.3d,%exvr0.4d #||
+.i12: cld  #%exvr4.0||
+.i13: repz stosl  #%exvr0.0d,%exvr3.1w:0x0(%exvr0.4d),%exvr0.2d,%exvr4.0||
+.i14: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i15: andl $0xfffffffe,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i16: movl %exvr0.0d,%exvr3.0w:0xfffffff8(%exvr0.1d) #||
+.i17: jmp .i18 #||
+.i18: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i19: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i20: jb .i22 #,%exvr4.0||
+.i21: jmp .NEXTPC0x0 #||
+.i22: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i23: leal %exvr3.2w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.3d #||
+.i24: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i25: addl %exvr0.0d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i26: movzwl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i27: movw %exvr0.0w,%exvr3.2w:0x0(%exvr0.3d) #||
+.i28: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i29: jmp .i18 #||
+== 1 0 array_setw_noiter:small.gcc48.O0.i.804a5e1.10 # NEXTPC0x0 array_setw_noiter, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jb .i4 #,%exvr4.0||
+.i3: jmp .NEXTPC0x0 #||
+.i4: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i5: leal %exvr3.1w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.2d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i7: addl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i8: movzwl %exvr3.0w:0xffffffec(%exvr0.1d),%exvr0.0d #||
+.i9: movw %exvr0.0w,%exvr3.1w:0x0(%exvr0.2d) #||
+.i10: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i11: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x401],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i1: movw %exvr0.0w,%exvr3.0w:0xffffffe8(%exvr0.1d) #||
+.i2: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i3: shrl $0x1,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i4: movl %exvr0.0d,%exvr0.2d #||
+.i5: movzwl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i6: shll $0x10,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i7: movl %exvr0.0d,%exvr0.3d #||
+.i8: movzwl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i9: orl %exvr0.3d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i10: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.3d #||
+.i11: movl %exvr0.3d,%exvr0.4d #||
+.i12: cld  #%exvr4.0||
+.i13: repz stosl  #%exvr0.0d,%exvr3.1w:0x0(%exvr0.4d),%exvr0.2d,%exvr4.0||
+.i14: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i15: andl $0xfffffffe,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i16: movl %exvr0.0d,%exvr3.0w:0xfffffff8(%exvr0.1d) #||
+.i17: jmp .i18 #||
+.i18: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i19: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i20: jb .i22 #,%exvr4.0||
+.i21: jmp .NEXTPC0x0 #||
+.i22: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i23: leal %exvr3.2w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.3d #||
+.i24: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i25: addl %exvr0.0d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i26: movzwl %exvr3.0w:0xffffffe8(%exvr0.1d),%exvr0.0d #||
+.i27: movw %exvr0.0w,%exvr3.2w:0x0(%exvr0.3d) #||
+.i28: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i29: jmp .i18 #||
+== 1 0 array_setw:small.gcc48.O0.i.804a625.10 # NEXTPC0x0 array_setw, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jb .i4 #,%exvr4.0||
+.i3: jmp .NEXTPC0x0 #||
+.i4: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i5: leal %exvr3.1w:0x0(,%exvr0.0d,4),%exvr0.2d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i7: addl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i8: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i9: movl %exvr0.0d,%exvr3.1w:0x0(%exvr0.2d) #||
+.i10: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i11: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x455],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.2d #||
+.i2: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.3d #||
+.i3: cld  #%exvr4.0||
+.i4: repz stosl  #%exvr0.2d,%exvr3.1w:0x0(%exvr0.3d),%exvr0.0d,%exvr4.0||
+.i5: jmp .NEXTPC0x0 #||
+== 1 0 array_setl_noiter:small.gcc48.O0.i.804a8d0.10 # NEXTPC0x0 array_setl_noiter, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jb .i4 #,%exvr4.0||
+.i3: jmp .NEXTPC0x0 #||
+.i4: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i5: leal %exvr3.1w:0x0(,%exvr0.0d,4),%exvr0.2d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i7: addl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i8: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i9: movl %exvr0.0d,%exvr3.1w:0x0(%exvr0.2d) #||
+.i10: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i11: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x401],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.2d #||
+.i2: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.3d #||
+.i3: cld  #%exvr4.0||
+.i4: repz stosl  #%exvr0.2d,%exvr3.1w:0x0(%exvr0.3d),%exvr0.0d,%exvr4.0||
+.i5: jmp .NEXTPC0x0 #||
+== 1 0 array_setl:small.gcc48.O0.i.804a90f.10 # NEXTPC0x0 array_setl, ==
+
+ENTRY:
+.i0: movb $0x0,%exvr3.0w:0xfffffffb(%exvr0.0d) #||
+.i1: movl $0x0,%exvr3.0w:0xfffffff4(%exvr0.0d) #||
+.i2: jmp .i3 #||
+.i3: cmpl $0x1f,%exvr3.0w:0xfffffff4(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i4: jbe .i6 #,%exvr4.0||
+.i5: jmp .NEXTPC0x0 #||
+.i6: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i7: leal %exvr3.1w:0x0(,%exvr0.1d,4),%exvr0.2d #||
+.i8: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i9: addl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i10: movl %exvr3.1w:0x0(%exvr0.1d),%exvr0.2d #||
+.i11: movl %exvr3.0w:0xfffffff4(%exvr0.0d),%exvr0.1d #||
+.i12: movl %exvr0.1d,%exvr0.3d #||
+.i13: shrl %exvr0.3b,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i14: movl %exvr0.2d,%exvr0.1d #||
+.i15: andl $0x1,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i16: testl %exvr0.1d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i17: je .i21 #,%exvr4.0||
+.i18: movzbl %exvr3.0w:0xfffffffb(%exvr0.0d),%exvr0.1d #||
+.i19: addl $0x1,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i20: movb %exvr0.1b,%exvr3.0w:0xfffffffb(%exvr0.0d) #||
+.i21: addl $0x1,%exvr3.0w:0xfffffff4(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i22: jmp .i3 #||
+--
+live : exr0.0[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0xed108401],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i1: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.2d #||
+.i2: popcntl %exvr3.0w:(%exvr0.2d,%exvr0.1d,4),%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i3: movb %exvr0.1b,%exvr3.0w:0xfffffffb(%exvr0.0d) #||
+.i4: jmp .NEXTPC0x0 #||
+== 1 0 count_ones32_noiter:small.gcc48.O0.i.804af89.10 # NEXTPC0x0 count_ones32_noiter, ==
+
+ENTRY:
+.i0: movb $0x0,%exvr3.0w:0xfffffff7(%exvr0.0d) #||
+.i1: movl $0x0,%exvr3.0w:0xfffffff0(%exvr0.0d) #||
+.i2: jmp .i3 #||
+.i3: cmpl $0x1f,%exvr3.0w:0xfffffff0(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i4: jbe .i6 #,%exvr4.0||
+.i5: jmp .NEXTPC0x0 #||
+.i6: movl %exvr3.0w:0xffffffec(%exvr0.0d),%exvr0.1d #||
+.i7: leal %exvr3.1w:0x0(,%exvr0.1d,4),%exvr0.2d #||
+.i8: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i9: addl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i10: movl %exvr3.1w:0x0(%exvr0.1d),%exvr0.2d #||
+.i11: movl %exvr3.0w:0xfffffff0(%exvr0.0d),%exvr0.1d #||
+.i12: movl %exvr0.1d,%exvr0.3d #||
+.i13: shrl %exvr0.3b,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i14: movl %exvr0.2d,%exvr0.1d #||
+.i15: andl $0x1,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i16: testl %exvr0.1d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i17: je .i21 #,%exvr4.0||
+.i18: movzbl %exvr3.0w:0xfffffff7(%exvr0.0d),%exvr0.1d #||
+.i19: addl $0x1,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i20: movb %exvr0.1b,%exvr3.0w:0xfffffff7(%exvr0.0d) #||
+.i21: addl $0x1,%exvr3.0w:0xfffffff0(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i22: jmp .i3 #||
+--
+live : exr0.0[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0xed108401],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr0.3 : exvr0.3
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0xffffffec(%exvr0.0d),%exvr0.1d #||
+.i1: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.2d #||
+.i2: popcntl %exvr3.0w:(%exvr0.2d,%exvr0.1d,4),%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i3: movb %exvr0.1b,%exvr3.0w:0xfffffff7(%exvr0.0d) #||
+.i4: jmp .NEXTPC0x0 #||
+== 1 0 count_ones32:small.gcc48.O0.i.804b009.10 # NEXTPC0x0 count_ones32, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i2: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.0d,%exvr0.2d #||
+.i4: cmpl %exvr3.0w:0xc(%exvr0.1d),%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i5: jae .i13 #,%exvr4.0||
+.i6: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.2d #||
+.i7: movzbl %exvr3.1w:0x0(%exvr0.2d),%exvr0.2d #||
+.i8: cmpb %exvr3.0w:0xffffffec(%exvr0.1d),%exvr0.2b #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .i13 #||
+.i11: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+.i13: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i14: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i15: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i16: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff], exr0.1[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x57d5],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i1: movb %exvr0.0b,%exvr3.0w:0xffffffe4(%exvr0.1d) #||
+.i2: movl $0x0,%exvr3.0w:0xfffffff4(%exvr0.1d) #||
+.i3: cld  #%exvr4.0||
+.i4: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.2d #||
+.i5: movzbl %exvr3.0w:0xffffffe4(%exvr0.1d),%exvr0.0d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.3d #||
+.i7: movl %exvr0.3d,%exvr0.4d #||
+.i8: movl %exvr0.2d,%exvr0.5d #||
+.i9: cmpl $0x1,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i10: repnz scasb  #%exvr3.1w:0x0(%exvr0.4d),%exvr0.0b,%exvr0.5d,%exvr5.0,%exvr4.0||
+.i11: sete %exvr0.6b #,%exvr4.0||
+.i12: movzbl %exvr0.6b,%exvr0.6d #||
+.i13: subl %exvr0.6d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i14: subl %exvr0.5d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i15: movl %exvr0.2d,%exvr0.0d #||
+.i16: jmp .NEXTPC0x0 #||
+== 1 0 array_findb_noiter:small.gcc48.O0.i.804a9a7.14 # NEXTPC0x0 array_findb_noiter, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i2: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.0d,%exvr0.2d #||
+.i4: cmpl %exvr3.0w:0xc(%exvr0.1d),%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i5: jae .i13 #,%exvr4.0||
+.i6: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.2d #||
+.i7: movzbl %exvr3.1w:0x0(%exvr0.2d),%exvr0.2d #||
+.i8: cmpb %exvr3.0w:0xffffffec(%exvr0.1d),%exvr0.2b #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .i13 #||
+.i11: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+.i13: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i14: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i15: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i16: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff], exr0.1[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x5781],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i1: movb %exvr0.0b,%exvr3.0w:0xffffffe4(%exvr0.1d) #||
+.i3: cld  #%exvr4.0||
+.i4: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.2d #||
+.i5: movzbl %exvr3.0w:0xffffffe4(%exvr0.1d),%exvr0.0d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.3d #||
+.i7: movl %exvr0.3d,%exvr0.4d #||
+.i8: movl %exvr0.2d,%exvr0.5d #||
+.i9: cmpl $0x1,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i10: repnz scasb  #%exvr3.1w:0x0(%exvr0.4d),%exvr0.0b,%exvr0.5d,%exvr5.0,%exvr4.0||
+.i11: sete %exvr0.6b #,%exvr4.0||
+.i12: movzbl %exvr0.6b,%exvr0.6d #||
+.i13: subl %exvr0.6d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i14: subl %exvr0.5d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i15: movl %exvr0.2d,%exvr0.0d #||
+.i16: jmp .NEXTPC0x0 #||
+== 1 0 array_findb:small.gcc48.O0.i.804a9ee.11 # NEXTPC0x0 array_findb, ==
+
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jae .NEXTPC0x0 #,%exvr4.0||
+.i3: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i4: leal %exvr3.1w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.2d #||
+.i5: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i6: addl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i7: movzwl %exvr3.1w:0x0(%exvr0.0d),%exvr0.0d #||
+.i8: cmpw %exvr3.0w:0xffffffec(%exvr0.1d),%exvr0.0w #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .NEXTPC0x0 #||
+.i11: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x455],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i1: movw %exvr0.0w,%exvr3.0w:0xffffffe4(%exvr0.1d) #||
+.i2: movl $0x0,%exvr3.0w:0xfffffff4(%exvr0.1d) #||
+.i3: cld  #%exvr4.0||
+.i4: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.2d #||
+.i5: movzwl %exvr3.0w:0xffffffe4(%exvr0.1d),%exvr0.0d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.3d #||
+.i7: movl %exvr0.3d,%exvr0.4d #||
+.i8: movl %exvr0.2d,%exvr0.5d #||
+.i9: cmpl $0x1,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i10: repnz scasw  #%exvr3.1w:0x0(%exvr0.4d),%exvr0.0w,%exvr0.5d,%exvr5.0,%exvr4.0||
+.i11: sete %exvr0.6b #,%exvr4.0||
+.i12: movzbl %exvr0.6b,%exvr0.6d #||
+.i13: subl %exvr0.6d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i14: subl %exvr0.5d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i15: movl %exvr0.2d,%exvr0.0d #||
+.i16: movl %exvr0.0d,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i17: jmp .NEXTPC0x0 #||
+== 1 0 array_findw_noiter:small.gcc48.O0.i.804aad5.11 # NEXTPC0x0 array_findw_noiter, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jae .NEXTPC0x0 #,%exvr4.0||
+.i3: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i4: leal %exvr3.1w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.2d #||
+.i5: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i6: addl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i7: movzwl %exvr3.1w:0x0(%exvr0.0d),%exvr0.0d #||
+.i8: cmpw %exvr3.0w:0xffffffec(%exvr0.1d),%exvr0.0w #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .NEXTPC0x0 #||
+.i11: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x401],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i1: movw %exvr0.0w,%exvr3.0w:0xffffffe4(%exvr0.1d) #||
+.i2: movl $0x0,%exvr3.0w:0xfffffff4(%exvr0.1d) #||
+.i3: cld  #%exvr4.0||
+.i4: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.2d #||
+.i5: movzwl %exvr3.0w:0xffffffe4(%exvr0.1d),%exvr0.0d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.3d #||
+.i7: movl %exvr0.3d,%exvr0.4d #||
+.i8: movl %exvr0.2d,%exvr0.5d #||
+.i9: cmpl $0x1,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i10: repnz scasw  #%exvr3.1w:0x0(%exvr0.4d),%exvr0.0w,%exvr0.5d,%exvr5.0,%exvr4.0||
+.i11: sete %exvr0.6b #,%exvr4.0||
+.i12: movzbl %exvr0.6b,%exvr0.6d #||
+.i13: subl %exvr0.6d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i14: subl %exvr0.5d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i15: movl %exvr0.2d,%exvr0.0d #||
+.i16: movl %exvr0.0d,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i17: jmp .NEXTPC0x0 #||
+== 1 0 array_findw:small.gcc48.O0.i.804ab19.11 # NEXTPC0x0 array_findw, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jae .NEXTPC0x0 #,%exvr4.0||
+.i3: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i4: leal %exvr3.1w:0x0(,%exvr0.0d,4),%exvr0.2d #||
+.i5: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i6: addl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i7: movl %exvr3.1w:0x0(%exvr0.0d),%exvr0.0d #||
+.i8: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .NEXTPC0x0 #||
+.i11: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x455],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x0,%exvr3.0w:0xfffffff4(%exvr0.0d) #||
+.i1: cld  #%exvr4.0||
+.i2: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.1d #||
+.i3: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.2d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.3d #||
+.i5: movl %exvr0.3d,%exvr0.4d #||
+.i6: movl %exvr0.1d,%exvr0.5d #||
+.i7: cmpl $0x1,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i8: repnz scasl  #%exvr3.1w:0x0(%exvr0.4d),%exvr0.2d,%exvr0.5d,%exvr5.0,%exvr4.0||
+.i9: sete %exvr0.6b #,%exvr4.0||
+.i10: movzbl %exvr0.6b,%exvr0.6d #||
+.i11: subl %exvr0.6d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i12: subl %exvr0.5d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i13: movl %exvr0.1d,%exvr0.2d #||
+.i14: movl %exvr0.2d,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i15: jmp .NEXTPC0x0 #||
+== 1 0 array_findl_noiter:small.gcc48.O0.i.804abf8.11 # NEXTPC0x0 array_findl_noiter, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i1: cmpl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i2: jae .NEXTPC0x0 #,%exvr4.0||
+.i3: movl %exvr3.0w:0xfffffff8(%exvr0.1d),%exvr0.0d #||
+.i4: leal %exvr3.1w:0x0(,%exvr0.0d,4),%exvr0.2d #||
+.i5: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i6: addl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i7: movl %exvr3.1w:0x0(%exvr0.0d),%exvr0.0d #||
+.i8: cmpl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .NEXTPC0x0 #||
+.i11: addl $0x1,%exvr3.0w:0xfffffff8(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x401],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x0,%exvr3.0w:0xfffffff4(%exvr0.0d) #||
+.i1: cld  #%exvr4.0||
+.i2: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.1d #||
+.i3: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.2d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.3d #||
+.i5: movl %exvr0.3d,%exvr0.4d #||
+.i6: movl %exvr0.1d,%exvr0.5d #||
+.i7: cmpl $0x1,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i8: repnz scasl  #%exvr3.1w:0x0(%exvr0.4d),%exvr0.2d,%exvr0.5d,%exvr5.0,%exvr4.0||
+.i9: sete %exvr0.6b #,%exvr4.0||
+.i10: movzbl %exvr0.6b,%exvr0.6d #||
+.i11: subl %exvr0.6d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i12: subl %exvr0.5d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i13: movl %exvr0.1d,%exvr0.2d #||
+.i14: movl %exvr0.2d,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i15: jmp .NEXTPC0x0 #||
+== 1 0 array_findl:small.gcc48.O0.i.804ac37.11 # NEXTPC0x0 array_findl, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i2: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.0d,%exvr0.2d #||
+.i4: cmpl $0xffffffff,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i5: je .i13 #,%exvr4.0||
+.i6: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.2d #||
+.i7: movzbl %exvr3.1w:0x0(%exvr0.2d),%exvr0.2d #||
+.i8: testb %exvr0.2b,%exvr0.2b #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .i13 #||
+.i11: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+.i13: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i14: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i15: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i16: movl %exvr0.0d,%exvr0.2d #||
+.i17: cmpl $0xffffffff,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i18: jne .i21 #,%exvr4.0||
+.i19: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i20: jmp .i21 #||
+.i21: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i22: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i23: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i24: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff], exr0.1[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x57d5],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x0,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i1: cld  #%exvr4.0||
+.i2: movl $0xffffffff,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i3: movl %exvr3.0w:0xfffffff8(%exvr0.0d),%exvr0.1d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.2d #||
+.i5: movl %exvr0.2d,%exvr0.3d #||
+.i6: movl $0x0,%exvr0.4d #||
+.i7: repnz scasb  #%exvr3.1w:0x0(%exvr0.3d),%exvr0.4b,%exvr0.1d,%exvr5.0,%exvr4.0||
+.i8: negl %exvr0.1d #,%exvr5.0,%exvr4.0||
+.i9: subl $0x2,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i10: movl %exvr0.1d,%exvr0.2d #||
+.i11: jmp .NEXTPC0x0 #||
+== 1 0 my_strlen_noiter:small.gcc48.O0.i.804ad0b.21 # NEXTPC0x0 my_strlen_noiter, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i2: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i3: movl %exvr0.0d,%exvr0.2d #||
+.i4: cmpl $0xffffffff,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i5: je .i13 #,%exvr4.0||
+.i6: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.2d #||
+.i7: movzbl %exvr3.1w:0x0(%exvr0.2d),%exvr0.2d #||
+.i8: testb %exvr0.2b,%exvr0.2b #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .i13 #||
+.i11: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+.i13: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i14: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i15: subl %exvr0.2d,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i16: movl %exvr0.0d,%exvr0.2d #||
+.i17: cmpl $0xffffffff,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i18: jne .NEXTPC0x0 #,%exvr4.0||
+.i19: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i20: jmp .NEXTPC0x0 #||
+--
+live : exr0.1[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x5781],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x0,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i1: cld  #%exvr4.0||
+.i2: movl $0xffffffff,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i3: movl %exvr3.0w:0xfffffff8(%exvr0.0d),%exvr0.1d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.2d #||
+.i5: movl %exvr0.2d,%exvr0.3d #||
+.i6: movl $0x0,%exvr0.4d #||
+.i7: repnz scasb  #%exvr3.1w:0x0(%exvr0.3d),%exvr0.4b,%exvr0.1d,%exvr5.0,%exvr4.0||
+.i8: negl %exvr0.1d #,%exvr5.0,%exvr4.0||
+.i9: subl $0x2,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i10: movl %exvr0.1d,%exvr0.2d #||
+.i11: jmp .NEXTPC0x0 #||
+== 1 0 my_strlen:small.gcc48.O0.i.804ad64.18 # NEXTPC0x0 my_strlen, ==
+
+ENTRY:
+.i0: cmpl $0x0,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i1: je .i12 #,%exvr4.0||
+.i2: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.1d #||
+.i3: leal %exvr3.1w:0xffffffff(%exvr0.1d),%exvr0.2d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i5: addl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i6: movzbl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i7: cmpb %exvr3.0w:0xffffffec(%exvr0.0d),%exvr0.1b #,%exvr5.0,%exvr4.0||
+.i8: jne .i10 #,%exvr4.0||
+.i9: jmp .i12 #||
+.i10: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i11: jmp .i0 #||
+.i12: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i13: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x455],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i1: movb %exvr0.0b,%exvr3.0w:0xffffffe0(%exvr0.1d) #||
+.i2: movl $0x0,%exvr3.0w:0xfffffff0(%exvr0.1d) #||
+.i3: std  #%exvr4.0||
+.i4: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i5: leal %exvr3.1w:0xffffffff(%exvr0.0d),%exvr0.2d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i7: addl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i8: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.3d #||
+.i9: movzbl %exvr3.0w:0xffffffe0(%exvr0.1d),%exvr0.0d #||
+.i10: movl %exvr0.3d,%exvr0.4d #||
+.i11: movl %exvr0.2d,%exvr0.5d #||
+.i12: movl %exvr0.4d,%exvr0.3d #||
+.i13: cmpl $0x1,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i14: repnz scasb  #%exvr3.2w:0x0(%exvr0.5d),%exvr0.0b,%exvr0.3d,%exvr5.0,%exvr4.0||
+.i15: setne %exvr0.6b #,%exvr4.0||
+.i16: movzbl %exvr0.6b,%exvr0.6d #||
+.i17: subl %exvr0.6d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i18: movl %exvr0.3d,%exvr0.0d #||
+.i19: movl %exvr0.0d,%exvr3.0w:0xfffffffc(%exvr0.1d)#||
+.i20: jmp .NEXTPC0x0 #||
+== 1 0 array_rfindb_noiter:small.gcc48.O0.i.804885d.10 # NEXTPC0x0 array_rfindb_noiter, ==
+
+ENTRY:
+.i0: cmpl $0x0,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i1: je .i12 #,%exvr4.0||
+.i2: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.1d #||
+.i3: leal %exvr3.1w:0xffffffff(%exvr0.1d),%exvr0.2d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i5: addl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i6: movzbl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i7: cmpb %exvr3.0w:0xffffffec(%exvr0.0d),%exvr0.1b #,%exvr5.0,%exvr4.0||
+.i8: jne .i10 #,%exvr4.0||
+.i9: jmp .i12 #||
+.i10: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i11: jmp .i0 #||
+.i12: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i13: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x401],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i1: movb %exvr0.0b,%exvr3.0w:0xffffffe0(%exvr0.1d) #||
+.i2: movl $0x0,%exvr3.0w:0xfffffff0(%exvr0.1d) #||
+.i3: std  #%exvr4.0||
+.i4: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i5: leal %exvr3.1w:0xffffffff(%exvr0.0d),%exvr0.2d #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i7: addl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i8: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.3d #||
+.i9: movzbl %exvr3.0w:0xffffffe0(%exvr0.1d),%exvr0.0d #||
+.i10: movl %exvr0.3d,%exvr0.4d #||
+.i11: movl %exvr0.2d,%exvr0.5d #||
+.i12: movl %exvr0.4d,%exvr0.3d #||
+.i13: cmpl $0x1,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i14: repnz scasb  #%exvr3.2w:0x0(%exvr0.5d),%exvr0.0b,%exvr0.3d,%exvr5.0,%exvr4.0||
+.i15: setne %exvr0.6b #,%exvr4.0||
+.i16: movzbl %exvr0.6b,%exvr0.6d #||
+.i17: subl %exvr0.6d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i18: movl %exvr0.3d,%exvr0.0d #||
+.i19: movl %exvr0.0d,%exvr3.0w:0xfffffffc(%exvr0.1d)#||
+.i20: jmp .NEXTPC0x0 #||
+== 1 0 array_rfindb:small.gcc48.O0.i.804889f.10 # NEXTPC0x0 array_rfindb, ==
+
+ENTRY:
+.i0: cmpl $0x0,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i1: je .i13 #,%exvr4.0||
+.i2: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.1d #||
+.i3: addl $0x7fffffff,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i4: leal %exvr3.1w:0x0(%exvr0.1d,%exvr0.1d,1),%exvr0.2d #||
+.i5: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i6: addl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i7: movzwl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i8: cmpw %exvr3.0w:0xffffffec(%exvr0.0d),%exvr0.1w #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .i13 #||
+.i11: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+.i13: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i14: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x69008455],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i1: movw %exvr0.0w,%exvr3.0w:0xffffffe0(%exvr0.1d) #||
+.i2: movl $0x0,%exvr3.0w:0xfffffff0(%exvr0.1d) #||
+.i3: std  #%exvr4.0||
+.i4: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i5: addl $0x7fffffff,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i6: leal %exvr3.1w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.2d #||
+.i7: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i8: addl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i9: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.3d #||
+.i10: movzwl %exvr3.0w:0xffffffe0(%exvr0.1d),%exvr0.0d #||
+.i11: movl %exvr0.3d,%exvr0.4d #||
+.i12: movl %exvr0.2d,%exvr0.5d #||
+.i13: movl %exvr0.4d,%exvr0.3d #||
+.i14: cmpl $0x1,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i15: repnz scasw  #%exvr3.2w:0x0(%exvr0.5d),%exvr0.0w,%exvr0.3d,%exvr5.0,%exvr4.0||
+.i16: setne %exvr0.6b #,%exvr4.0||
+.i17: movzbl %exvr0.6b,%exvr0.6d #||
+.i18: subl %exvr0.6d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i19: movl %exvr0.3d,%exvr0.0d #||
+.i20: movl %exvr0.0d,%exvr3.0w:0xfffffffc(%exvr0.1d) #||
+.i21: jmp .NEXTPC0x0 #||
+== 1 0 array_rfindw_noiter:small.gcc48.O0.i.8048994.11 # NEXTPC0x0 array_rfindw_noiter, ==
+
+ENTRY:
+.i0: cmpl $0x0,%exvr3.0w:0xfffffff8(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i1: je .i13 #,%exvr4.0||
+.i2: movl %exvr3.0w:0xfffffff8(%exvr0.0d),%exvr0.1d #||
+.i3: addl $0x7fffffff,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i4: leal %exvr3.1w:0x0(%exvr0.1d,%exvr0.1d,1),%exvr0.2d #||
+.i5: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i6: addl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i7: movzwl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i8: cmpw %exvr3.0w:0xffffffec(%exvr0.0d),%exvr0.1w #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .i13 #||
+.i11: subl $0x1,%exvr3.0w:0xfffffff8(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+.i13: subl $0x1,%exvr3.0w:0xfffffff8(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i14: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x69008401],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0x10(%exvr0.1d),%exvr0.0d #||
+.i1: movw %exvr0.0w,%exvr3.0w:0xffffffe0(%exvr0.1d) #||
+.i2: movl $0x0,%exvr3.0w:0xfffffff0(%exvr0.1d) #||
+.i3: std  #%exvr4.0||
+.i4: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i5: addl $0x7fffffff,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i6: leal %exvr3.1w:0x0(%exvr0.0d,%exvr0.0d,1),%exvr0.2d #||
+.i7: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i8: addl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i9: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.3d #||
+.i10: movzwl %exvr3.0w:0xffffffe0(%exvr0.1d),%exvr0.0d #||
+.i11: movl %exvr0.3d,%exvr0.4d #||
+.i12: movl %exvr0.2d,%exvr0.5d #||
+.i13: movl %exvr0.4d,%exvr0.3d #||
+.i14: cmpl $0x1,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i15: repnz scasw  #%exvr3.2w:0x0(%exvr0.5d),%exvr0.0w,%exvr0.3d,%exvr5.0,%exvr4.0||
+.i16: setne %exvr0.6b #,%exvr4.0||
+.i17: movzbl %exvr0.6b,%exvr0.6d #||
+.i18: subl %exvr0.6d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i19: movl %exvr0.3d,%exvr0.0d #||
+.i20: movl %exvr0.0d,%exvr3.0w:0xfffffff8(%exvr0.1d) #||
+.i21: jmp .NEXTPC0x0 #||
+== 1 0 array_rfindw:small.gcc48.O0.i.80489dd.11 # NEXTPC0x0 array_rfindw, ==
+
+ENTRY:
+.i0: cmpl $0x0,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i1: je .i13 #,%exvr4.0||
+.i2: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.1d #||
+.i3: addl $0x3fffffff,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i4: leal %exvr3.1w:0x0(,%exvr0.1d,4),%exvr0.2d #||
+.i5: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i6: addl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i7: movl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i8: cmpl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .i13 #||
+.i11: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+.i13: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i14: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x69008455],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x0,%exvr3.0w:0xfffffff0(%exvr0.0d) #||
+.i1: std  #%exvr4.0||
+.i2: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.1d #||
+.i3: addl $0x3fffffff,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i4: leal %exvr3.1w:0x0(,%exvr0.1d,4),%exvr0.2d #||
+.i5: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i6: addl %exvr0.1d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i7: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.3d #||
+.i8: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #||
+.i9: movl %exvr0.3d,%exvr0.4d #||
+.i10: movl %exvr0.2d,%exvr0.5d #||
+.i11: movl %exvr0.4d,%exvr0.3d #||
+.i12: cmpl $0x1,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i13: repnz scasl  #%exvr3.2w:0x0(%exvr0.5d),%exvr0.1d,%exvr0.3d,%exvr5.0,%exvr4.0||
+.i14: setne %exvr0.6b #,%exvr4.0||
+.i15: movzbl %exvr0.6b,%exvr0.6d #||
+.i16: subl %exvr0.6d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i17: movl %exvr0.3d,%exvr0.1d #||
+.i18: movl %exvr0.1d,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i19: jmp .NEXTPC0x0 #||
+== 1 0 array_rfindl_noiter:small.gcc48.O0.i.8048adf.11 # NEXTPC0x0 array_rfindl_noiter, ==
+
+ENTRY:
+.i0: cmpl $0x0,%exvr3.0w:0xfffffff8(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i1: je .i13 #,%exvr4.0||
+.i2: movl %exvr3.0w:0xfffffff8(%exvr0.0d),%exvr0.1d #||
+.i3: addl $0x3fffffff,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i4: leal %exvr3.1w:0x0(,%exvr0.1d,4),%exvr0.2d #||
+.i5: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i6: addl %exvr0.2d,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i7: movl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i8: cmpl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i9: jne .i11 #,%exvr4.0||
+.i10: jmp .i13 #||
+.i11: subl $0x1,%exvr3.0w:0xfffffff8(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i12: jmp .i0 #||
+.i13: subl $0x1,%exvr3.0w:0xfffffff8(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i14: jmp .NEXTPC0x0 #||
+--
+live : exr0.0[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x69008401],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl $0x0,%exvr3.0w:0xfffffff0(%exvr0.0d) #||
+.i1: std  #%exvr4.0||
+.i2: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.1d #||
+.i3: addl $0x3fffffff,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i4: leal %exvr3.1w:0x0(,%exvr0.1d,4),%exvr0.2d #||
+.i5: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i6: addl %exvr0.1d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i7: movl %exvr3.0w:0xc(%exvr0.0d),%exvr0.3d #||
+.i8: movl %exvr3.0w:0x10(%exvr0.0d),%exvr0.1d #||
+.i9: movl %exvr0.3d,%exvr0.4d #||
+.i10: movl %exvr0.2d,%exvr0.5d #||
+.i11: movl %exvr0.4d,%exvr0.3d #||
+.i12: cmpl $0x1,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i13: repnz scasl  #%exvr3.2w:0x0(%exvr0.5d),%exvr0.1d,%exvr0.3d,%exvr5.0,%exvr4.0||
+.i14: setne %exvr0.6b #,%exvr4.0||
+.i15: movzbl %exvr0.6b,%exvr0.6d #||
+.i16: subl %exvr0.6d,%exvr0.3d #,%exvr5.0,%exvr4.0||
+.i17: movl %exvr0.3d,%exvr0.1d #||
+.i18: movl %exvr0.1d,%exvr3.0w:0xfffffff8(%exvr0.0d) #||
+.i19: jmp .NEXTPC0x0 #||
+== 1 0 array_rfindl:small.gcc48.O0.i.8048b23.11 # NEXTPC0x0 array_rfindl, ==
+
+ENTRY:
+.i0: movb %exvr0.1b,%exvr3.0w:0xffffffec(%exvr0.0d) #||
+.i1: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i2: movl %exvr0.1d,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i3: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i4: movl %exvr0.1d,%exvr3.0w:0xfffffffc(%exvr0.0d) #||
+.i5: jmp .i6 #||
+.i6: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.2d #||
+.i7: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i8: subl %exvr0.1d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i9: movl %exvr0.2d,%exvr0.1d #||
+.i10: cmpl $0xffffffff,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i11: je .i19 #,%exvr4.0||
+.i12: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.1d #||
+.i13: movzbl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i14: testb %exvr0.1b,%exvr0.1b #,%exvr5.0,%exvr4.0||
+.i15: jne .i17 #,%exvr4.0||
+.i16: jmp .i19 #||
+.i17: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i18: jmp .i6 #||
+.i19: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.2d #||
+.i20: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i21: subl %exvr0.1d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i22: movl %exvr0.2d,%exvr0.1d #||
+.i23: cmpl $0xffffffff,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i24: jne .i27 #,%exvr4.0||
+.i25: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i26: jmp .i28 #||
+.i27: jmp .i28 #||
+.i28: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.2d #||
+.i29: movl %exvr3.0w:0x8(%exvr0.0d),%exvr0.1d #||
+.i30: subl %exvr0.1d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i31: movl %exvr0.2d,%exvr0.1d #||
+.i32: cmpl $0xffffffff,%exvr0.1d #,%exvr5.0,%exvr4.0||
+.i33: je .NEXTPC0x0 #,%exvr4.0||
+.i34: movl %exvr3.0w:0xfffffffc(%exvr0.0d),%exvr0.1d #||
+.i35: movzbl %exvr3.1w:0x0(%exvr0.1d),%exvr0.1d #||
+.i36: cmpb %exvr3.0w:0xffffffec(%exvr0.0d),%exvr0.1b #,%exvr5.0,%exvr4.0||
+.i37: jne .i39 #,%exvr4.0||
+.i38: jmp .NEXTPC0x0 #||
+.i39: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.0d) #,%exvr5.0,%exvr4.0||
+.i40: jmp .i28 #||
+--
+live : exr0.0[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x57d5],#
+memlive : true
+--
+exvr0.0 : exvr0.1
+exvr0.1 : exvr0.0
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i1: movb %exvr0.0b,%exvr3.0w:0xffffffe4(%exvr0.1d) #||
+.i2: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i3: movl %exvr0.0d,%exvr3.0w:0xfffffff4(%exvr0.1d) #||
+.i4: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i5: movl %exvr0.0d,%exvr3.0w:0xfffffff4(%exvr0.1d) #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i7: movzbl %exvr3.0w:0xffffffe4(%exvr0.1d),%exvr0.3d #||
+.i8: cld  #%exvr4.0||
+.i9: movl %exvr0.2d,%exvr0.4d #||
+.i10: movl $0xffffffff,%exvr0.5d #||
+.i11: movl $0x0,%exvr0.0d #||
+.i12: repnz scasb  #%exvr3.1w:0x0(%exvr0.4d),%exvr0.0b,%exvr0.5d,%exvr5.0,%exvr4.0||
+.i13: negl %exvr0.5d #,%exvr5.0,%exvr4.0||
+.i14: subl $0x1,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i15: subl $0x1,%exvr0.4d #,%exvr5.0,%exvr4.0||
+.i16: std  #%exvr4.0||
+.i17: movb %exvr0.3b,%exvr0.0b #||
+.i18: cmpl $0x1,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i19: repnz scasb  #%exvr3.1w:0x0(%exvr0.4d),%exvr0.0b,%exvr0.5d,%exvr5.0,%exvr4.0||
+.i20: setne %exvr0.0b #,%exvr4.0||
+.i21: movzbl %exvr0.0b,%exvr0.0d #||
+.i22: subl %exvr0.0d,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i23: leal %exvr3.2w:0x0(%exvr0.2d,%exvr0.5d,1),%exvr0.4d #||
+.i24: movl %exvr0.4d,%exvr0.2d #||
+.i25: movl %exvr0.2d,%exvr3.0w:0xfffffff4(%exvr0.1d) #||
+.i26: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.0d #||
+.i27: movl %exvr0.0d,%exvr3.0w:0xfffffffc(%exvr0.1d) #||
+.i28: jmp .NEXTPC0x0 #||
+== 1 0 my_strrchr_noiter:small.gcc48.O0.i.804868c.19 # NEXTPC0x0 my_strrchr_noiter, ==
+
+ENTRY:
+.i0: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i1: movl %exvr0.0d,%exvr3.0w:0xfffffffc(%exvr0.1d) #||
+.i2: jmp .i3 #||
+.i3: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.2d #||
+.i4: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i5: subl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i6: movl %exvr0.2d,%exvr0.0d #||
+.i7: cmpl $0xffffffff,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i8: je .i16 #,%exvr4.0||
+.i9: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i10: movzbl %exvr3.1w:0x0(%exvr0.0d),%exvr0.0d #||
+.i11: testb %exvr0.0b,%exvr0.0b #,%exvr5.0,%exvr4.0||
+.i12: jne .i14 #,%exvr4.0||
+.i13: jmp .i16 #||
+.i14: addl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i15: jmp .i3 #||
+.i16: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.2d #||
+.i17: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i18: subl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i19: movl %exvr0.2d,%exvr0.0d #||
+.i20: cmpl $0xffffffff,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i21: jne .i24 #,%exvr4.0||
+.i22: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i23: jmp .i25 #||
+.i24: jmp .i25 #||
+.i25: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.2d #||
+.i26: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i27: subl %exvr0.0d,%exvr0.2d #,%exvr5.0,%exvr4.0||
+.i28: movl %exvr0.2d,%exvr0.0d #||
+.i29: cmpl $0xffffffff,%exvr0.0d #,%exvr5.0,%exvr4.0||
+.i30: je .NEXTPC0x0 #,%exvr4.0||
+.i31: movl %exvr3.0w:0xfffffffc(%exvr0.1d),%exvr0.0d #||
+.i32: movzbl %exvr3.1w:0x0(%exvr0.0d),%exvr0.0d #||
+.i33: cmpb %exvr3.0w:0xffffffec(%exvr0.1d),%exvr0.0b #,%exvr5.0,%exvr4.0||
+.i34: jne .i36 #,%exvr4.0||
+.i35: jmp .NEXTPC0x0 #||
+.i36: subl $0x1,%exvr3.0w:0xfffffffc(%exvr0.1d) #,%exvr5.0,%exvr4.0||
+.i37: jmp .i25 #||
+--
+live : exr0.1[0xffffffff], exr0.2[0xffffffff], exr3.0[0xffff], exr3.1[0xffff], exr4.0[0x5781],#
+memlive : true
+--
+exvr0.0 : exvr0.0
+exvr0.1 : exvr0.1
+exvr0.2 : exvr0.2
+exvr3.0 : exvr3.0
+exvr3.1 : exvr3.1
+exvr4.0 : exvr4.0
+--
+--
+--
+insn_line_map 0 entries
+--
+insn_line_map 0 entries
+--
+.i0: movl %exvr3.0w:0xc(%exvr0.1d),%exvr0.0d #||
+.i1: movb %exvr0.0b,%exvr3.0w:0xffffffe4(%exvr0.1d) #||
+.i2: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i3: movl %exvr0.0d,%exvr3.0w:0xfffffff4(%exvr0.1d) #||
+.i4: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.0d #||
+.i5: movl %exvr0.0d,%exvr3.0w:0xfffffff4(%exvr0.1d) #||
+.i6: movl %exvr3.0w:0x8(%exvr0.1d),%exvr0.2d #||
+.i7: movzbl %exvr3.0w:0xffffffe4(%exvr0.1d),%exvr0.3d #||
+.i8: cld  #%exvr4.0||
+.i9: movl %exvr0.2d,%exvr0.4d #||
+.i10: movl $0xffffffff,%exvr0.5d #||
+.i11: movl $0x0,%exvr0.0d #||
+.i12: repnz scasb  #%exvr3.1w:0x0(%exvr0.4d),%exvr0.0b,%exvr0.5d,%exvr5.0,%exvr4.0||
+.i13: negl %exvr0.5d #,%exvr5.0,%exvr4.0||
+.i14: subl $0x1,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i15: subl $0x1,%exvr0.4d #,%exvr5.0,%exvr4.0||
+.i16: std  #%exvr4.0||
+.i17: movb %exvr0.3b,%exvr0.0b #||
+.i18: cmpl $0x1,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i19: repnz scasb  #%exvr3.1w:0x0(%exvr0.4d),%exvr0.0b,%exvr0.5d,%exvr5.0,%exvr4.0||
+.i20: setne %exvr0.0b #,%exvr4.0||
+.i21: movzbl %exvr0.0b,%exvr0.0d #||
+.i22: subl %exvr0.0d,%exvr0.5d #,%exvr5.0,%exvr4.0||
+.i23: leal %exvr3.2w:0x0(%exvr0.2d,%exvr0.5d,1),%exvr0.4d #||
+.i24: movl %exvr0.4d,%exvr0.2d #||
+.i25: movl %exvr0.2d,%exvr3.0w:0xfffffff4(%exvr0.1d) #||
+.i26: movl %exvr3.0w:0xfffffff4(%exvr0.1d),%exvr0.0d #||
+.i27: movl %exvr0.0d,%exvr3.0w:0xfffffffc(%exvr0.1d) #||
+.i28: jmp .NEXTPC0x0 #||
+== 1 0 my_strrchr:small.gcc48.O0.i.804870f.16 # NEXTPC0x0 my_strrchr, ==
+
+
+
+#ENTRY:
+#.i0: movzbl %exvr2.0:0x0(%vr1d,%vr2d,1),%vr0d #
+#.i1: incl %vr1d #,%exvr4.0,%exvr3.0
+#.i2: addl %vr0d,%vr3d #,%exvr4.0,%exvr3.0
+#.i3: cmpl %vr1d,%vr4d #,%exvr4.0,%exvr3.0
+#.i4: jmp .i5 #
+#.i5: movzbl %exvr2.0:0x0(%vr1d,%vr2d,1),%vr0d #
+#.i6: incl %vr1d #,%exvr4.0,%exvr3.0
+#.i7: add %vr0d,%vr3d #,%exvr4.0,%exvr3.0
+#.i8: cmp %vr1d,%vr4d #,%exvr4.0,%exvr3.0
+#.i9: jmp .i10 #
+#.i10: movzbl %exvr2.0:0x0(%vr1d,%vr2d,1),%vr0d #
+#.i11: incl %vr1d #,%exvr4.0,%exvr3.0
+#.i12: add %vr0d,%vr3d #,%exvr4.0,%exvr3.0
+#.i13: cmp %vr1d,%vr4d #,%exvr4.0,%exvr3.0
+#.i14: jmp .i15 #
+#.i15: movzbl %exvr2.0:0x0(%vr1d,%vr2d,1),%vr0d #
+#.i16: incl %vr1d #,%exvr4.0,%exvr3.0
+#.i17: add %vr0d,%vr3d #,%exvr4.0,%exvr3.0
+#.i18: cmp %vr1d,%vr4d #,%exvr4.0,%exvr3.0
+#.i19: jmp .i20 #
+#.i20: movzbl %exvr2.0:0x0(%vr1d,%vr2d,1),%vr0d #
+#.i21: incl %vr1d #,%exvr4.0,%exvr3.0
+#.i22: add %vr0d,%vr3d #,%exvr4.0,%exvr3.0
+#.i23: cmp %vr1d,%vr4d #,%exvr4.0,%exvr3.0
+#.i24: jmp .i25 #
+#.i25: movzbl %exvr2.0:0x0(%vr1d,%vr2d,1),%vr0d #
+#.i26: incl %vr1d #,%exvr4.0,%exvr3.0
+#.i27: add %vr0d,%vr3d #,%exvr4.0,%exvr3.0
+#.i28: cmp %vr1d,%vr4d #,%exvr4.0,%exvr3.0
+#.i29: jmp .i30 #
+#.i30: movzbl %exvr2.0:0x0(%vr1d,%vr2d,1),%vr0d #
+#.i31: incl %vr1d #,%exvr4.0,%exvr3.0
+#.i32: add %vr0d,%vr3d #,%exvr4.0,%exvr3.0
+#.i33: cmp %vr1d,%vr4d #,%exvr4.0,%exvr3.0
+#.i34: jmp .i35 #
+#.i35: movzbl %exvr2.0:0x0(%vr1d,%vr2d,1),%vr0d #
+#.i36: incl %vr1d #,%exvr4.0,%exvr3.0
+#.i37: add %vr0d,%vr3d #,%exvr4.0,%exvr3.0
+#.i38: cmp %vr1d,%vr4d #,%exvr4.0,%exvr3.0
+#.i39: jmp .NEXTPC0 #
+#--
+#vr1 : vr0
+#vr2 : vr1
+#vr3 : vr3
+#exvr2.0 : exvr2.0
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : r1[0xffffffff], r2[0xffffffff], r3[0xfffffffff], r4[0xfffffffff], #  
+#memlive : true
+#--
+#.i0: psubb  %exvr0.0, %exvr0.0 #
+#.i1: psadbw %exvr2.0:0x0(%vr0d,%vr1d,1),%exvr0.0 #
+#.i2: movd   %exvr0.0, %vr2d #
+#.i3: addl   %vr2d, %vr3d #,%exvr4.0,%exvr3.0
+#.i4: addl   $8, %vr2d #,%exvr4.0,%exvr3.0
+#.i5: jmp .NEXTPC0 #
+#==
+
+#ENTRY:
+#.i0: lea %exvr2.0:-8(%vr0d),%vr0d #
+#.i1: psubb %exvr0.0,%exvr0.0 #
+#.i2: psadbw %exvr2.0:0x0(%vr0d,%vr1d,1),%exvr0.0 #
+#.i3: movd %exvr0.0,%vr2d #
+#.i4: add %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+#.i5: addl $0x8,%vr0d #,%exvr4.0,%exvr3.0
+#.i6: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#vr2 : vr2
+#vr3 : vr3
+#exvr0.0 : exvr0.0
+#exvr2.0 : exvr2.0
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr0[0xffffffff],vr1[0xffffffff],vr3[0xffffffff], # 
+#memlive : true
+#--
+#.i0: psubb %exvr0.0,%exvr0.0 #
+#.i1: psadbw %exvr2.0:-8(%vr0d,%vr1d,1),%exvr0.0 #
+#.i2: movd %exvr0.0,%vr2d #
+#.i3: add %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+#.i4: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: subl %vr0d, %vr1d #,%exvr4.0,%exvr3.0
+#.i1: movl %vr1d, %vr0d #
+#.i2: decl %vr0d #,%exvr4.0,%exvr3.0
+#.i3: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr0[0xffffffff], #
+#memlive : true
+#--
+#.i0: notl %vr0d #,%exvr4.0,%exvr3.0
+#.i1: addl %vr1d, %vr0d #,%exvr4.0,%exvr3.0
+#.i2: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: subl %vr0d, %vr1d #,%exvr4.0,%exvr3.0
+#.i1: testl %vr1d, %vr1d #,%exvr4.0,%exvr3.0
+#.i2: je .NEXTPC0 #,%exvr4.0,%exvr3.0
+#.i3: movl %vr2d,%vr3d #
+#.i4: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#vr2 : vr2
+#vr3 : vr3
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr0[0xffffffff],vr1[0xffffffff],vr2[0xffffffff],vr3[0xffffffff], # 
+#memlive : true
+#--
+#.i0: subl %vr0d, %vr1d #,%exvr4.0,%exvr3.0
+#.i1: cmovne %vr2d, %vr3d #,%exvr4.0,%exvr3.0
+#.i2: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: mov %vr0d, %vr1d #
+#.i1: mov %vr2d, %vr0d #
+#.i2: mov %vr1d, %vr2d #
+#.i3: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#vr2 : vr2
+#--
+#live : vr0[0xffffffff],vr2[0xffffffff], # 
+#memlive : true
+#--
+#.i0: xchg %vr0d, %vr2d #
+#.i1: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: setg %vr0b #,%exvr4.0,%exvr3.0
+#.i1: movzbl %vr0b,%vr0d #
+#.i2: decl %vr0d #,%exvr4.0,%exvr3.0
+#.i3: andl %vr0d,%vr1d #,%exvr4.0,%exvr3.0
+#.i4: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr1[0xffffffff], # 
+#memlive : true
+#--
+#.i0: movl $0, %vr0d #
+#.i1: cmovg %vr0d, %vr1d #,%exvr4.0,%exvr3.0
+#.i2: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: movl $C0d,%vr0d #
+#.i1: subl %vr1d, %vr0d #,%exvr4.0,%exvr3.0
+#.i2: decl %vr0d #,%exvr4.0,%exvr3.0
+#.i3: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr0[0xffffffff],vr1[0xffffffff], # 
+#memlive : true
+#--
+#.i0: movl $C0d-1, %vr0d #
+#.i1: subl %vr1d, %vr0d #,%exvr4.0,%exvr3.0
+#.i2: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: movl %vr0d, %exvr2.0:C0d(%vr1d) #
+#.i1: movl %exvr2.0:C0d(%vr1d), %vr2d #
+#.i2: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#vr2 : vr2
+#exvr2.0 : exvr2.0
+#--
+#live : vr0[0xffffffff],vr1[0xffffffff],vr2[0xffffffff], # 
+#memlive : true
+#--
+#.i0: mov %vr0d, %exvr2.0:C0d(%vr1d) #
+#.i1: mov %vr0d, %vr2d #
+#.i2: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: mov %exvr2.0:C0d,%vr0d #
+#.i1: mov %exvr2.0:C0d,%vr1d #
+#.i2: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#exvr2.0 : exvr2.0
+#--
+#live : vr0[0xffffffff],vr1[0xffffffff], # 
+#memlive : true
+#--
+#.i0: mov %exvr2.0:C0d,%vr0d #
+#.i1: mov %vr0d,%vr1d #
+#.i2: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: movl %vr0d, %vr1d #
+#.i1: shll $31, %vr1d #,%exvr4.0,%exvr3.0
+#.i2: shrl $1, %vr0d #,%exvr4.0,%exvr3.0
+#.i3: orl %vr1d, %vr0d #,%exvr4.0,%exvr3.0
+#.i4: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr0[0xffffffff], # 
+#memlive : true
+#--
+#.i0: rorl $1, %vr0d #,%exvr4.0,%exvr3.0
+#.i1: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: movl %vr0d, %vr1d #
+#.i1: shrl $31, %vr1d #,%exvr4.0,%exvr3.0
+#.i2: shll $1, %vr0d #,%exvr4.0,%exvr3.0
+#.i3: orl %vr1d, %vr0d #,%exvr4.0,%exvr3.0
+#.i4: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr0[0xffffffff], # 
+#memlive : true
+#--
+#.i0: roll $1, %vr0d #,%exvr4.0,%exvr3.0
+#.i1: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: movl %vr0d, %vr1d #
+#.i1: shll %vr2b, %vr1d #,%exvr4.0,%exvr3.0
+#.i2: negl %vr2d #,%exvr4.0,%exvr3.0
+#.i3: addl $32, %vr2d #,%exvr4.0,%exvr3.0
+#.i4: shrl %vr2b, %vr0d #,%exvr4.0,%exvr3.0
+#.i5: orl  %vr1d, %vr0d #,%exvr4.0,%exvr3.0
+#.i6: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#vr2 : vr2
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr0[0xffffffff], # 
+#memlive : true
+#--
+#.i0: roll %vr2b, %vr0d #,%exvr4.0,%exvr3.0
+#.i1: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: movl %exvr2.0:C0d(%vr1d), %vr0d #
+#.i1: movl %exvr2.0:C0d(%vr1d), %vr2d #
+#.i2: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#vr2 : vr2
+#exvr2.0 : exvr2.0
+#--
+#live : vr0[0xffffffff], vr1[0xffffffff], vr2[0xffffffff], # 
+#memlive : true
+#--
+#.i0: movl %exvr2.0:C0d(%vr1d), %vr0d #
+#.i1: movl %vr0d, %vr2d #
+#.i2: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: movl %vr1d, %vr0d #
+#.i1: movl %exvr2.0:(%vr0d), %vr0d #
+#.i2: sall %vr0d #,%exvr4.0,%exvr3.0
+#.i3: movl %vr0d, %exvr2.0:(%vr1d) #
+#.i4: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#exvr2.0 : exvr2.0
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr1[0xffffffff], #
+#memlive : true
+#--
+#.i0: sall %exvr2.0:(%vr1d) #,%exvr4.0,%exvr3.0
+#.i1: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: movl %vr1d, %exvr2.0:C0d(%vr0d) #
+#.i1: cmpl $C1d, %exvr2.0:C0d(%vr0d) #,%exvr4.0,%exvr3.0
+#.i2: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#exvr2.0 : exvr2.0
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr0[0xffffffff], vr1[0xffffffff], exvr3.0[0xffffffff], # 
+#memlive : true
+#--
+#.i0: movl %vr1d, %exvr2.0:C0d(%vr0d) #
+#.i1: cmpl $C1d, %vr1d #,%exvr4.0,%exvr3.0
+#.i2: jmp .NEXTPC0
+#==
+#
+#ENTRY:
+#.i0: movl %vr1d, %vr0d #
+#.i1: movl %exvr2.0:C0d(%vr0d), %vr0d #
+#.i2: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#exvr2.0 : exvr2.0
+#--
+#live : vr0[0xffffffff], vr1[0xffffffff], # 
+#memlive : true
+#--
+#.i0: movl %exvr2.0:C0d(%vr1d), %vr0d #
+#.i1: jmp .NEXTPC0 #
+#==
+#
+#ENTRY:
+#.i0: movl %exvr2.0:C0d(%vr1d), %vr0d #
+#.i1: movl %vr0d, %exvr2.0:C1d(%vr2d) #
+#.i2: cmpl $C2d, %vr0d #,%exvr4.0,%exvr3.0
+#.i3: jmp .NEXTPC0 #
+#--
+#vr0 : vr0
+#vr1 : vr1
+#vr2 : vr2
+#exvr2.0 : exvr2.0
+#exvr3.0 : exvr3.0
+#exvr4.0 : exvr4.0
+#--
+#live : vr2[0xffffffff], exvr3.0[0xffffffff], # 
+#memlive : true
+#--
+#.i0: movl %exvr2.0:C0d(%vr1d), %vr1d #
+#.i1: movl %vr1d, %exvr2.0:C1d(%vr2d) #
+#.i2: cmpl $C2d, %vr1d #,%exvr4.0,%exvr3.0
+#.i3: jmp .NEXTPC0 #
+#==
+#
+#ENTRY: base
+#.i0: movl $1, %vr0d #
+#.i1: jne .NEXTPC0 #,%exvr4.0,%exvr3.0
+#.i2: retl  #%vr1d
+#  --
+#  vr0 : vr0
+#  vr1 : vr1
+#  --
+#  live :vr1[0xffffffff],#vr0[0xffffffff],vr1[0xffffffff],#
+#  --
+#.i0: jne .NEXTPC0 #,%exvr4.0,%exvr3.0
+#.i1: movl $1, %vr0d #
+#.i2: retl  #%vr1d
+#  ==
+#
+##Loops
+#
+##ENTRY:
+##.i0: movl %exvr2.0:0x8(%vr1d),%vr0d #
+##.i1: movl %exvr2.0:0x8(%vr1d),%vr2d #
+##.i2: movl %exvr2.0:0x0(%vr2d),%vr2d #
+##.i3: shll $0x1,%vr2d #,%exvr4.0,%exvr3.0
+##.i4: movl %vr2d,%exvr2.0:0x0(%vr0d) #
+##.i5: movl %exvr2.0:0x8(%vr1d),%vr2d #
+##.i6: movl %exvr2.0:0x4(%vr2d),%vr2d #
+##.i7: movl %vr2d,%exvr2.0:0x8(%vr1d) #
+##.i8: cmpl $0x0,%exvr2.0:0x8(%vr1d) #,%exvr4.0,%exvr3.0
+##.i9: jne .i0 #,%exvr4.0,%exvr3.0
+##.i10: jmp .NEXTPC0 #
+##--
+##vr0 : vr0
+##vr1 : vr1
+##vr2 : vr2
+##exvr2.0 : exvr2.0
+##exvr3.0 : exvr3.0
+##exvr4.0 : exvr4.0
+##--
+##live : vr1[0xffffffff], # 
+##memlive : true
+##--
+##.i0: mov %exvr2.0:0x8(%vr1d),%vr0d #
+##.i1: shll %exvr2.0:(%vr0d) #,%exvr4.0,%exvr3.0
+##.i2: mov %exvr2.0:4(%vr0d), %vr0d #
+##.i3: testl %vr0d,%vr0d #,%exvr4.0,%exvr3.0
+##.i4: jne .i1 #,%exvr4.0,%exvr3.0
+##.i5: jmp .NEXTPC0 #
+##==
+#
+##ENTRY:
+##.i0: mov %vr1b,%exvr2.0:C0d(%vr0d) #
+##.i1: incl %vr0d #,%exvr4.0,%exvr3.0
+##.i2: cmp %vr0d,%vr2d #,%exvr4.0,%exvr3.0
+##.i3: jne .i0 #,%exvr4.0,%exvr3.0
+##.i4: jmp .NEXTPC0 #
+##--
+##vr0 : vr0
+##vr1 : vr1
+##vr2 : vr2
+##exvr2.0 : exvr2.0
+##exvr3.0 : exvr3.0
+##exvr4.0 : exvr4.0
+##--
+##live : vr0[0xffffffff],vr1[0xffffffff],vr2[0xffffffff], # 
+##memlive : true
+##--
+##.i0: mov %vr2d, %tr0d #
+##.i1: sub %vr0d, %tr0d #,%exvr4.0,%exvr3.0
+##.i2: leal %exvr2.0:C0d(%vr0d), %tr1d #
+##.i2: rep stosb %vr1b, %es:(%tr1d) #
+##.i3: mov %vr2d, %vr0d #
+##.i4: jmp .NEXTPC0 #
+##==
+#
+##ENTRY:
+##.i0: xorl %vr0d,%vr0d #,%exvr4.0,%exvr3.0
+##.i1: movzbl %exvr2.0:0x0(%vr0d,%vr2d,1),%vr1d #
+##.i2: incl %vr0d #,%exvr4.0,%exvr3.0
+##.i3: addl %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i4: cmpl %vr0d,%vr4d #,%exvr4.0,%exvr3.0
+##.i5: jne .i1 #,%exvr4.0,%exvr3.0
+##.i6: jmp .NEXTPC0 #
+##--
+##vr0 : vr0
+##vr1 : vr1
+##vr2 : vr2
+##vr3 : vr3
+##vr4 : vr4
+##exvr2.0 : exvr2.0
+##exvr3.0 : exvr3.0
+##exvr4.0 : exvr4.0
+##--
+##live : vr0[0xffffffff],vr3[0xffffffff], # 
+##memlive : true
+##--
+##.i0: xorl %vr0d,%vr0d #,%exvr4.0,%exvr3.0
+##.i1: addl $0x8, %vr0d #,%exvr4.0,%exvr3.0
+##.i2: cmpl %vr0d,%vr4d #,%exvr4.0,%exvr3.0
+##.i3: jb .i8 #,%exvr4.0,%exvr3.0
+##.i4: psubb %mm0, %mm0 #
+##.i5: psadbw %exvr2.0:0xfffffff8(%vr0d,%vr2d,1),%mm0 #
+##.i6: movd %mm0, %tr0d #
+##.i7: addl %tr0d, %vr3d #,%exvr4.0,%exvr3.0
+##.i8: jmp .i0 #
+##.i9: subl $0x8, %vr0d #,%exvr4.0,%exvr3.0
+##.i10: cmpl %vr0d,%vr4d #,%exvr4.0,%exvr3.0
+##.i11: je .i15 #,%exvr4.0,%exvr3.0
+##.i12: movzbl %exvr2.0:0x0(%vr0d,%vr2d,1),%vr1d #
+##.i13: incl %vr0d #,%exvr4.0,%exvr3.0
+##.i14: addl %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i15: jmp .i9 #
+##.i16: jmp .NEXTPC0 #
+##==
+#
+#
+##need aliasing preconditions
+##ENTRY:
+##.i0: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i1: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i2: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i3: jb .i11 #,%exvr4.0,%exvr3.0
+##.i4: movzbl %vr0b,%vr3d #
+##.i5: movzbl %vr2b,%vr2d #
+##.i6: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i7: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i8: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i9: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i10: jmp .i18 #
+##.i11: movzbl %vr2b,%vr3d #
+##.i12: movzbl %vr0b,%vr2d #
+##.i13: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i14: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i15: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i16: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i17: jmp .i18 #
+##.i18: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i19: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i20: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i21: jb .i29 #,%exvr4.0,%exvr3.0
+##.i22: movzbl %vr0b,%vr3d #
+##.i23: movzbl %vr2b,%vr2d #
+##.i24: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i25: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i26: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i27: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i28: jmp .i36 #
+##.i29: movzbl %vr2b,%vr3d #
+##.i30: movzbl %vr0b,%vr2d #
+##.i31: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i32: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i33: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i34: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i35: jmp .i36 #
+##.i36: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i37: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i38: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i39: jb .i47 #,%exvr4.0,%exvr3.0
+##.i40: movzbl %vr0b,%vr3d #
+##.i41: movzbl %vr2b,%vr2d #
+##.i42: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i43: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i44: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i45: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i46: jmp .i54 #
+##.i47: movzbl %vr2b,%vr3d #
+##.i48: movzbl %vr0b,%vr2d #
+##.i49: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i50: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i51: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i52: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i53: jmp .i54 #
+##.i54: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i55: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i56: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i57: jb .i65 #,%exvr4.0,%exvr3.0
+##.i58: movzbl %vr0b,%vr3d #
+##.i59: movzbl %vr2b,%vr2d #
+##.i60: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i61: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i62: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i63: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i64: jmp .i72 #
+##.i65: movzbl %vr2b,%vr3d #
+##.i66: movzbl %vr0b,%vr2d #
+##.i67: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i68: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i69: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i70: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i71: jmp .i72 #
+##.i72: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i73: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i74: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i75: jb .i83 #,%exvr4.0,%exvr3.0
+##.i76: movzbl %vr0b,%vr3d #
+##.i77: movzbl %vr2b,%vr2d #
+##.i78: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i79: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i80: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i81: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i82: jmp .i90 #
+##.i83: movzbl %vr2b,%vr3d #
+##.i84: movzbl %vr0b,%vr2d #
+##.i85: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i86: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i87: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i88: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i89: jmp .i90 #
+##.i90: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i91: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i92: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i93: jb .i101 #,%exvr4.0,%exvr3.0
+##.i94: movzbl %vr0b,%vr3d #
+##.i95: movzbl %vr2b,%vr2d #
+##.i96: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i97: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i98: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i99: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i100: jmp .i108 #
+##.i101: movzbl %vr2b,%vr3d #
+##.i102: movzbl %vr0b,%vr2d #
+##.i103: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i104: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i105: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i106: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i107: jmp .i108 #
+##.i108: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i109: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i110: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i111: jb .i119 #,%exvr4.0,%exvr3.0
+##.i112: movzbl %vr0b,%vr3d #
+##.i113: movzbl %vr2b,%vr2d #
+##.i114: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i115: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i116: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i117: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i118: jmp .i126 #
+##.i119: movzbl %vr2b,%vr3d #
+##.i120: movzbl %vr0b,%vr2d #
+##.i121: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i122: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i123: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i124: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i125: jmp .i126 #
+##.i126: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i127: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i128: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i129: jb .i137 #,%exvr4.0,%exvr3.0
+##.i130: movzbl %vr0b,%vr3d #
+##.i131: movzbl %vr2b,%vr2d #
+##.i132: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i133: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i134: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i135: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i136: jmp .NEXTPC0 #
+##.i137: movzbl %vr2b,%vr3d #
+##.i138: movzbl %vr0b,%vr2d #
+##.i139: sub %vr2d,%vr3d #,%exvr4.0,%exvr3.0
+##.i140: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i141: add %vr3d,%vr4d #,%exvr4.0,%exvr3.0
+##.i142: cmp %vr1d,%vr5d #,%exvr4.0,%exvr3.0
+##.i143: jmp .NEXTPC0 #
+##--
+##vr0 : vr0
+##vr1 : vr1
+##vr2 : vr2
+##vr3 : vr3
+##vr4 : vr4
+##vr5 : vr5
+##exvr2.0 : exvr2.0
+##exvr3.0 : exvr3.0
+##exvr4.0 : exvr4.0
+##--
+##live : vr1,vr4,vr5, #  
+##memlive : true
+##--
+##.i0: movq   %exvr2.0:C0d(%vr1d), %extr0.0 #
+##.i1: psadbw %exvr2.0:C1d(%vr1d), %extr0.0 #
+##.i2: movd   %extr0.0, %tr0d #
+##.i3: addl   %tr0d, %vr4d #,%exvr4.0,%exvr3.0
+##.i4: addl   $8, %vr1d #,%exvr4.0,%exvr3.0
+##.i5: jmp .NEXTPC0
+##==
+##
+##ENTRY:
+##.i0: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i1: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i2: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i3: jl .i8 #,%exvr4.0,%exvr3.0
+##.i4: mov %vr2b,%exvr2.0:C2d(%vr1d) #
+##.i5: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i6: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i7: jmp .i12 #
+##.i8: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i9: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i10: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i11: jmp .i12 #
+##.i12: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i13: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i14: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i15: jl .i20 #,%exvr4.0,%exvr3.0
+##.i16: mov %vr2b,%exvr2.0:C2d(%vr1d) #
+##.i17: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i18: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i19: jmp .i24 #
+##.i20: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i21: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i22: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i23: jmp .i24 #
+##.i24: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i25: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i26: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i27: jl .i32 #,%exvr4.0,%exvr3.0
+##.i28: mov %vr2b,%exvr2.0:C2d(%vr1d) #
+##.i29: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i30: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i31: jmp .i36 #
+##.i32: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i33: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i34: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i35: jmp .i36 #
+##.i36: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i37: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i38: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i39: jl .i44 #,%exvr4.0,%exvr3.0
+##.i40: mov %vr2b,%exvr2.0:C2d(%vr1d) #
+##.i41: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i42: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i43: jmp .i48 #
+##.i44: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i45: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i46: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i47: jmp .i48 #
+##.i48: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i49: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i50: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i51: jl .i56 #,%exvr4.0,%exvr3.0
+##.i52: mov %vr2b,%exvr2.0:C2d(%vr1d) #
+##.i53: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i54: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i55: jmp .i60 #
+##.i56: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i57: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i58: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i59: jmp .i60 #
+##.i60: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i61: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i62: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i63: jl .i68 #,%exvr4.0,%exvr3.0
+##.i64: mov %vr2b,%exvr2.0:C2d(%vr1d) #
+##.i65: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i66: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i67: jmp .i72 #
+##.i68: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i69: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i70: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i71: jmp .i72 #
+##.i72: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i73: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i74: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i75: jl .i80 #,%exvr4.0,%exvr3.0
+##.i76: mov %vr2b,%exvr2.0:C2d(%vr1d) #
+##.i77: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i78: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i79: jmp .i84 #
+##.i80: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i81: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i82: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i83: jmp .i84 #
+##.i84: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i85: movzbl %exvr2.0:C1d(%vr1d),%vr2d #
+##.i86: cmp %vr2b,%vr0b #,%exvr4.0,%exvr3.0
+##.i87: jl .i92 #,%exvr4.0,%exvr3.0
+##.i88: mov %vr2b,%exvr2.0:C2d(%vr1d) #
+##.i89: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i90: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i91: jmp .NEXTPC0 #
+##.i92: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i93: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i94: cmp %vr1d,%vr3d #,%exvr4.0,%exvr3.0
+##.i95: jmp .NEXTPC0 #
+##--
+##vr0 : vr0
+##vr1 : vr1
+##vr2 : vr2
+##vr3 : vr3
+##exvr2.0 : exvr2.0
+##exvr3.0 : exvr3.0
+##exvr4.0 : exvr4.0
+##--
+##live : vr1,vr3, #  
+##memlive : true
+##--
+##.i0: movq %exvr2.0:C0d(%vr1d),%extr0.0 #
+##.i1: movq %exvr2.0:C1d(%vr1d),%extr0.1 #
+##.i2: psubb %extr0.0,%extr0.1 #
+##.i3: pcmpgtb %exvr2.0:C1d(%vr1d),%extr0.0 #
+##.i4: pand %extr0.1,%extr0.0 #
+##.i5: paddb %exvr2.0:C0d(%vr1d),%extr0.0 #
+##.i6: movq %extr0.0,%exvr2.0:C2d(%vr1d) #
+##.i7: addl $8,%vr1d #,%exvr4.0,%exvr3.0
+##.i8: jmp .NEXTPC0 #
+##==
+#
+##ENTRY:
+##.i0: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i1: cmp %exvr2.0:C1d(%vr1d),%vr0b #,%exvr4.0,%exvr3.0
+##.i2: setle %vr0b #,%exvr4.0,%exvr3.0
+##.i3: decb %vr0b #,%exvr4.0,%exvr3.0
+##.i4: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i5: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i6: cmp %vr1d,%vr2d #,%exvr4.0,%exvr3.0
+##.i7: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i8: cmp %exvr2.0:C1d(%vr1d),%vr0b #,%exvr4.0,%exvr3.0
+##.i9: setle %vr0b #,%exvr4.0,%exvr3.0
+##.i10: decb %vr0b #,%exvr4.0,%exvr3.0
+##.i11: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i12: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i13: cmp %vr1d,%vr2d #,%exvr4.0,%exvr3.0
+##.i14: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i15: cmp %exvr2.0:C1d(%vr1d),%vr0b #,%exvr4.0,%exvr3.0
+##.i16: setle %vr0b #,%exvr4.0,%exvr3.0
+##.i17: decb %vr0b #,%exvr4.0,%exvr3.0
+##.i18: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i19: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i20: cmp %vr1d,%vr2d #,%exvr4.0,%exvr3.0
+##.i21: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i22: cmp %exvr2.0:C1d(%vr1d),%vr0b #,%exvr4.0,%exvr3.0
+##.i23: setle %vr0b #,%exvr4.0,%exvr3.0
+##.i24: decb %vr0b #,%exvr4.0,%exvr3.0
+##.i25: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i26: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i27: cmp %vr1d,%vr2d #,%exvr4.0,%exvr3.0
+##.i28: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i29: cmp %exvr2.0:C1d(%vr1d),%vr0b #,%exvr4.0,%exvr3.0
+##.i30: setle %vr0b #,%exvr4.0,%exvr3.0
+##.i31: decb %vr0b #,%exvr4.0,%exvr3.0
+##.i32: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i33: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i34: cmp %vr1d,%vr2d #,%exvr4.0,%exvr3.0
+##.i35: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i36: cmp %exvr2.0:C1d(%vr1d),%vr0b #,%exvr4.0,%exvr3.0
+##.i37: setle %vr0b #,%exvr4.0,%exvr3.0
+##.i38: decb %vr0b #,%exvr4.0,%exvr3.0
+##.i39: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i40: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i41: cmp %vr1d,%vr2d #,%exvr4.0,%exvr3.0
+##.i42: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i43: cmp %exvr2.0:C1d(%vr1d),%vr0b #,%exvr4.0,%exvr3.0
+##.i44: setle %vr0b #,%exvr4.0,%exvr3.0
+##.i45: decb %vr0b #,%exvr4.0,%exvr3.0
+##.i46: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i47: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i48: cmp %vr1d,%vr2d #,%exvr4.0,%exvr3.0
+##.i49: movzbl %exvr2.0:C0d(%vr1d),%vr0d #
+##.i50: cmp %exvr2.0:C1d(%vr1d),%vr0b #,%exvr4.0,%exvr3.0
+##.i51: setle %vr0b #,%exvr4.0,%exvr3.0
+##.i52: decb %vr0b #,%exvr4.0,%exvr3.0
+##.i53: mov %vr0b,%exvr2.0:C2d(%vr1d) #
+##.i54: incl %vr1d #,%exvr4.0,%exvr3.0
+##.i55: cmp %vr1d,%vr2d #,%exvr4.0,%exvr3.0
+##.i56: jmp .NEXTPC0 #
+##--
+##vr0 : vr0
+##vr1 : vr1
+##vr2 : vr2
+##exvr2.0 : exvr2.0
+##exvr3.0 : exvr3.0
+##exvr4.0 : exvr4.0
+##--
+##live : vr1[0xffffffff],vr2[0xffffffff], # 
+##memlive : true
+##--
+##.i0: movq %exvr2.0:C0d(%vr1d),%extr0.0 #
+##.i1: pcmpgtb %exvr2.0:C1d(%vr1d),%extr0.0 #
+##.i2: movq %extr0.0,%exvr2.0:C2d(%vr1d) #
+##.i3: addl $8, %vr1d #,%exvr4.0,%exvr3.0
+##.i4: jmp .NEXTPC0 #
+##==
+#
+##ENTRY:
+##.i0: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i1: xor %exvr2.0:C1d(%vr1d),%vr0b
+##.i2: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i3: inc %vr1d
+##.i4: cmp %vr1d,%vr2d
+##.i5: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i6: xor %exvr2.0:C1d(%vr1d),%vr0b
+##.i7: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i8: inc %vr1d
+##.i9: cmp %vr1d,%vr2d
+##.i10: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i11: xor %exvr2.0:C1d(%vr1d),%vr0b
+##.i12: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i13: inc %vr1d
+##.i14: cmp %vr1d,%vr2d
+##.i15: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i16: xor %exvr2.0:C1d(%vr1d),%vr0b
+##.i17: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i18: inc %vr1d
+##.i19: cmp %vr1d,%vr2d
+##.i20: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i21: xor %exvr2.0:C1d(%vr1d),%vr0b
+##.i22: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i23: inc %vr1d
+##.i24: cmp %vr1d,%vr2d
+##.i25: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i26: xor %exvr2.0:C1d(%vr1d),%vr0b
+##.i27: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i28: inc %vr1d
+##.i29: cmp %vr1d,%vr2d
+##.i30: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i31: xor %exvr2.0:C1d(%vr1d),%vr0b
+##.i32: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i33: inc %vr1d
+##.i34: cmp %vr1d,%vr2d
+##.i35: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i36: xor %exvr2.0:C1d(%vr1d),%vr0b
+##.i37: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i38: inc %vr1d
+##.i39: cmp %vr1d,%vr2d
+##.i40: jmp .NEXTPC0
+##--
+##vr0 : vr0
+##vr1 : vr1
+##vr2 : vr2
+##eflags : SF
+##--
+##live : vr1,vr2, # 
+##memlive : true
+##--
+##.i0: movq %exvr2.0:C0d(%vr1d),%mm0
+##.i1: pxor %exvr2.0:C1d(%vr1d),%mm0
+##.i2: movq %mm0,%exvr2.0:C2d(%vr1d)
+##.i3: addl $8,%vr1d
+##.i4: jmp .NEXTPC0
+##==
+##
+##ENTRY:
+##.i0: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i1: test %vr0b,%vr0b
+##.i2: jne .i5
+##.i3: movzbl %exvr2.0:C1d(%vr1d),%vr0d
+##.i4: jmp .i5
+##.i5: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i6: incl %vr1d
+##.i7: cmp %vr1d,%vr2d
+##.i8: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i9: test %vr0b,%vr0b
+##.i10: jne .i13
+##.i11: movzbl %exvr2.0:C1d(%vr1d),%vr0d
+##.i12: jmp .i13
+##.i13: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i14: incl %vr1d
+##.i15: cmp %vr1d,%vr2d
+##.i16: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i17: test %vr0b,%vr0b
+##.i18: jne .i21
+##.i19: movzbl %exvr2.0:C1d(%vr1d),%vr0d
+##.i20: jmp .i21
+##.i21: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i22: incl %vr1d
+##.i23: cmp %vr1d,%vr2d
+##.i24: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i25: test %vr0b,%vr0b
+##.i26: jne .i29
+##.i27: movzbl %exvr2.0:C1d(%vr1d),%vr0d
+##.i28: jmp .i29
+##.i29: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i30: incl %vr1d
+##.i31: cmp %vr1d,%vr2d
+##.i32: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i33: test %vr0b,%vr0b
+##.i34: jne .i37
+##.i35: movzbl %exvr2.0:C1d(%vr1d),%vr0d
+##.i36: jmp .i37
+##.i37: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i38: incl %vr1d
+##.i39: cmp %vr1d,%vr2d
+##.i40: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i41: test %vr0b,%vr0b
+##.i42: jne .i45
+##.i43: movzbl %exvr2.0:C1d(%vr1d),%vr0d
+##.i44: jmp .i45
+##.i45: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i46: incl %vr1d
+##.i47: cmp %vr1d,%vr2d
+##.i48: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i49: test %vr0b,%vr0b
+##.i50: jne .i53
+##.i51: movzbl %exvr2.0:C1d(%vr1d),%vr0d
+##.i52: jmp .i53
+##.i53: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i54: incl %vr1d
+##.i55: cmp %vr1d,%vr2d
+##.i56: movzbl %exvr2.0:C0d(%vr1d),%vr0d
+##.i57: test %vr0b,%vr0b
+##.i58: jne .i61
+##.i59: movzbl %exvr2.0:C1d(%vr1d),%vr0d
+##.i60: jmp .i61
+##.i61: mov %vr0b,%exvr2.0:C2d(%vr1d)
+##.i62: incl %vr1d
+##.i63: cmp %vr1d,%vr2d
+##.i64: jmp .NEXTPC0
+##--
+##vr0 : vr0
+##vr1 : vr1
+##vr2 : vr2
+##eflags : SF
+##--
+##live : vr1,vr2, # 
+##memlive : true
+##--
+##.i0: pxor %mm0,%mm0
+##.i1: pcmpeqb %exvr2.0:C0d(%vr1d),%mm0
+##.i2: pcmpeqb %mm1,%mm1
+##.i3: pxor %mm0,%mm1
+##.i4: pand %exvr2.0:C1d(%vr1d),%mm0
+##.i5: pand %exvr2.0:C0d(%vr1d),%mm1
+##.i6: por %mm1,%mm0
+##.i7: movq %mm0,%exvr2.0:C2d(%vr1d)
+##.i8: addl $8,%vr1d
+##.i9: jmp .NEXTPC0
+##==
+##
+##ENTRY:
+##.i0: movl %exvr2.0:C0d(%vr1d), %vr0d #
+##.i1: sall %exvr2.0:(%vr0d) #,%exvr4.0,%exvr3.0
+##.i2: movl %exvr2.0:C0d(%vr1d), %vr2d #
+##.i3: jmp .NEXTPC0 #
+##--
+##vr0 : vr0
+##vr1 : vr1
+##vr2 : vr2
+##exvr2.0 : exvr2.0
+##exvr3.0 : exvr3.0
+##exvr4.0 : exvr4.0
+##--
+##live : vr1[0xffffffff], vr2[0xffffffff], # 
+##memlive : true
+##--
+##.i0: movl %exvr2.0:C0d(%vr1d), %vr2d #
+##.i1: sall %exvr2.0:(%vr2d) #,%exvr4.0,%exvr3.0
+##.i2: jmp .NEXTPC0 #
+##==
+#
