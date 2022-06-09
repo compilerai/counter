@@ -1,2 +1,2 @@
 all::
-	gunzip etfg_x64/*
+	-gunzip etfg_x64/*

@@ -178,7 +178,7 @@ int main(int argc, char **argv)
 
   g_ctx_init();
   context *ctx = g_ctx;
-  ctx->parse_consts_db(CONSTS_DB_FILENAME);
+  //ctx->parse_consts_db(CONSTS_DB_FILENAME);
   consts_struct_t &cs = ctx->get_consts_struct();
 
   string source_filename = etfg_file.get_value();

@@ -28,10 +28,6 @@ MINOR_VERSION=1
 PACKAGE_REVISION=0
 PACKAGE_NAME=qcc_$(MAJOR_VERSION).$(MINOR_VERSION)-$(PACKAGE_REVISION)
 
-all::
-	$(MAKE) -C $(SUPEROPT_PROJECT_DIR) build
-	#$(MAKE) -C $(SUPEROPT_PROJECT_DIR) install
-
 build::
 	$(MAKE) -C $(SUPEROPT_PROJECT_DIR)/binlibs
 	cd $(SUPEROPT_PROJECT_DIR)/superopt && ./configure && cd -
@@ -44,7 +40,12 @@ build::
 	$(MAKE) -C $(SUPEROPT_PROJECT_DIR) $(SUPEROPT_PROJECT_DIR)/build/clang12
 	$(MAKE) -C $(SUPEROPT_PROJECT_DIR) cleaninstall
 	$(MAKE) -C $(SUPEROPT_PROJECT_DIR) linkinstall
-	cd $(SUPEROPT_PROJECT_DIR)/superopt-tests && ./configure && make && cd -
+	#cd $(SUPEROPT_PROJECT_DIR)/superopt-tests && ./configure && make && cd -
+
+docker-build::
+	docker build -t static-persist .
+
+
 
 install::
 	$(MAKE) -C $(SUPEROPT_PROJECT_DIR) cleaninstall
@@ -327,5 +328,10 @@ printpaths:
 
 pushdebian::
 	scp $(PACKAGE_NAME).deb sbansal@xorav.com:
+
+clean::
+	rm -rf $(SUPEROPT_PROJECT_DIR)/superopt/build
+	rm -rf $(SUPEROPT_INSTALL_DIR)
+	rm -rf $(SUPEROPT_PROJECT_DIR)/llvm-project/build
 
 .PHONY: all build ci install ci_install testinit gentest eqtest printpaths

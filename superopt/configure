@@ -16,24 +16,24 @@ mkdir -p "$build_dir/i386_i386/superopt-files"
 mkdir -p "$build_dir/etfg_x64/superopt-files"
 mkdir -p "$build_dir/x64_x64/superopt-files"
 
-config_host_py="$src_dir/utils/config_host.py"
-echo "srcdir = \"$src_dir\"" > $config_host_py
-echo "build_dir = \"$build_dir\"" >> $config_host_py
-config_host_pm="$src_dir/utils/config_host.pm"
-echo "our \$srcdir = \"$src_dir\";" > $config_host_pm
-echo "our @src_dst_combos = ();" >> $config_host_pm
-echo "our \$dwarfdump = \"$build_dir/third_party/$libdwarf/dwarfdump/dwarfdump\";" >> $config_host_pm
-echo "push(@src_archs, \"etfg\");" >> $config_host_pm;
-echo "push(@src_archs, \"i386\");" >> $config_host_pm;
-echo "push(@src_archs, \"x64\");" >> $config_host_pm;
-#echo "push(@src_archs, \"ppc\");" >> $config_host_pm;
-echo "push(@dst_archs, \"i386\");" >> $config_host_pm;
-echo "push(@dst_archs, \"x64\");" >> $config_host_pm;
-echo "push(@src_dst_combos, \"etfg-i386\");" >> $config_host_pm;
-echo "push(@src_dst_combos, \"i386-i386\");" >> $config_host_pm;
-echo "push(@src_dst_combos, \"etfg-x64\");" >> $config_host_pm;
-echo "push(@src_dst_combos, \"x64-x64\");" >> $config_host_pm;
-#echo "push(@src_dst_combos, \"ppc-i386\");" >> $config_host_pm;
+#config_host_py="$src_dir/utils/config_host.py"
+#echo "srcdir = \"$src_dir\"" > $config_host_py
+#echo "build_dir = \"$build_dir\"" >> $config_host_py
+#config_host_pm="$src_dir/utils/config_host.pm"
+#echo "our \$srcdir = \"$src_dir\";" > $config_host_pm
+#echo "our @src_dst_combos = ();" >> $config_host_pm
+#echo "our \$dwarfdump = \"$build_dir/third_party/$libdwarf/dwarfdump/dwarfdump\";" >> $config_host_pm
+#echo "push(@src_archs, \"etfg\");" >> $config_host_pm;
+#echo "push(@src_archs, \"i386\");" >> $config_host_pm;
+#echo "push(@src_archs, \"x64\");" >> $config_host_pm;
+##echo "push(@src_archs, \"ppc\");" >> $config_host_pm;
+#echo "push(@dst_archs, \"i386\");" >> $config_host_pm;
+#echo "push(@dst_archs, \"x64\");" >> $config_host_pm;
+#echo "push(@src_dst_combos, \"etfg-i386\");" >> $config_host_pm;
+#echo "push(@src_dst_combos, \"i386-i386\");" >> $config_host_pm;
+#echo "push(@src_dst_combos, \"etfg-x64\");" >> $config_host_pm;
+#echo "push(@src_dst_combos, \"x64-x64\");" >> $config_host_pm;
+##echo "push(@src_dst_combos, \"ppc-i386\");" >> $config_host_pm;
 
 cp $src_dir/config-host.h.in $build_dir/
 config_host_h="$build_dir/config-host.h.in"
@@ -101,38 +101,38 @@ echo "#define I386_EXREG_GROUP_FP_STATUS_REG_C3 $i386_exreg_group_fp_status_reg_
 echo "#define I386_EXREG_GROUP_FP_STATUS_REG_OTHER $i386_exreg_group_fp_status_reg_other" >> $config_host_h
 
 
-echo "our \$i386_exreg_group_gprs = $i386_exreg_group_gprs;" >> $config_host_pm;
-echo "our \$i386_exreg_group_mmx = $i386_exreg_group_mmx;" >> $config_host_pm;
-echo "our \$i386_exreg_group_xmm = $i386_exreg_group_xmm;" >> $config_host_pm;
-echo "our \$i386_exreg_group_ymm = $i386_exreg_group_ymm;" >> $config_host_pm;
-echo "our \$i386_exreg_group_fp_data_regs = $i386_exreg_group_fp_data_regs;" >> $config_host_pm;
-echo "our \$i386_exreg_group_segs = $i386_exreg_group_segs;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_other = $i386_exreg_group_eflags_other;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_eq = $i386_exreg_group_eflags_eq;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_ne = $i386_exreg_group_eflags_ne;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_ult = $i386_exreg_group_eflags_ult;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_slt = $i386_exreg_group_eflags_slt;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_ugt = $i386_exreg_group_eflags_ugt;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_sgt = $i386_exreg_group_eflags_sgt;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_ule = $i386_exreg_group_eflags_ule;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_sle = $i386_exreg_group_eflags_sle;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_uge = $i386_exreg_group_eflags_uge;" >> $config_host_pm;
-echo "our \$i386_exreg_group_eflags_sge = $i386_exreg_group_eflags_sge;" >> $config_host_pm;
-echo "our \$i386_exreg_group_st_top = $i386_exreg_group_st_top;" >> $config_host_pm;
-echo "our \$i386_exreg_group_fp_control_reg_rm = $i386_exreg_group_fp_control_reg_rm;" >> $config_host_pm;
-echo "our \$i386_exreg_group_fp_control_reg_other = $i386_exreg_group_fp_control_reg_other;" >> $config_host_pm;
-echo "our \$i386_exreg_group_fp_tag_reg = $i386_exreg_group_fp_tag_reg;" >> $config_host_pm;
-echo "our \$i386_exreg_group_fp_last_instr_pointer = $i386_exreg_group_fp_last_instr_pointer;" >> $config_host_pm;
-echo "our \$i386_exreg_group_fp_last_operand_pointer = $i386_exreg_group_fp_last_operand_pointer;" >> $config_host_pm;
-echo "our \$i386_exreg_group_fp_opcode_reg = $i386_exreg_group_fp_opcode_reg;" >> $config_host_pm;
-echo "our \$i386_exreg_group_mxcsr_rm = $i386_exreg_group_mxcsr_rm;" >> $config_host_pm;
-echo "our \$i386_exreg_group_fp_status_reg_c0 = $i386_exreg_group_fp_status_reg_c0;" >> $config_host_pm
-echo "our \$i386_exreg_group_fp_status_reg_c1 = $i386_exreg_group_fp_status_reg_c1;" >> $config_host_pm
-echo "our \$i386_exreg_group_fp_status_reg_c2 = $i386_exreg_group_fp_status_reg_c2;" >> $config_host_pm
-echo "our \$i386_exreg_group_fp_status_reg_c3 = $i386_exreg_group_fp_status_reg_c3;" >> $config_host_pm
-echo "our \$i386_exreg_group_fp_status_reg_other = $i386_exreg_group_fp_status_reg_other;" >> $config_host_pm
-
-echo "1;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_gprs = $i386_exreg_group_gprs;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_mmx = $i386_exreg_group_mmx;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_xmm = $i386_exreg_group_xmm;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_ymm = $i386_exreg_group_ymm;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_fp_data_regs = $i386_exreg_group_fp_data_regs;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_segs = $i386_exreg_group_segs;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_other = $i386_exreg_group_eflags_other;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_eq = $i386_exreg_group_eflags_eq;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_ne = $i386_exreg_group_eflags_ne;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_ult = $i386_exreg_group_eflags_ult;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_slt = $i386_exreg_group_eflags_slt;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_ugt = $i386_exreg_group_eflags_ugt;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_sgt = $i386_exreg_group_eflags_sgt;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_ule = $i386_exreg_group_eflags_ule;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_sle = $i386_exreg_group_eflags_sle;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_uge = $i386_exreg_group_eflags_uge;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_eflags_sge = $i386_exreg_group_eflags_sge;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_st_top = $i386_exreg_group_st_top;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_fp_control_reg_rm = $i386_exreg_group_fp_control_reg_rm;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_fp_control_reg_other = $i386_exreg_group_fp_control_reg_other;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_fp_tag_reg = $i386_exreg_group_fp_tag_reg;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_fp_last_instr_pointer = $i386_exreg_group_fp_last_instr_pointer;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_fp_last_operand_pointer = $i386_exreg_group_fp_last_operand_pointer;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_fp_opcode_reg = $i386_exreg_group_fp_opcode_reg;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_mxcsr_rm = $i386_exreg_group_mxcsr_rm;" >> $config_host_pm;
+#echo "our \$i386_exreg_group_fp_status_reg_c0 = $i386_exreg_group_fp_status_reg_c0;" >> $config_host_pm
+#echo "our \$i386_exreg_group_fp_status_reg_c1 = $i386_exreg_group_fp_status_reg_c1;" >> $config_host_pm
+#echo "our \$i386_exreg_group_fp_status_reg_c2 = $i386_exreg_group_fp_status_reg_c2;" >> $config_host_pm
+#echo "our \$i386_exreg_group_fp_status_reg_c3 = $i386_exreg_group_fp_status_reg_c3;" >> $config_host_pm
+#echo "our \$i386_exreg_group_fp_status_reg_other = $i386_exreg_group_fp_status_reg_other;" >> $config_host_pm
+#
+#echo "1;" >> $config_host_pm;
 
 cd "$build_dir/etfg_i386" && cmake -G "Ninja" -D CMAKE_C_COMPILER=clang-11 -D CMAKE_CXX_COMPILER=clang++-11 -DCMAKE_BUILD_TYPE=etfg_i386 ../..
 cd "$build_dir/i386_i386" && cmake -G "Ninja" -D CMAKE_C_COMPILER=clang-11 -D CMAKE_CXX_COMPILER=clang++-11 -DCMAKE_BUILD_TYPE=i386_i386 ../..
