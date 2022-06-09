@@ -6,7 +6,7 @@ ifdef DISTCC_AVAILABLE
 endif
 
 all::
-	ninja -C build llvm2tfg clang #llc opt llvm-config llvm-dis llvm-link llvm-as harvest-dwarf LLVMSuperopt.so LLVMLockstep.so UnsequencedAliasVisitor.so harvest-dwarf scan-build scan-view
+	ninja -C build llvm2tfg clang opt #llc llvm-config llvm-dis llvm-link llvm-as harvest-dwarf LLVMSuperopt.so LLVMLockstep.so UnsequencedAliasVisitor.so harvest-dwarf scan-build scan-view
 	
 install::
 	#https://llvm.org/docs/GettingStarted.html
