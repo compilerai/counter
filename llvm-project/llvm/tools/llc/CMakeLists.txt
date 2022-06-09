@@ -9,6 +9,7 @@ set(LLVM_LINK_COMPONENTS
   AllTargetsDescs
   AllTargetsInfos
   Analysis
+  AsmParser
   AsmPrinter
   CodeGen
   Core
@@ -32,6 +33,9 @@ add_llvm_tool(llc
   SUPPORT_PLUGINS
   )
 
-target_link_libraries(llc PRIVATE ${SUPEROPT_LIBS})
+add_superopt_libs(slibs)
+message(STATUS "slibs=${slibs}")
+
+target_link_libraries(llc PRIVATE ${slibs})
 
 export_executable_symbols_for_plugins(llc)

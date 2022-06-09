@@ -67,7 +67,7 @@ their layouts, and subscripted accesses to these tensors in memory.
 
 The information captured in the IR allows a compact expression of all loop
 transformations, data remappings, explicit copying necessary for explicitly
-addressed memory in accelerators, mapping to pre-tuned expert written
+addressed memory in accelerators, mapping to pre-tuned expert-written
 primitives, and mapping to specialized vector instructions. Loop transformations
 that can be easily implemented include the body of affine transformations: these
 subsume all traditional loop transformations (unimodular and non-unimodular)
@@ -202,34 +202,21 @@ and described in
 interest
 [starts here](https://www.google.com/url?q=https://youtu.be/Ntj8ab-5cvE?t%3D596&sa=D&ust=1529450150971000&usg=AFQjCNFQHEWL7m8q3eO-1DiKw9zqC2v24Q).
 
-### Index type disallowed in vector/memref types
+### Index type disallowed in vector types
 
-Index types are not allowed as elements of `vector` and `memref` types. Index
+Index types are not allowed as elements of `vector` types. Index
 types are intended to be used for platform-specific "size" values and may appear
 in subscripts, sizes of aggregate types and affine expressions. They are also
 tightly coupled with `affine.apply` and affine.load/store operations; having
 `index` type is a necessary precondition of a value to be acceptable by these
-operations. While it may be useful to have `memref<?xindex>` to express indirect
-accesses, e.g. sparse matrix manipulations or lookup tables, it creates problems
-MLIR is not ready to address yet. MLIR needs to internally store constants of
-aggregate types and emit code operating on values of those types, which are
-subject to target-specific size and alignment constraints. Since MLIR does not
-have a target description mechanism at the moment, it cannot reliably emit such
-code. Moreover, some platforms may not support vectors of type equivalent to
-`index`.
+operations.
 
-Indirect access use cases can be alternatively supported by providing and
-`index_cast` instruction that allows for conversion between `index` and
-fixed-width integer types, at the SSA value level. It has an additional benefit
-of supporting smaller integer types, e.g. `i8` or `i16`, for small indices
-instead of (presumably larger) `index` type.
+We allow `index` types in tensors and memrefs as a code generation strategy has
+to map `index` to an implementation type and hence needs to be able to
+materialize corresponding values. However, the target might lack support for
+`vector` values with the target specfic equivalent of the `index` type.
 
-Index types are allowed as element types of `tensor` types. The `tensor` type
-specifically abstracts the target-specific aspects that intersect with the
-code-generation-related/lowering-related concerns explained above. In fact, the
-`tensor` type even allows dialect-specific types as element types.
-
-### Bit width of a non-primitive types and `index` is undefined
+### Bit width of a non-primitive type and `index` is undefined
 
 The bit width of a compound type is not defined by MLIR, it may be defined by a
 specific lowering pass. In MLIR, bit width is a property of certain primitive
@@ -259,7 +246,7 @@ abstraction, especially closer to source language, might want to differentiate
 signedness with integer types; while others, especially closer to machine
 instruction, might want signless integers. Instead of forcing each abstraction
 to adopt the same integer modelling or develop its own one in house, Integer
-types provides this as an option to help code reuse and consistency.
+type provides this as an option to help code reuse and consistency.
 
 For the standard dialect, the choice is to have signless integer types. An
 integer value does not have an intrinsic sign, and it's up to the specific op
@@ -765,7 +752,7 @@ func @conv2d(%input: memref<16x1024x1024x3xf32, #lm0, /*scratchpad=*/1>,
 }
 ```
 
-TODO (Add more examples showing the IR for a variety of interesting cases)
+TODO: (Add more examples showing the IR for a variety of interesting cases)
 
 ## Design alternatives and extensions
 
@@ -861,11 +848,12 @@ func @matmul(%A, %B, %C, %M, %N, %K) : (...)  { // %M, N, K are symbols
 
 ### Affine Relations
 
-The current MLIR spec includes affine maps and integer sets, but not affine
-relations. Affine relations are a natural way to model read and write access
-information, which can be very useful to capture the behavior of opaque external
-library calls, high-performance vendor libraries, or user-provided / user-tuned
-routines.
+The current MLIR spec includes affine maps and integer sets, but not
+affine relations. Affine relations are a natural way to model read and
+write access information, which can be very useful to capture the
+behavior of external library calls where no implementation is
+available, high-performance vendor libraries, or user-provided /
+user-tuned routines.
 
 An affine relation is a relation between input and output dimension identifiers
 while being symbolic on a list of symbolic identifiers and with affine

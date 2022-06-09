@@ -32,6 +32,7 @@ void nextpc_map_copy(nextpc_map_t *dst, nextpc_map_t const *src);
 char *nextpc_map_to_string(nextpc_map_t const *nextpc_map, char *buf, size_t size);
 void nextpc_map_set_identity_var(nextpc_map_t *nextpc_map, size_t num_nextpcs);
 void nextpc_map_rename_pcrel(valtag_t &pcrel, nextpc_map_t const *nextpc_map);
+void nextpc_map_add_indir_nextpc_if_not_present(nextpc_map_t *nextpc_map);
 
 #define MATCH_NEXTPC_VALTAG(vt, tvt, nextpc_map, var) do { \
   if (tvt.tag == tag_const) { \

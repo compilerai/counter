@@ -122,6 +122,8 @@
 #include <cassert>
 #include <cstdint>
 
+#include "Superopt/sym_exec_llvm.h"
+
 using namespace llvm;
 
 // A handy option for disabling TBAA functionality. The same effect can also be
@@ -370,8 +372,13 @@ static bool isStructPathTBAA(const MDNode *MD) {
 AliasResult TypeBasedAAResult::alias(const MemoryLocation &LocA,
                                      const MemoryLocation &LocB,
                                      AAQueryInfo &AAQI) {
-  if (!EnableTBAA)
+  DYN_DEBUG2(aliasAnalysis, std::cout << "TypeBasedAAResult::" << __func__ << " " << __LINE__ << ": LocA = " << sym_exec_common::get_value_name_using_srcdst_keyword(*LocA.Ptr, G_SRC_KEYWORD) << "\n");
+  DYN_DEBUG2(aliasAnalysis, std::cout << "TypeBasedAAResult::" << __func__ << " " << __LINE__ << ": LocB = " << sym_exec_common::get_value_name_using_srcdst_keyword(*LocB.Ptr, G_SRC_KEYWORD) << "\n");
+
+  if (!EnableTBAA) {
+    DYN_DEBUG2(aliasAnalysis, std::cout << "TypeBasedAAResult::" << __func__ << " " << __LINE__ << ": returning false because !EnableTBAA\n");
     return AAResultBase::alias(LocA, LocB, AAQI);
+  }
 
   // If accesses may alias, chain to the next AliasAnalysis.
   if (Aliases(LocA.AATags.TBAA, LocB.AATags.TBAA))

@@ -18,7 +18,7 @@ class JITDylibSearchOrderResolver : public JITSymbolResolver {
 public:
   JITDylibSearchOrderResolver(MaterializationResponsibility &MR) : MR(MR) {}
 
-  void lookup(const LookupSet &Symbols, OnResolvedFunction OnResolved) {
+  void lookup(const LookupSet &Symbols, OnResolvedFunction OnResolved) override {
     auto &ES = MR.getTargetJITDylib().getExecutionSession();
     SymbolLookupSet InternedSymbols;
 
@@ -47,15 +47,15 @@ public:
       MR.addDependenciesForAll(Deps);
     };
 
-    JITDylibSearchOrder SearchOrder;
-    MR.getTargetJITDylib().withSearchOrderDo(
-        [&](const JITDylibSearchOrder &JDs) { SearchOrder = JDs; });
-    ES.lookup(LookupKind::Static, SearchOrder, InternedSymbols,
+    JITDylibSearchOrder LinkOrder;
+    MR.getTargetJITDylib().withLinkOrderDo(
+        [&](const JITDylibSearchOrder &LO) { LinkOrder = LO; });
+    ES.lookup(LookupKind::Static, LinkOrder, InternedSymbols,
               SymbolState::Resolved, std::move(OnResolvedWithUnwrap),
               RegisterDependencies);
   }
 
-  Expected<LookupSet> getResponsibilitySet(const LookupSet &Symbols) {
+  Expected<LookupSet> getResponsibilitySet(const LookupSet &Symbols) override {
     LookupSet Result;
 
     for (auto &KV : MR.getSymbols()) {

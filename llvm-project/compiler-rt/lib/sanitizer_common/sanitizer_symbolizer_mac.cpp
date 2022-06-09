@@ -33,8 +33,15 @@ bool DlAddrSymbolizer::SymbolizePC(uptr addr, SymbolizedStack *stack) {
   int result = dladdr((const void *)addr, &info);
   if (!result) return false;
 
-  CHECK(addr >= reinterpret_cast<uptr>(info.dli_saddr));
-  stack->info.function_offset = addr - reinterpret_cast<uptr>(info.dli_saddr);
+  // Compute offset if possible. `dladdr()` doesn't always ensure that `addr >=
+  // sym_addr` so only compute the offset when this holds. Failure to find the
+  // function offset is not treated as a failure because it might still be
+  // possible to get the symbol name.
+  uptr sym_addr = reinterpret_cast<uptr>(info.dli_saddr);
+  if (addr >= sym_addr) {
+    stack->info.function_offset = addr - sym_addr;
+  }
+
   const char *demangled = DemangleSwiftAndCXX(info.dli_sname);
   if (!demangled) return false;
   stack->info.function = internal_strdup(demangled);
@@ -53,6 +60,11 @@ bool DlAddrSymbolizer::SymbolizeData(uptr addr, DataInfo *datainfo) {
 
 #define K_ATOS_ENV_VAR "__check_mach_ports_lookup"
 
+// This cannot live in `AtosSymbolizerProcess` because instances of that object
+// are allocated by the internal allocator which under ASan is poisoned with
+// kAsanInternalHeapMagic.
+static char kAtosMachPortEnvEntry[] = K_ATOS_ENV_VAR "=000000000000000";
+
 class AtosSymbolizerProcess : public SymbolizerProcess {
  public:
   explicit AtosSymbolizerProcess(const char *path)
@@ -69,7 +81,7 @@ class AtosSymbolizerProcess : public SymbolizerProcess {
       // We use `putenv()` rather than `setenv()` so that we can later directly
       // write into the storage without LibC getting involved to change what the
       // variable is set to
-      int result = putenv(mach_port_env_var_entry_);
+      int result = putenv(kAtosMachPortEnvEntry);
       CHECK_EQ(result, 0);
     }
   }
@@ -95,12 +107,13 @@ class AtosSymbolizerProcess : public SymbolizerProcess {
       // for our task port. We can't call `setenv()` here because it might call
       // malloc/realloc. To avoid that we instead update the
       // `mach_port_env_var_entry_` variable with our current PID.
-      uptr count = internal_snprintf(mach_port_env_var_entry_,
-                                     sizeof(mach_port_env_var_entry_),
+      uptr count = internal_snprintf(kAtosMachPortEnvEntry,
+                                     sizeof(kAtosMachPortEnvEntry),
                                      K_ATOS_ENV_VAR "=%s", pid_str_);
       CHECK_GE(count, sizeof(K_ATOS_ENV_VAR) + internal_strlen(pid_str_));
       // Document our assumption but without calling `getenv()` in normal
       // builds.
+      DCHECK(getenv(K_ATOS_ENV_VAR));
       DCHECK_EQ(internal_strcmp(getenv(K_ATOS_ENV_VAR), pid_str_), 0);
     }
 
@@ -117,7 +130,7 @@ class AtosSymbolizerProcess : public SymbolizerProcess {
     argv[i++] = path_to_binary;
     argv[i++] = "-p";
     argv[i++] = &pid_str_[0];
-    if (GetMacosVersion() == MACOS_VERSION_MAVERICKS) {
+    if (GetMacosAlignedVersion() == MacosVersion(10, 9)) {
       // On Mavericks atos prints a deprecation warning which we suppress by
       // passing -d. The warning isn't present on other OSX versions, even the
       // newer ones.
@@ -127,9 +140,10 @@ class AtosSymbolizerProcess : public SymbolizerProcess {
   }
 
   char pid_str_[16];
-  // Space for `\0` in `kAtosEnvVar_` is reused for `=`.
-  char mach_port_env_var_entry_[sizeof(K_ATOS_ENV_VAR) + sizeof(pid_str_)] =
-      K_ATOS_ENV_VAR "=0";
+  // Space for `\0` in `K_ATOS_ENV_VAR` is reused for `=`.
+  static_assert(sizeof(kAtosMachPortEnvEntry) ==
+                    (sizeof(K_ATOS_ENV_VAR) + sizeof(pid_str_)),
+                "sizes should match");
 };
 
 #undef K_ATOS_ENV_VAR
@@ -212,10 +226,10 @@ bool AtosSymbolizer::SymbolizePC(uptr addr, SymbolizedStack *stack) {
       start_address = reinterpret_cast<uptr>(info.dli_saddr);
   }
 
-  // Only assig to `function_offset` if we were able to get the function's
-  // start address.
-  if (start_address != AddressInfo::kUnknown) {
-    CHECK(addr >= start_address);
+  // Only assign to `function_offset` if we were able to get the function's
+  // start address and we got a sensible `start_address` (dladdr doesn't always
+  // ensure that `addr >= sym_addr`).
+  if (start_address != AddressInfo::kUnknown && addr >= start_address) {
     stack->info.function_offset = addr - start_address;
   }
   return true;

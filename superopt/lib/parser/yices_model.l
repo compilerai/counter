@@ -1,61 +1,84 @@
 %{
-#include <cstdio>
-#include <iostream>
+/* Implementation of yyFlexScanner */
 #include <string>
+#include <sstream>
+#include "support/bv_const.h"
 #include "parser/parse_tree_yices.h"
-#include "yices_model_y.hpp"
+#include "parser/yices_scanner.h"
 
-#define YY_DECL int yclex()
-// #define lctext yytext
-using namespace std;
+#undef  YY_DECL
+#define YY_DECL int Yices_Scanner::yylex( yy::Yices_Parser::semantic_type * const yylval, yy::Yices_Parser::location_type *loc)
 
-//string str; int l;
+/* typedef to make the returns for the tokens shorter */
+using token = yy::Yices_Parser::token;
+
+/* return EOD on exit */
+/* #define yyterminate() return(token::END) */
+
+/* update location on token matching */
+#define YY_USER_ACTION loc->columns(yyleng);
 %}
 
+%option c++
+%option prefix="yices"
+%option nodefault
+%option yyclass="Yices_Scanner"
 %option noyywrap
 
 digit [0-9]
 number {digit}+
 letter [A-Za-z]
-whitespace [ \t\n]+
-connectors (%|\.|-|_)
+connectors (%|\.|-|_|!|=|\/)
 func_name (_)?({letter})({letter}|{digit}|{connectors})*
+internal_func_name @fun_{number}+
+WS  [ \t\v\f]
 
 %%
 
-"@fun_"{number}	{
-					yclval.str = strdup(yctext);
-					return FUNC_NAME;
-				}
+%{
+  /* this is run each time yylex is called */
+  loc->step();
+%}
 
-"#b"[0-1]+	{
-				yclval.str = strdup(yctext);
-				return CONST;
-			}
-"true"          return TRUE;
-"false"         return FALSE;
-[-<>*+;/{}_]	return *yctext;
+"sat"          ;
+"model"	       ;
 
-"function"	return DECL;
-"default"	return DEFAULT;
-"_ BitVec"{whitespace}[1-9][0-9]*	{
-			string str = string(yctext);
-			int l = str.find_last_not_of("0123456789");
-			str = (str.substr(l + 1));
-			yclval.num = atoi(str.c_str());
-			return BV;
-		}
-"type"            return TYPE;
-"("               return L_BRAC;
-")"               return R_BRAC;
-"Array"           return ARRAY;
-"FunType"{number} return FUNTYPE;
-"="               return EQ;
-"sat"	            ;
+"#b"[0-1]+    { yylval->build<pair<size_t,bv_const>>(str_to_bvlen_val_pair(yytext)); return token::BVCONST; }
+[-<>*+;/{}_]  { return *yytext; }
 
-{func_name}	{	yclval.str = strdup(yctext);
-				return GLOBAL_FUNC_NAME;
-			}
-{whitespace}	;	/*Ignore Whitespace */
+"_ BitVec"	{
+	return token::BV;
+}
 
-.	;
+{number}   {
+	string str = string(yytext);
+  yylval->build<int>(stoi(str));
+  return token::NUM;
+}
+
+"function"	   { return token::DECL; }
+"type"	       { return token::TYPE; }
+"default"	     { return token::DEFAULT; }
+"Bool"	       { return token::BOOL; }
+"Array"	       { return token::ARRAY; }
+"("			       { return token::L_BRAC; }
+")"			       { return token::R_BRAC; }
+"="	           { return token::EQ;  }
+"true"         { return token::TRUE;  }
+"false"        { return token::FALSE; }
+
+{internal_func_name}	{
+	yylval->build<string>(yytext);
+	return token::INTERNAL_FUNC_NAME;
+}
+
+{func_name}	{
+  yylval->build<string>(yytext);
+  return token::GLOBAL_FUNC_NAME;
+}
+
+{WS}+				{ loc->step(); }
+[\n]+				{ loc->lines(yyleng); loc->step(); }
+.           { /*Ignore everything else */ }
+
+%%

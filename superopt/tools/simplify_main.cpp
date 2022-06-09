@@ -1,5 +1,5 @@
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 {
   // command line args processing
   cl::arg<string> expr_file(cl::implicit_prefix, "", "path to .expr file ('-' for stdin)");
-  cl::arg<string> debug(cl::explicit_prefix, "debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --debug=correlate=2,smt_query=1");
+  cl::arg<string> debug(cl::explicit_prefix, "dyn-debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --debug=correlate=2,smt_query=1");
   cl::arg<unsigned> smt_query_timeout(cl::explicit_prefix, "smt-query-timeout", 600, "Timeout per query (s)");
   cl::arg<unsigned> sage_query_timeout(cl::explicit_prefix, "sage-query-timeout", 600, "Timeout per query (s)");
   cl::cl cmd("Expression Simplifier");
@@ -34,8 +34,13 @@ int main(int argc, char **argv)
   cmd.add_arg(&output_file);
   cmd.parse(argc, argv);
 
-  eqspace::init_dyn_debug_from_string(debug.get_value());
-  CPP_DBG_EXEC(DYN_DEBUG, eqspace::print_debug_class_levels());
+  init_dyn_debug_from_string(debug.get_value());
+  CPP_DBG_EXEC(DYN_DEBUG, print_debug_class_levels());
+
+  DBG_SET(IS_CONTAINED_IN, 2);
+  DBG_SET(EXPR_SIMPLIFY, 2);
+  DBG_SET(IS_OVERLAPPING, 2);
+  DBG_SET(IS_EXPR_EQUAL_SYNTACTIC, 2);
 
   context::config cfg(smt_query_timeout.get_value(), sage_query_timeout.get_value());
   context ctx(cfg);
@@ -44,6 +49,7 @@ int main(int argc, char **argv)
 
   //DYN_DBG_SET(expr_simplify_solver, 2);
   //DYN_DBG_SET(expr_simplify, 2);
+  DYN_DBG_ELEVATE(expr_simplify_select_dbg, 2);
 
   ifstream fin;
   istream* in = &cin;
@@ -64,12 +70,15 @@ int main(int argc, char **argv)
   ofs << ctx.expr_to_string_table(e_simpl) << endl;
   ofs.close();
 
+  cout << "simplified_expr: " << expr_string(e_simpl) << endl;
+
   CPP_DBG_EXEC(STATS,
     cout << __func__ << " " << __LINE__ << ":Printing stats:\n";
     print_all_timers();
     cout << stats::get();
-    cout << ctx.stat() << endl;
+    cout << ctx.stats() << endl;
   );
+  cout << "Simplified expr written to " << output_file.get_value() << endl;
 
   return 0;
 }

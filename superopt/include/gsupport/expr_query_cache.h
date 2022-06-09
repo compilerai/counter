@@ -22,7 +22,7 @@ private:
   unsigned long m_total = 0;
   unsigned long m_both_found = 0;
   unsigned long m_either_found = 0;
-  map<vector<expr_id_t>, pair<vector<expr_ref>, deque<tuple<T, set<predicate_ref>, precond_t, sprel_map_pair_t, tfg_suffixpath_t, pred_avail_exprs_t>>>>m_cache;
+  map<vector<expr_id_t>, pair<vector<expr_ref>, deque<tuple<T, set<predicate_ref>, precond_t, sprel_map_pair_t, tfg_suffixpath_t, avail_exprs_t>>>>m_cache;
   /*bool (&m_lessT)(T const &a, T const &b);
   T minT(T const &a, T const &b) {
     if (m_lessT(a, b)) {
@@ -40,7 +40,7 @@ private:
       return a;
     }
   }*/
-  void add_vec(set<predicate_ref> const &lhs_set, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, pred_avail_exprs_t const &src_pred_avail_exprs, vector<expr_ref> const &rhs, T val)
+  void add_vec(set<predicate_ref> const &lhs_set, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, avail_exprs_t const &src_avail_exprs, vector<expr_ref> const &rhs, T val)
   {
     if (g_ctx->expr_query_caches_are_disabled()) { //HACK
       return;
@@ -51,18 +51,18 @@ private:
     }
     if (m_cache.count(rhs_ids) != 0) {
       auto& deck =  m_cache[rhs_ids].second;
-      deck.push_back(make_tuple(val, lhs_set, precond, sprel_map_pair, src_suffixpath, src_pred_avail_exprs));
+      deck.push_back(make_tuple(val, lhs_set, precond, sprel_map_pair, src_suffixpath, src_avail_exprs));
       if (deck.size() > EXPR_QUERY_CACHE_SIZE)
         deck.pop_front();
     } else {
-      deque<tuple<T, set<predicate_ref>, precond_t, sprel_map_pair_t, tfg_suffixpath_t, pred_avail_exprs_t>> ls;
-      ls.push_back(make_tuple(val, lhs_set, precond, sprel_map_pair, src_suffixpath, src_pred_avail_exprs));
+      deque<tuple<T, set<predicate_ref>, precond_t, sprel_map_pair_t, tfg_suffixpath_t, avail_exprs_t>> ls;
+      ls.push_back(make_tuple(val, lhs_set, precond, sprel_map_pair, src_suffixpath, src_avail_exprs));
       m_cache[rhs_ids] = make_pair(rhs, ls);
     }
   }
 
   /* assumes subset x bool lattice with top = empty set x true, and bottom = full set x false; lower-bound (lb) corresponds to full set x true; upper-bound (ub) corresponds to empty set x false */
-  void find_bounds_vec(set<predicate_ref> const &lhs_predicates, precond_t const &lhs_precond, sprel_map_pair_t const &lhs_sprel_map_pair, tfg_suffixpath_t const &lhs_suffixpath, pred_avail_exprs_t const &lhs_pred_avail_exprs, vector<expr_ref> const &rhs_vec, bool &lb_found, T &lb, bool &ub_found, T &ub)
+  void find_bounds_vec(set<predicate_ref> const &lhs_predicates, precond_t const &lhs_precond, sprel_map_pair_t const &lhs_sprel_map_pair, tfg_suffixpath_t const &lhs_suffixpath, avail_exprs_t const &lhs_avail_exprs, vector<expr_ref> const &rhs_vec, bool &lb_found, T &lb, bool &ub_found, T &ub)
   {
     if (g_ctx->expr_query_caches_are_disabled()) { //HACK
       return;
@@ -79,54 +79,54 @@ private:
       ++m_misses;
       return;
     }
-    deque<tuple<T, set<predicate_ref>, precond_t, sprel_map_pair_t, tfg_suffixpath_t, pred_avail_exprs_t>> const &ls = m_cache.at(rhs_ids).second;
+    deque<tuple<T, set<predicate_ref>, precond_t, sprel_map_pair_t, tfg_suffixpath_t, avail_exprs_t>> const &ls = m_cache.at(rhs_ids).second;
     set<predicate_ref> const *cur_top_predicates = nullptr, *cur_bottom_predicates = nullptr;
     precond_t const *cur_top_precond = nullptr, *cur_bottom_precond = nullptr;
     sprel_map_pair_t const *cur_top_sprel_map_pair = nullptr, *cur_bottom_sprel_map_pair = nullptr;
     tfg_suffixpath_t const *cur_top_suffixpath = nullptr, *cur_bottom_suffixpath = nullptr;
-    pred_avail_exprs_t const *cur_top_pred_avail_exprs = nullptr, *cur_bottom_pred_avail_exprs = nullptr;
+    avail_exprs_t const *cur_top_avail_exprs = nullptr, *cur_bottom_avail_exprs = nullptr;
     for (auto const& p : ls) {
       set<predicate_ref> const &predicates = get<1>(p);
       precond_t const &precond = get<2>(p);
       sprel_map_pair_t const &sprel_map_pair = get<3>(p);
       tfg_suffixpath_t const &suffixpath = get<4>(p);
-      pred_avail_exprs_t const &pred_avail_exprs = get<5>(p);
+      avail_exprs_t const &avail_exprs = get<5>(p);
       if (   lhs_precond.precond_implies(precond)
           && tfg::tfg_suffixpath_implies(lhs_suffixpath, suffixpath)
           && lhs_sprel_map_pair.sprel_map_pair_implies(sprel_map_pair)
           && set_contains(lhs_predicates, predicates)
-          && pred_avail_exprs_contains(lhs_pred_avail_exprs, pred_avail_exprs)
+          && lhs_avail_exprs.avail_exprs_contains(avail_exprs)
           && (   !ub_found
               || (   precond.precond_implies(*cur_top_precond)
                   && tfg::tfg_suffixpath_implies(suffixpath, *cur_top_suffixpath)
                   && sprel_map_pair.sprel_map_pair_implies(*cur_top_sprel_map_pair)
                   && set_contains(predicates, *cur_top_predicates)
-                  && pred_avail_exprs_contains(pred_avail_exprs, *cur_top_pred_avail_exprs)))) {
+                  && avail_exprs.avail_exprs_contains(*cur_top_avail_exprs)))) {
         ub = get<0>(p);
         cur_top_predicates = &predicates;
         cur_top_precond = &precond;
         cur_top_sprel_map_pair = &sprel_map_pair;
         cur_top_suffixpath = &suffixpath;
-        cur_top_pred_avail_exprs = &pred_avail_exprs;
+        cur_top_avail_exprs = &avail_exprs;
         ub_found = true;
       }
       if (   precond.precond_implies(lhs_precond)
           && tfg::tfg_suffixpath_implies(suffixpath, lhs_suffixpath)
           && sprel_map_pair.sprel_map_pair_implies(lhs_sprel_map_pair)
           && set_contains(predicates, lhs_predicates)
-          && pred_avail_exprs_contains(pred_avail_exprs, lhs_pred_avail_exprs)
+          && avail_exprs.avail_exprs_contains(lhs_avail_exprs)
           && (   !lb_found
               || (   cur_bottom_precond->precond_implies(precond)
                   && tfg::tfg_suffixpath_implies(*cur_bottom_suffixpath, suffixpath)
                   && cur_bottom_sprel_map_pair->sprel_map_pair_implies(sprel_map_pair)
                   && set_contains(*cur_bottom_predicates, predicates)
-                  && pred_avail_exprs_contains(*cur_bottom_pred_avail_exprs, pred_avail_exprs)))) {
+                  && cur_bottom_avail_exprs->avail_exprs_contains(avail_exprs)))) {
         lb = get<0>(p);
         cur_bottom_predicates = &predicates;
         cur_bottom_precond = &precond;
         cur_bottom_sprel_map_pair = &sprel_map_pair;
         cur_bottom_suffixpath = &suffixpath;
-        cur_bottom_pred_avail_exprs = &pred_avail_exprs;
+        cur_bottom_avail_exprs = &avail_exprs;
         lb_found = true;
       }
     }
@@ -144,34 +144,34 @@ public:
     m_cache.clear();
   }
 
-  void add(predicate_set_t const &lhs_set, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, pred_avail_exprs_t const &src_pred_avail_exprs, expr_ref rhs, T val)
+  void add(predicate_set_t const &lhs_set, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, avail_exprs_t const &src_avail_exprs, expr_ref rhs, T val)
   {
     vector<expr_ref> rhs_vec;
     rhs_vec.push_back(rhs);
-    add_vec(set<predicate_ref>(lhs_set.begin(),lhs_set.end()), precond, sprel_map_pair, src_suffixpath, src_pred_avail_exprs, rhs_vec, val);
+    add_vec(set<predicate_ref>(lhs_set.begin(),lhs_set.end()), precond, sprel_map_pair, src_suffixpath, src_avail_exprs, rhs_vec, val);
   }
 
-  void add(predicate_set_t const &lhs_set, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, pred_avail_exprs_t const &src_pred_avail_exprs, expr_ref rhs1, expr_ref rhs2, T val)
+  void add(predicate_set_t const &lhs_set, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, avail_exprs_t const &src_avail_exprs, expr_ref rhs1, expr_ref rhs2, T val)
   {
     vector<expr_ref> rhs_vec;
     rhs_vec.push_back(rhs1);
     rhs_vec.push_back(rhs2);
-    add_vec(set<predicate_ref>(lhs_set.begin(),lhs_set.end()), precond, sprel_map_pair, src_suffixpath, src_pred_avail_exprs, rhs_vec, val);
+    add_vec(set<predicate_ref>(lhs_set.begin(),lhs_set.end()), precond, sprel_map_pair, src_suffixpath, src_avail_exprs, rhs_vec, val);
   }
 
-  void find_bounds(predicate_set_t const &lhs_set, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, pred_avail_exprs_t const &src_pred_avail_exprs, expr_ref rhs, bool &lb_found, T &lb, bool &ub_found, T &ub)
+  void find_bounds(predicate_set_t const &lhs_set, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, avail_exprs_t const &src_avail_exprs, expr_ref rhs, bool &lb_found, T &lb, bool &ub_found, T &ub)
   {
     vector<expr_ref> rhs_vec;
     rhs_vec.push_back(rhs);
-    find_bounds_vec(set<predicate_ref>(lhs_set.begin(),lhs_set.end()), precond, sprel_map_pair, src_suffixpath, src_pred_avail_exprs, rhs_vec, lb_found, lb, ub_found, ub);
+    find_bounds_vec(set<predicate_ref>(lhs_set.begin(),lhs_set.end()), precond, sprel_map_pair, src_suffixpath, src_avail_exprs, rhs_vec, lb_found, lb, ub_found, ub);
   }
 
-  void find_bounds(predicate_set_t const &lhs_set, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, pred_avail_exprs_t const &src_pred_avail_exprs, expr_ref rhs1, expr_ref rhs2, bool &lb_found, T &lb, bool &ub_found, T &ub)
+  void find_bounds(predicate_set_t const &lhs_set, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, avail_exprs_t const &src_avail_exprs, expr_ref rhs1, expr_ref rhs2, bool &lb_found, T &lb, bool &ub_found, T &ub)
   {
     vector<expr_ref> rhs_vec;
     rhs_vec.push_back(rhs1);
     rhs_vec.push_back(rhs2);
-    find_bounds_vec(set<predicate_ref>(lhs_set.begin(),lhs_set.end()), precond, sprel_map_pair, src_suffixpath, src_pred_avail_exprs, rhs_vec, lb_found, lb, ub_found, ub);
+    find_bounds_vec(set<predicate_ref>(lhs_set.begin(),lhs_set.end()), precond, sprel_map_pair, src_suffixpath, src_avail_exprs, rhs_vec, lb_found, lb, ub_found, ub);
   }
 
   string stats(string const& pfx) const

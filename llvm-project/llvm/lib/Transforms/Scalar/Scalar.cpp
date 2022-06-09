@@ -20,6 +20,7 @@
 #include "llvm/Analysis/ScopedNoAliasAA.h"
 #include "llvm/Analysis/TypeBasedAliasAnalysis.h"
 #include "llvm/Analysis/UnsequencedAliasAnalysis.h"
+#include "llvm/Analysis/SemanticAliasAnalysis.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Verifier.h"
@@ -86,6 +87,7 @@ void llvm::initializeScalarOpts(PassRegistry &Registry) {
   initializeLowerExpectIntrinsicPass(Registry);
   initializeLowerGuardIntrinsicLegacyPassPass(Registry);
   initializeLowerMatrixIntrinsicsLegacyPassPass(Registry);
+  initializeLowerMatrixIntrinsicsMinimalLegacyPassPass(Registry);
   initializeLowerWidenableConditionLegacyPassPass(Registry);
   initializeMemCpyOptLegacyPassPass(Registry);
   initializeMergeICmpsLegacyPassPass(Registry);
@@ -142,7 +144,7 @@ void LLVMAddAlignmentFromAssumptionsPass(LLVMPassManagerRef PM) {
 }
 
 void LLVMAddCFGSimplificationPass(LLVMPassManagerRef PM) {
-  unwrap(PM)->add(createCFGSimplificationPass(1, false, false, true));
+  unwrap(PM)->add(createCFGSimplificationPass());
 }
 
 void LLVMAddDeadStoreEliminationPass(LLVMPassManagerRef PM) {
@@ -305,6 +307,11 @@ void LLVMAddUnifyFunctionExitNodesPass(LLVMPassManagerRef PM) {
 void LLVMAddUnsequencedAliasAnalysisPass(LLVMPassManagerRef PM) {
   unwrap(PM)->add(createUnseqAAWrapperPass());
 }
+
+void LLVMAddSemanticAliasAnalysisPass(LLVMPassManagerRef PM) {
+  unwrap(PM)->add(createSemanticAAWrapperPass());
+}
+
 
 void LLVMAddRemoveAliasPredicatesPass(LLVMPassManagerRef PM) {
     unwrap(PM)->add(createRemoveAliasPredicatesPass());

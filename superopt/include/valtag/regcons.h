@@ -143,6 +143,7 @@ bool regcons_entry_intersect(regcons_t *dst, regcons_t const *src, exreg_group_i
 
 bool regmap_satisfies_regcons(regmap_t const *regmap, struct regcons_t const *regcons);
 void regcons_set_i386(struct regcons_t  *regcons, fixed_reg_mapping_t const &fixed_reg_mapping);
+void regcons_set_x64(struct regcons_t  *regcons, fixed_reg_mapping_t const &fixed_reg_mapping);
 void regcons_set_ppc(struct regcons_t  *regcons, fixed_reg_mapping_t const &fixed_reg_mapping);
 void regcons_unmark_dst_reg(regcons_t *regcons, int group, int dst_reg);
 //void regcons_minimize(struct regcons_t  *regcons);

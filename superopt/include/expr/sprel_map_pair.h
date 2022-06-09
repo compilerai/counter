@@ -1,7 +1,7 @@
 #pragma once
 
 #include "expr/expr.h"
-#include "tfg/predicate.h"
+//#include "gsupport/predicate.h"
 #include "support/types.h"
 
 namespace eqspace {
@@ -12,6 +12,8 @@ private:
 public:
   sprel_map_pair_t(sprel_map_t const &src_sprel/*, map<graph_loc_id_t, expr_ref> const &src_locid2expr_map*/, sprel_map_t const &dst_sprel/*, map<graph_loc_id_t, expr_ref> const &dst_locid2expr_map*/);
   sprel_map_pair_t(sprel_map_t const &src_sprel/*, map<graph_loc_id_t, expr_ref> const &src_locid2expr_map*/);
+  sprel_map_pair_t(map<expr_id_t, pair<expr_ref, expr_ref>> const& submap) : m_submap(submap)
+  { }
   sprel_map_pair_t() {}
   sprel_map_pair_t(consts_struct_t const &cs) {}
   map<expr_id_t, pair<expr_ref, expr_ref>> const &sprel_map_pair_get_submap() const;
@@ -26,7 +28,6 @@ public:
   {
     m_submap = submap;
   }
-  list<predicate_ref> get_predicates_for_non_var_locs(context *ctx) const;
 };
 
 expr_ref sprel_map_pair_and_var_locs(sprel_map_pair_t const& sprel_map_pair, expr_ref const &in);

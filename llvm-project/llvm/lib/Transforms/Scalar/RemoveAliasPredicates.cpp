@@ -23,7 +23,7 @@ static bool removePredicates(Function &F) {
     Instruction* I = WorkList.back();
     WorkList.pop_back();
     if (isa<CallInst>(I)) {
-      Value* sv = cast<CallInst>(I)->getCalledValue()->stripPointerCasts();
+      Value* sv = cast<CallInst>(I)->getCalledOperand()->stripPointerCasts();
       if (sv->getName() == "__not_alias") {
         // Remove the instruction.
         I->eraseFromParent();

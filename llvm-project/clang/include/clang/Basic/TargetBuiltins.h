@@ -15,6 +15,7 @@
 #ifndef LLVM_CLANG_BASIC_TARGETBUILTINS_H
 #define LLVM_CLANG_BASIC_TARGETBUILTINS_H
 
+#include <algorithm>
 #include <stdint.h>
 #include "clang/Basic/Builtins.h"
 #include "llvm/Support/MathExtras.h"
@@ -118,6 +119,11 @@ namespace clang {
   };
   }
 
+  /// VE builtins
+  namespace VE {
+  enum { LastTIBuiltin = clang::Builtin::FirstTSBuiltin - 1, LastTSBuiltin };
+  }
+
   /// Flags to identify the types for overloaded Neon builtins.
   ///
   /// These must be kept in sync with the flags in utils/TableGen/NeonEmitter.h.
@@ -141,7 +147,8 @@ namespace clang {
       Poly128,
       Float16,
       Float32,
-      Float64
+      Float64,
+      BFloat16
     };
 
     NeonTypeFlags(unsigned F) : Flags(F) {}
@@ -155,7 +162,7 @@ namespace clang {
     EltType getEltType() const { return (EltType)(Flags & EltTypeMask); }
     bool isPoly() const {
       EltType ET = getEltType();
-      return ET == Poly8 || ET == Poly16;
+      return ET == Poly8 || ET == Poly16 || ET == Poly64;
     }
     bool isUnsigned() const { return (Flags & UnsignedFlag) != 0; }
     bool isQuad() const { return (Flags & QuadFlag) != 0; }
@@ -167,6 +174,7 @@ namespace clang {
     unsigned EltTypeShift;
     unsigned MemEltTypeShift;
     unsigned MergeTypeShift;
+    unsigned SplatOperandMaskShift;
 
   public:
 #define LLVM_GET_SVE_TYPEFLAGS
@@ -201,6 +209,7 @@ namespace clang {
       EltTypeShift = llvm::countTrailingZeros(EltTypeMask);
       MemEltTypeShift = llvm::countTrailingZeros(MemEltTypeMask);
       MergeTypeShift = llvm::countTrailingZeros(MergeTypeMask);
+      SplatOperandMaskShift = llvm::countTrailingZeros(SplatOperandMask);
     }
 
     EltType getEltType() const {
@@ -215,6 +224,14 @@ namespace clang {
       return (MergeType)((Flags & MergeTypeMask) >> MergeTypeShift);
     }
 
+    unsigned getSplatOperand() const {
+      return ((Flags & SplatOperandMask) >> SplatOperandMaskShift) - 1;
+    }
+
+    bool hasSplatOperand() const {
+      return Flags & SplatOperandMask;
+    }
+
     bool isLoad() const { return Flags & IsLoad; }
     bool isStore() const { return Flags & IsStore; }
     bool isGatherLoad() const { return Flags & IsGatherLoad; }
@@ -222,6 +239,22 @@ namespace clang {
     bool isStructLoad() const { return Flags & IsStructLoad; }
     bool isStructStore() const { return Flags & IsStructStore; }
     bool isZExtReturn() const { return Flags & IsZExtReturn; }
+    bool isByteIndexed() const { return Flags & IsByteIndexed; }
+    bool isOverloadNone() const { return Flags & IsOverloadNone; }
+    bool isOverloadWhile() const { return Flags & IsOverloadWhile; }
+    bool isOverloadDefault() const { return !(Flags & OverloadKindMask); }
+    bool isOverloadWhileRW() const { return Flags & IsOverloadWhileRW; }
+    bool isOverloadCvt() const { return Flags & IsOverloadCvt; }
+    bool isPrefetch() const { return Flags & IsPrefetch; }
+    bool isReverseCompare() const { return Flags & ReverseCompare; }
+    bool isAppendSVALL() const { return Flags & IsAppendSVALL; }
+    bool isInsertOp1SVALL() const { return Flags & IsInsertOp1SVALL; }
+    bool isGatherPrefetch() const { return Flags & IsGatherPrefetch; }
+    bool isReverseUSDOT() const { return Flags & ReverseUSDOT; }
+    bool isUndef() const { return Flags & IsUndef; }
+    bool isTupleCreate() const { return Flags & IsTupleCreate; }
+    bool isTupleGet() const { return Flags & IsTupleGet; }
+    bool isTupleSet() const { return Flags & IsTupleSet; }
 
     uint64_t getBits() const { return Flags; }
     bool isFlagSet(uint64_t Flag) const { return Flags & Flag; }
@@ -286,6 +319,14 @@ namespace clang {
       LastTSBuiltin
     };
   }
+
+  static constexpr uint64_t LargestBuiltinID = std::max<uint64_t>(
+      {NEON::FirstTSBuiltin, ARM::LastTSBuiltin, SVE::FirstTSBuiltin,
+       AArch64::LastTSBuiltin, BPF::LastTSBuiltin, PPC::LastTSBuiltin,
+       NVPTX::LastTSBuiltin, AMDGPU::LastTSBuiltin, X86::LastTSBuiltin,
+       Hexagon::LastTSBuiltin, Mips::LastTSBuiltin, XCore::LastTSBuiltin,
+       Le64::LastTSBuiltin, SystemZ::LastTSBuiltin,
+       WebAssembly::LastTSBuiltin});
 
 } // end namespace clang.
 

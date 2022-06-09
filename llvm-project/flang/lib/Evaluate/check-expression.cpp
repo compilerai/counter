@@ -7,10 +7,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "flang/Evaluate/check-expression.h"
+#include "flang/Evaluate/intrinsics.h"
 #include "flang/Evaluate/traverse.h"
 #include "flang/Evaluate/type.h"
 #include "flang/Semantics/symbol.h"
 #include "flang/Semantics/tools.h"
+#include <set>
+#include <string>
 
 namespace Fortran::evaluate {
 
@@ -30,7 +33,9 @@ public:
     return IsKindTypeParameter(inq.parameter());
   }
   bool operator()(const semantics::Symbol &symbol) const {
-    return IsNamedConstant(symbol) || IsImpliedDoIndex(symbol);
+    const auto &ultimate{symbol.GetUltimate()};
+    return IsNamedConstant(ultimate) || IsImpliedDoIndex(ultimate) ||
+        IsInitialProcedureTarget(ultimate);
   }
   bool operator()(const CoarrayRef &) const { return false; }
   bool operator()(const semantics::ParamValue &param) const {
@@ -38,22 +43,50 @@ public:
   }
   template <typename T> bool operator()(const FunctionRef<T> &call) const {
     if (const auto *intrinsic{std::get_if<SpecificIntrinsic>(&call.proc().u)}) {
-      return intrinsic->name == "kind";
+      // kind is always a constant, and we avoid cascading errors by calling
+      // invalid calls to intrinsics constant
+      return intrinsic->name == "kind" ||
+          intrinsic->name == IntrinsicProcTable::InvalidName;
       // TODO: other inquiry intrinsics
     } else {
       return false;
     }
   }
-
+  bool operator()(const StructureConstructor &constructor) const {
+    for (const auto &[symRef, expr] : constructor) {
+      if (!IsConstantStructureConstructorComponent(*symRef, expr.value())) {
+        return false;
+      }
+    }
+    return true;
+  }
+  bool operator()(const Component &component) const {
+    return (*this)(component.base());
+  }
   // Forbid integer division by zero in constants.
   template <int KIND>
   bool operator()(
       const Divide<Type<TypeCategory::Integer, KIND>> &division) const {
     using T = Type<TypeCategory::Integer, KIND>;
     if (const auto divisor{GetScalarConstantValue<T>(division.right())}) {
-      return !divisor->IsZero();
+      return !divisor->IsZero() && (*this)(division.left());
     } else {
       return false;
+    }
+  }
+
+  bool operator()(const Constant<SomeDerived> &) const { return true; }
+
+private:
+  bool IsConstantStructureConstructorComponent(
+      const Symbol &component, const Expr<SomeType> &expr) const {
+    if (IsAllocatable(component)) {
+      return IsNullPointer(expr);
+    } else if (IsPointer(component)) {
+      return IsNullPointer(expr) || IsInitialDataTarget(expr) ||
+          IsInitialProcedureTarget(expr);
+    } else {
+      return (*this)(expr);
     }
   }
 };
@@ -64,40 +97,60 @@ template <typename A> bool IsConstantExpr(const A &x) {
 template bool IsConstantExpr(const Expr<SomeType> &);
 template bool IsConstantExpr(const Expr<SomeInteger> &);
 template bool IsConstantExpr(const Expr<SubscriptInteger> &);
+template bool IsConstantExpr(const StructureConstructor &);
 
 // Object pointer initialization checking predicate IsInitialDataTarget().
 // This code determines whether an expression is allowable as the static
 // data address used to initialize a pointer with "=> x".  See C765.
-struct IsInitialDataTargetHelper
+class IsInitialDataTargetHelper
     : public AllTraverse<IsInitialDataTargetHelper, true> {
+public:
   using Base = AllTraverse<IsInitialDataTargetHelper, true>;
   using Base::operator();
-  explicit IsInitialDataTargetHelper(parser::ContextualMessages &m)
+  explicit IsInitialDataTargetHelper(parser::ContextualMessages *m)
       : Base{*this}, messages_{m} {}
+
+  bool emittedMessage() const { return emittedMessage_; }
 
   bool operator()(const BOZLiteralConstant &) const { return false; }
   bool operator()(const NullPointer &) const { return true; }
   template <typename T> bool operator()(const Constant<T> &) const {
     return false;
   }
-  bool operator()(const semantics::Symbol &symbol) const {
+  bool operator()(const semantics::Symbol &symbol) {
     const Symbol &ultimate{symbol.GetUltimate()};
     if (IsAllocatable(ultimate)) {
-      messages_.Say(
-          "An initial data target may not be a reference to an ALLOCATABLE '%s'"_err_en_US,
-          ultimate.name());
+      if (messages_) {
+        messages_->Say(
+            "An initial data target may not be a reference to an ALLOCATABLE '%s'"_err_en_US,
+            ultimate.name());
+        emittedMessage_ = true;
+      }
+      return false;
     } else if (ultimate.Corank() > 0) {
-      messages_.Say(
-          "An initial data target may not be a reference to a coarray '%s'"_err_en_US,
-          ultimate.name());
+      if (messages_) {
+        messages_->Say(
+            "An initial data target may not be a reference to a coarray '%s'"_err_en_US,
+            ultimate.name());
+        emittedMessage_ = true;
+      }
+      return false;
     } else if (!ultimate.attrs().test(semantics::Attr::TARGET)) {
-      messages_.Say(
-          "An initial data target may not be a reference to an object '%s' that lacks the TARGET attribute"_err_en_US,
-          ultimate.name());
+      if (messages_) {
+        messages_->Say(
+            "An initial data target may not be a reference to an object '%s' that lacks the TARGET attribute"_err_en_US,
+            ultimate.name());
+        emittedMessage_ = true;
+      }
+      return false;
     } else if (!IsSaved(ultimate)) {
-      messages_.Say(
-          "An initial data target may not be a reference to an object '%s' that lacks the SAVE attribute"_err_en_US,
-          ultimate.name());
+      if (messages_) {
+        messages_->Say(
+            "An initial data target may not be a reference to an object '%s' that lacks the SAVE attribute"_err_en_US,
+            ultimate.name());
+        emittedMessage_ = true;
+      }
+      return false;
     }
     return true;
   }
@@ -142,12 +195,51 @@ struct IsInitialDataTargetHelper
   bool operator()(const Relational<SomeType> &) const { return false; }
 
 private:
-  parser::ContextualMessages &messages_;
+  parser::ContextualMessages *messages_;
+  bool emittedMessage_{false};
 };
 
 bool IsInitialDataTarget(
-    const Expr<SomeType> &x, parser::ContextualMessages &messages) {
-  return IsInitialDataTargetHelper{messages}(x);
+    const Expr<SomeType> &x, parser::ContextualMessages *messages) {
+  IsInitialDataTargetHelper helper{messages};
+  bool result{helper(x)};
+  if (!result && messages && !helper.emittedMessage()) {
+    messages->Say(
+        "An initial data target must be a designator with constant subscripts"_err_en_US);
+  }
+  return result;
+}
+
+bool IsInitialProcedureTarget(const semantics::Symbol &symbol) {
+  const auto &ultimate{symbol.GetUltimate()};
+  return std::visit(
+      common::visitors{
+          [](const semantics::SubprogramDetails &) { return true; },
+          [](const semantics::SubprogramNameDetails &) { return true; },
+          [&](const semantics::ProcEntityDetails &proc) {
+            return !semantics::IsPointer(ultimate) && !proc.isDummy();
+          },
+          [](const auto &) { return false; },
+      },
+      ultimate.details());
+}
+
+bool IsInitialProcedureTarget(const ProcedureDesignator &proc) {
+  if (const auto *intrin{proc.GetSpecificIntrinsic()}) {
+    return !intrin->isRestrictedSpecific;
+  } else if (proc.GetComponent()) {
+    return false;
+  } else {
+    return IsInitialProcedureTarget(DEREF(proc.GetSymbol()));
+  }
+}
+
+bool IsInitialProcedureTarget(const Expr<SomeType> &expr) {
+  if (const auto *proc{std::get_if<ProcedureDesignator>(&expr.u)}) {
+    return IsInitialProcedureTarget(*proc);
+  } else {
+    return IsNullPointer(expr);
+  }
 }
 
 // Specification expression validation (10.1.11(2), C1010)
@@ -157,8 +249,9 @@ class CheckSpecificationExprHelper
 public:
   using Result = std::optional<std::string>;
   using Base = AnyTraverse<CheckSpecificationExprHelper, Result>;
-  explicit CheckSpecificationExprHelper(const semantics::Scope &s)
-      : Base{*this}, scope_{s} {}
+  explicit CheckSpecificationExprHelper(
+      const semantics::Scope &s, const IntrinsicProcTable &table)
+      : Base{*this}, scope_{s}, table_{table} {}
   using Base::operator();
 
   Result operator()(const ProcedureDesignator &) const {
@@ -169,7 +262,11 @@ public:
   Result operator()(const semantics::Symbol &symbol) const {
     if (semantics::IsNamedConstant(symbol)) {
       return std::nullopt;
-    } else if (symbol.IsDummy()) {
+    } else if (scope_.IsDerivedType() && IsVariableName(symbol)) { // C750, C754
+      return "derived type component or type parameter value not allowed to "
+             "reference variable '"s +
+          symbol.name().ToString() + "'";
+    } else if (IsDummy(symbol)) {
       if (symbol.attrs().test(semantics::Attr::OPTIONAL)) {
         return "reference to OPTIONAL dummy argument '"s +
             symbol.name().ToString() + "'";
@@ -213,16 +310,52 @@ public:
     return std::nullopt;
   }
 
+  template <int KIND>
+  Result operator()(const TypeParamInquiry<KIND> &inq) const {
+    if (scope_.IsDerivedType() && !IsConstantExpr(inq) &&
+        inq.parameter().owner() != scope_) { // C750, C754
+      return "non-constant reference to a type parameter inquiry not "
+             "allowed for derived type components or type parameter values";
+    }
+    return std::nullopt;
+  }
+
   template <typename T> Result operator()(const FunctionRef<T> &x) const {
     if (const auto *symbol{x.proc().GetSymbol()}) {
       if (!semantics::IsPureProcedure(*symbol)) {
         return "reference to impure function '"s + symbol->name().ToString() +
             "'";
       }
+      if (semantics::IsStmtFunction(*symbol)) {
+        return "reference to statement function '"s +
+            symbol->name().ToString() + "'";
+      }
+      if (scope_.IsDerivedType()) { // C750, C754
+        return "reference to function '"s + symbol->name().ToString() +
+            "' not allowed for derived type components or type parameter"
+            " values";
+      }
       // TODO: other checks for standard module procedures
     } else {
       const SpecificIntrinsic &intrin{DEREF(x.proc().GetSpecificIntrinsic())};
-      if (intrin.name == "present") {
+      if (scope_.IsDerivedType()) { // C750, C754
+        if ((table_.IsIntrinsic(intrin.name) &&
+                badIntrinsicsForComponents_.find(intrin.name) !=
+                    badIntrinsicsForComponents_.end()) ||
+            IsProhibitedFunction(intrin.name)) {
+          return "reference to intrinsic '"s + intrin.name +
+              "' not allowed for derived type components or type parameter"
+              " values";
+        }
+        if (table_.GetIntrinsicClass(intrin.name) ==
+                IntrinsicClass::inquiryFunction &&
+            !IsConstantExpr(x)) {
+          return "non-constant reference to inquiry intrinsic '"s +
+              intrin.name +
+              "' not allowed for derived type components or type"
+              " parameter values";
+        }
+      } else if (intrin.name == "present") {
         return std::nullopt; // no need to check argument(s)
       }
       if (IsConstantExpr(x)) {
@@ -235,29 +368,38 @@ public:
 
 private:
   const semantics::Scope &scope_;
+  const IntrinsicProcTable &table_;
+  const std::set<std::string> badIntrinsicsForComponents_{
+      "allocated", "associated", "extends_type_of", "present", "same_type_as"};
+  static bool IsProhibitedFunction(std::string name) { return false; }
 };
 
 template <typename A>
 void CheckSpecificationExpr(const A &x, parser::ContextualMessages &messages,
-    const semantics::Scope &scope) {
-  if (auto why{CheckSpecificationExprHelper{scope}(x)}) {
+    const semantics::Scope &scope, const IntrinsicProcTable &table) {
+  if (auto why{CheckSpecificationExprHelper{scope, table}(x)}) {
     messages.Say("Invalid specification expression: %s"_err_en_US, *why);
   }
 }
 
 template void CheckSpecificationExpr(const Expr<SomeType> &,
-    parser::ContextualMessages &, const semantics::Scope &);
+    parser::ContextualMessages &, const semantics::Scope &,
+    const IntrinsicProcTable &);
 template void CheckSpecificationExpr(const Expr<SomeInteger> &,
-    parser::ContextualMessages &, const semantics::Scope &);
+    parser::ContextualMessages &, const semantics::Scope &,
+    const IntrinsicProcTable &);
 template void CheckSpecificationExpr(const Expr<SubscriptInteger> &,
-    parser::ContextualMessages &, const semantics::Scope &);
+    parser::ContextualMessages &, const semantics::Scope &,
+    const IntrinsicProcTable &);
 template void CheckSpecificationExpr(const std::optional<Expr<SomeType>> &,
-    parser::ContextualMessages &, const semantics::Scope &);
+    parser::ContextualMessages &, const semantics::Scope &,
+    const IntrinsicProcTable &);
 template void CheckSpecificationExpr(const std::optional<Expr<SomeInteger>> &,
-    parser::ContextualMessages &, const semantics::Scope &);
+    parser::ContextualMessages &, const semantics::Scope &,
+    const IntrinsicProcTable &);
 template void CheckSpecificationExpr(
     const std::optional<Expr<SubscriptInteger>> &, parser::ContextualMessages &,
-    const semantics::Scope &);
+    const semantics::Scope &, const IntrinsicProcTable &);
 
 // IsSimplyContiguous() -- 9.5.4
 class IsSimplyContiguousHelper

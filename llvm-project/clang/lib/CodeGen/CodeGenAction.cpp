@@ -269,7 +269,7 @@ std::string getFileNameFromPath(std::string path) {
       for (auto &LM : LinkModules) {
         if (LM.PropagateAttrs)
           for (Function &F : *LM.Module)
-            Gen->CGM().AddDefaultFnAttrs(F);
+            Gen->CGM().addDefaultFunctionDefinitionAttributes(F);
 
         CurLinkModule = LM.Module.get();
 
@@ -656,8 +656,9 @@ const FullSourceLoc BackendConsumer::getBestLocationFromDebugLoc(
 
 void BackendConsumer::UnsupportedDiagHandler(
     const llvm::DiagnosticInfoUnsupported &D) {
-  // We only support errors.
-  assert(D.getSeverity() == llvm::DS_Error);
+  // We only support warnings or errors.
+  assert(D.getSeverity() == llvm::DS_Error ||
+         D.getSeverity() == llvm::DS_Warning);
 
   StringRef Filename;
   unsigned Line, Column;
@@ -675,7 +676,11 @@ void BackendConsumer::UnsupportedDiagHandler(
     DiagnosticPrinterRawOStream DP(MsgStream);
     D.print(DP);
   }
-  Diags.Report(Loc, diag::err_fe_backend_unsupported) << MsgStream.str();
+
+  auto DiagType = D.getSeverity() == llvm::DS_Error
+                      ? diag::err_fe_backend_unsupported
+                      : diag::warn_fe_backend_unsupported;
+  Diags.Report(Loc, DiagType) << MsgStream.str();
 
   if (BadDebugInfo)
     // If we were not able to translate the file:line:col information
@@ -1008,11 +1013,9 @@ CodeGenAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
 
   CoverageSourceInfo *CoverageInfo = nullptr;
   // Add the preprocessor callback only when the coverage mapping is generated.
-  if (CI.getCodeGenOpts().CoverageMapping) {
-    CoverageInfo = new CoverageSourceInfo;
-    CI.getPreprocessor().addPPCallbacks(
-                                    std::unique_ptr<PPCallbacks>(CoverageInfo));
-  }
+  if (CI.getCodeGenOpts().CoverageMapping)
+    CoverageInfo = CodeGen::CoverageMappingModuleGen::setUpCoverageCallbacks(
+        CI.getPreprocessor());
 
   std::unique_ptr<BackendConsumer> Result(new BackendConsumer(
       BA, CI.getDiagnostics(), CI.getHeaderSearchOpts(),

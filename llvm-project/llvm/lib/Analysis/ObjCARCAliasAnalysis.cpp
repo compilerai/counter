@@ -24,12 +24,14 @@
 
 #include "llvm/Analysis/ObjCARCAliasAnalysis.h"
 #include "llvm/Analysis/ObjCARCAnalysisUtils.h"
+#include "llvm/Analysis/Passes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Value.h"
 #include "llvm/InitializePasses.h"
-#include "llvm/PassAnalysisSupport.h"
-#include "llvm/PassSupport.h"
+#include "llvm/Pass.h"
+
+#include "Superopt/sym_exec_llvm.h"
 
 #define DEBUG_TYPE "objc-arc-aa"
 
@@ -39,6 +41,8 @@ using namespace llvm::objcarc;
 AliasResult ObjCARCAAResult::alias(const MemoryLocation &LocA,
                                    const MemoryLocation &LocB,
                                    AAQueryInfo &AAQI) {
+  DYN_DEBUG2(aliasAnalysis, std::cout << "ObjCARCAAResult::" << __func__ << " " << __LINE__ << ": LocA = " << sym_exec_common::get_value_name_using_srcdst_keyword(*LocA.Ptr, G_SRC_KEYWORD) << "\n");
+  DYN_DEBUG2(aliasAnalysis, std::cout << "ObjCARCAAResult::" << __func__ << " " << __LINE__ << ": LocB = " << sym_exec_common::get_value_name_using_srcdst_keyword(*LocB.Ptr, G_SRC_KEYWORD) << "\n");
   if (!EnableARCOpts)
     return AAResultBase::alias(LocA, LocB, AAQI);
 
@@ -54,8 +58,8 @@ AliasResult ObjCARCAAResult::alias(const MemoryLocation &LocA,
 
   // If that failed, climb to the underlying object, including climbing through
   // ObjC-specific no-ops, and try making an imprecise alias query.
-  const Value *UA = GetUnderlyingObjCPtr(SA, DL);
-  const Value *UB = GetUnderlyingObjCPtr(SB, DL);
+  const Value *UA = GetUnderlyingObjCPtr(SA);
+  const Value *UB = GetUnderlyingObjCPtr(SB);
   if (UA != SA || UB != SB) {
     Result = AAResultBase::alias(MemoryLocation(UA), MemoryLocation(UB), AAQI);
     // We can't use MustAlias or PartialAlias results here because
@@ -83,7 +87,7 @@ bool ObjCARCAAResult::pointsToConstantMemory(const MemoryLocation &Loc,
 
   // If that failed, climb to the underlying object, including climbing through
   // ObjC-specific no-ops, and try making an imprecise alias query.
-  const Value *U = GetUnderlyingObjCPtr(S, DL);
+  const Value *U = GetUnderlyingObjCPtr(S);
   if (U != S)
     return AAResultBase::pointsToConstantMemory(MemoryLocation(U), AAQI,
                                                 OrLocal);

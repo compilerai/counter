@@ -9,9 +9,9 @@
 #ifndef LLDB_SOURCE_PLUGINS_PLATFORM_MACOSX_PLATFORMAPPLETVSIMULATOR_H
 #define LLDB_SOURCE_PLUGINS_PLATFORM_MACOSX_PLATFORMAPPLETVSIMULATOR_H
 
-#include "PlatformDarwin.h"
+#include "PlatformAppleSimulator.h"
 
-class PlatformAppleTVSimulator : public PlatformDarwin {
+class PlatformAppleTVSimulator : public PlatformAppleSimulator {
 public:
   // Class Functions
   static lldb::PlatformSP CreateInstance(bool force,
@@ -62,9 +62,6 @@ public:
   FindProcesses(const lldb_private::ProcessInstanceInfoMatch &match_info,
                 lldb_private::ProcessInstanceInfoList &process_infos) override;
 
-  bool GetSupportedArchitectureAtIndex(uint32_t idx,
-                                       lldb_private::ArchSpec &arch) override;
-
   void
   AddClangModuleCompilationOptions(lldb_private::Target *target,
                                    std::vector<std::string> &options) override {
@@ -77,10 +74,12 @@ protected:
   std::string m_sdk_directory;
   std::string m_build_update;
 
-  const char *GetSDKDirectoryAsCString();
+  llvm::StringRef GetSDKDirectoryAsCString();
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(PlatformAppleTVSimulator);
+  PlatformAppleTVSimulator(const PlatformAppleTVSimulator &) = delete;
+  const PlatformAppleTVSimulator &
+  operator=(const PlatformAppleTVSimulator &) = delete;
 };
 
 #endif // LLDB_SOURCE_PLUGINS_PLATFORM_MACOSX_PLATFORMAPPLETVSIMULATOR_H

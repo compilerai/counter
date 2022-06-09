@@ -68,7 +68,7 @@ public:
   tmp_reg_count_t get_tmp_reg_count() const { return m_tmp_reg_count; }
   tmp_reg_count_t get_tmp_reg_count_for_group(exreg_group_id_t g) const
   {
-#if ARCH_DST == ARCH_I386
+#if ARCH_DST == ARCH_I386 || ARCH_DST == ARCH_X64
     size_t count = (g == DST_EXREG_GROUP_GPRS) ? m_tmp_reg_count : (g >= I386_EXREG_GROUP_EFLAGS_OTHER && g <= I386_EXREG_GROUP_EFLAGS_SGE) ? 1 : 0;
 #else
     NOT_IMPLEMENTED();

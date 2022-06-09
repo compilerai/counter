@@ -13,14 +13,14 @@
 #include "support/src-defs.h"
 #include "support/debug.h"
 //#include "rewrite/harvest.h"
-#include "codegen/etfg_insn.h"
+#include "etfg/etfg_insn.h"
 #include "i386/insntypes.h"
-#include "rewrite/dst-insn.h"
-#include "rewrite/insn_list.h"
+#include "insn/dst-insn.h"
+#include "insn/insn_list.h"
 //#include "config.h"
 //#include "cpu.h"
 //#include "exec-all.h"
-#include "rewrite/jumptable.h"
+#include "insn/jumptable.h"
 //#include "strtab.h"
 //#include "disas.h"
 #include "expr/z3_solver.h"
@@ -35,20 +35,21 @@
 #include "valtag/regset.h"
 //#include "temporaries.h"
 #include "support/utils.h"
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 #include "rewrite/peephole.h"
 
 #include "i386/insn.h"
+#include "x64/insn.h"
 #include "ppc/insn.h"
-#include "rewrite/src-insn.h"
+#include "insn/src-insn.h"
 
 //#include "live_ranges.h"
 #include "ppc/regs.h"
-#include "rewrite/rdefs.h"
+#include "insn/rdefs.h"
 #include "valtag/memset.h"
 #include "ppc/insn.h"
 
-#include "rewrite/edge_table.h"
+#include "insn/edge_table.h"
 #include "rewrite/peep_entry_list.h"
 
 #include "valtag/elf/elftypes.h"
@@ -133,9 +134,10 @@ main(int argc, char **argv)
   jtable_t jtable;
   jtable_init(&jtable, &itable, jtable_cur_regmap_filename_ptr, MAX_NUM_STATES);
 
-  char const *output_filename_ptr = output_filename.get_value().c_str();
-  string output_filename_gencode = output_filename.get_value() + ".gencode.c";
-  string output_filename_gencode_so = output_filename.get_value() + ".gencode.so";
+  string output_filename_val = output_filename.get_value();
+  char const *output_filename_ptr = output_filename_val.c_str();
+  string output_filename_gencode = output_filename_val + ".gencode.c";
+  string output_filename_gencode_so = output_filename_val + ".gencode.so";
   char const *output_filename_gencode_ptr = output_filename_gencode.c_str();
   char const *output_filename_gencode_so_ptr = output_filename_gencode_so.c_str();
   //string jtab_cur = string(ABUILD_DIR "/superopt-files/jtab.") + itable.get_id_string();

@@ -9,10 +9,12 @@
 #ifndef MLIR_PASS_PASSMANAGER_H
 #define MLIR_PASS_PASSMANAGER_H
 
+#include "mlir/IR/OperationSupport.h"
 #include "mlir/Support/LogicalResult.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/iterator.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <functional>
 #include <vector>
@@ -99,13 +101,16 @@ public:
   void mergeStatisticsInto(OpPassManager &other);
 
 private:
-  OpPassManager(OperationName name, bool disableThreads, bool verifyPasses);
+  OpPassManager(OperationName name, bool verifyPasses);
 
   /// A pointer to an internal implementation instance.
   std::unique_ptr<detail::OpPassManagerImpl> impl;
 
   /// Allow access to the constructor.
   friend class PassManager;
+
+  /// Allow access.
+  friend detail::OpPassManagerImpl;
 };
 
 //===----------------------------------------------------------------------===//
@@ -136,17 +141,13 @@ public:
   LLVM_NODISCARD
   LogicalResult run(ModuleOp module);
 
-  /// Disable support for multi-threading within the pass manager.
-  void disableMultithreading(bool disable = true);
-
-  /// Return true if the pass manager is configured with multi-threading
-  /// enabled.
-  bool isMultithreadingEnabled();
-
   /// Enable support for the pass manager to generate a reproducer on the event
   /// of a crash or a pass failure. `outputFile` is a .mlir filename used to
-  /// write the generated reproducer.
-  void enableCrashReproducerGeneration(StringRef outputFile);
+  /// write the generated reproducer. If `genLocalReproducer` is true, the pass
+  /// manager will attempt to generate a local reproducer that contains the
+  /// smallest pipeline.
+  void enableCrashReproducerGeneration(StringRef outputFile,
+                                       bool genLocalReproducer = false);
 
   //===--------------------------------------------------------------------===//
   // Instrumentations
@@ -172,8 +173,11 @@ public:
     ///   pass, in the case of a non-failure, we should first check if any
     ///   potential mutations were made. This allows for reducing the number of
     ///   logs that don't contain meaningful changes.
-    explicit IRPrinterConfig(bool printModuleScope = false,
-                             bool printAfterOnlyOnChange = false);
+    /// * 'opPrintingFlags' sets up the printing flags to use when printing the
+    ///   IR.
+    explicit IRPrinterConfig(
+        bool printModuleScope = false, bool printAfterOnlyOnChange = false,
+        OpPrintingFlags opPrintingFlags = OpPrintingFlags());
     virtual ~IRPrinterConfig();
 
     /// A hook that may be overridden by a derived config that checks if the IR
@@ -197,6 +201,9 @@ public:
     /// "changed".
     bool shouldPrintAfterOnlyOnChange() const { return printAfterOnlyOnChange; }
 
+    /// Returns the printing flags to be used to print the IR.
+    OpPrintingFlags getOpPrintingFlags() const { return opPrintingFlags; }
+
   private:
     /// A flag that indicates if the IR should be printed at module scope.
     bool printModuleScope;
@@ -204,6 +211,9 @@ public:
     /// A flag that indicates that the IR after a pass should only be printed if
     /// a change is detected.
     bool printAfterOnlyOnChange;
+
+    /// Flags to control printing behavior.
+    OpPrintingFlags opPrintingFlags;
   };
 
   /// Add an instrumentation to print the IR before and after pass execution,
@@ -220,21 +230,53 @@ public:
   /// * 'printAfterOnlyOnChange' signals that when printing the IR after a
   ///   pass, in the case of a non-failure, we should first check if any
   ///   potential mutations were made.
+  /// * 'opPrintingFlags' sets up the printing flags to use when printing the
+  ///   IR.
   /// * 'out' corresponds to the stream to output the printed IR to.
   void enableIRPrinting(
-      std::function<bool(Pass *, Operation *)> shouldPrintBeforePass,
-      std::function<bool(Pass *, Operation *)> shouldPrintAfterPass,
-      bool printModuleScope, bool printAfterOnlyOnChange, raw_ostream &out);
+      std::function<bool(Pass *, Operation *)> shouldPrintBeforePass =
+          [](Pass *, Operation *) { return true; },
+      std::function<bool(Pass *, Operation *)> shouldPrintAfterPass =
+          [](Pass *, Operation *) { return true; },
+      bool printModuleScope = true, bool printAfterOnlyOnChange = true,
+      raw_ostream &out = llvm::errs(),
+      OpPrintingFlags opPrintingFlags = OpPrintingFlags());
 
   //===--------------------------------------------------------------------===//
   // Pass Timing
+
+  /// A configuration struct provided to the pass timing feature.
+  class PassTimingConfig {
+  public:
+    using PrintCallbackFn = function_ref<void(raw_ostream &)>;
+
+    /// Initialize the configuration.
+    /// * 'displayMode' switch between list or pipeline display (see the
+    /// `PassDisplayMode` enum documentation).
+    explicit PassTimingConfig(
+        PassDisplayMode displayMode = PassDisplayMode::Pipeline)
+        : displayMode(displayMode) {}
+
+    virtual ~PassTimingConfig();
+
+    /// A hook that may be overridden by a derived config to control the
+    /// printing. The callback is supplied by the framework and the config is
+    /// responsible to call it back with a stream for the output.
+    virtual void printTiming(PrintCallbackFn printCallback);
+
+    /// Return the `PassDisplayMode` this config was created with.
+    PassDisplayMode getDisplayMode() { return displayMode; }
+
+  private:
+    PassDisplayMode displayMode;
+  };
 
   /// Add an instrumentation to time the execution of passes and the computation
   /// of analyses.
   /// Note: Timing should be enabled after all other instrumentations to avoid
   /// any potential "ghost" timing from other instrumentations being
   /// unintentionally included in the timing results.
-  void enableTiming(PassDisplayMode displayMode = PassDisplayMode::Pipeline);
+  void enableTiming(std::unique_ptr<PassTimingConfig> config = nullptr);
 
   /// Prompts the pass manager to print the statistics collected for each of the
   /// held passes after each call to 'run'.
@@ -245,8 +287,12 @@ private:
   /// Dump the statistics of the passes within this pass manager.
   void dumpStatistics();
 
-  /// Flag that specifies if pass timing is enabled.
-  bool passTiming : 1;
+  /// Run the pass manager with crash recover enabled.
+  LogicalResult runWithCrashRecovery(ModuleOp module, AnalysisManager am);
+  /// Run the given passes with crash recover enabled.
+  LogicalResult
+  runWithCrashRecovery(MutableArrayRef<std::unique_ptr<Pass>> passes,
+                       ModuleOp module, AnalysisManager am);
 
   /// Flag that specifies if pass statistics should be dumped.
   Optional<PassDisplayMode> passStatisticsMode;
@@ -256,6 +302,12 @@ private:
 
   /// An optional filename to use when generating a crash reproducer if valid.
   Optional<std::string> crashReproducerFileName;
+
+  /// Flag that specifies if pass timing is enabled.
+  bool passTiming : 1;
+
+  /// Flag that specifies if the generated crash reproducer should be local.
+  bool localReproducer : 1;
 };
 
 /// Register a set of useful command-line options that can be used to configure

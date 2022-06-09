@@ -1,6 +1,6 @@
 #include "support/debug.h"
 #include "support/cmd_helper.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -8,12 +8,13 @@
 #include "support/globals.h"
 #include "expr/expr.h"
 #include "expr/local_sprel_expr_guesses.h"
-#include "codegen/codegen.h"
+#include "rewrite/static_translate.h"
 
 #include "support/timers.h"
 
 #include "i386/insn.h"
-#include "codegen/etfg_insn.h"
+#include "x64/insn.h"
+#include "etfg/etfg_insn.h"
 #include "expr/z3_solver.h"
 
 #include <fstream>
@@ -22,8 +23,6 @@
 #include <string>
 
 using namespace std;
-
-static char as1[4096];
 
 void dst_free();
 

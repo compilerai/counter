@@ -35,6 +35,7 @@
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TypeBasedAliasAnalysis.h"
 #include "llvm/Analysis/UnsequencedAliasAnalysis.h"
+#include "llvm/Analysis/SemanticAliasAnalysis.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRPrintingPasses.h"
@@ -81,6 +82,7 @@ namespace {
       (void) llvm::createTypeBasedAAWrapperPass();
       (void) llvm::createScopedNoAliasAAWrapperPass();
       (void) llvm::createUnseqAAWrapperPass();
+      (void) llvm::createSemanticAAWrapperPass();
       (void) llvm::createRemoveAliasPredicatesPass();
       (void) llvm::createBoundsCheckingLegacyPass();
       (void) llvm::createBreakCriticalEdgesPass();

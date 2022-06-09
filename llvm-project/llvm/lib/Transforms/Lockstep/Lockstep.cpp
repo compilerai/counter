@@ -94,7 +94,8 @@ namespace {
           errs() << __func__ << " " << __LINE__ << ": struct not implemented\n";
           assert(0);
         }
-        case Type::VectorTyID: {
+        case Type::ScalableVectorTyID:
+        case Type::FixedVectorTyID: {
           errs() << __func__ << " " << __LINE__ << ": vector not implemented\n";
           assert(0);
         }
@@ -234,7 +235,7 @@ namespace {
         return;
       }
       FunctionCallee new_callee = M.getOrInsertFunction(new_fun_name, calleeF->getFunctionType());
-      Value* calleeV = c->getCalledValue();
+      Value* calleeV = c->getCalledOperand();
       Value* new_calleeV = new_callee.getCallee();
       //Constant* new_calleeV = M.getOrInsertFunction(new_fun_name, calleeF->getFunctionType());
       Instruction* I = c;

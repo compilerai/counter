@@ -155,7 +155,7 @@ Parser::DeclGroupPtrTy Parser::ParseNamespace(DeclaratorContext Context,
     // Normal namespace definition, not a nested-namespace-definition.
   } else if (InlineLoc.isValid()) {
     Diag(InlineLoc, diag::err_inline_nested_namespace_definition);
-  } else if (getLangOpts().CPlusPlus2a) {
+  } else if (getLangOpts().CPlusPlus20) {
     Diag(ExtraNSs[0].NamespaceLoc,
          diag::warn_cxx14_compat_nested_namespace_definition);
     if (FirstNestedInlineLoc.isValid())
@@ -984,10 +984,10 @@ SourceLocation Parser::ParseDecltypeSpecifier(DeclSpec &DS) {
       EnterExpressionEvaluationContext Unevaluated(
           Actions, Sema::ExpressionEvaluationContext::Unevaluated, nullptr,
           Sema::ExpressionEvaluationContextRecord::EK_Decltype);
-      Result =
-          Actions.CorrectDelayedTyposInExpr(ParseExpression(), [](Expr *E) {
-            return E->hasPlaceholderType() ? ExprError() : E;
-          });
+      Result = Actions.CorrectDelayedTyposInExpr(
+          ParseExpression(), /*InitDecl=*/nullptr,
+          /*RecoverUncorrectedTypos=*/false,
+          [](Expr *E) { return E->hasPlaceholderType() ? ExprError() : E; });
       if (Result.isInvalid()) {
         DS.SetTypeSpecError();
         if (SkipUntil(tok::r_paren, StopAtSemi | StopBeforeMatch)) {
@@ -1283,7 +1283,8 @@ bool Parser::isValidAfterTypeSpecifier(bool CouldBeBitfield) {
   case tok::annot_pragma_ms_pointers_to_members:
     return true;
   case tok::colon:
-    return CouldBeBitfield;     // enum E { ... }   :         2;
+    return CouldBeBitfield ||   // enum E { ... }   :         2;
+           ColonIsSacred;       // _Generic(..., enum E :     2);
   // Microsoft compatibility
   case tok::kw___cdecl:         // struct foo {...} __cdecl      x;
   case tok::kw___fastcall:      // struct foo {...} __fastcall   x;
@@ -1680,7 +1681,8 @@ void Parser::ParseClassSpecifier(tok::TokenKind TagTokKind,
 
   const PrintingPolicy &Policy = Actions.getASTContext().getPrintingPolicy();
   Sema::TagUseKind TUK;
-  if (DSC == DeclSpecContext::DSC_trailing)
+  if (isDefiningTypeSpecifierContext(DSC) == AllowDefiningTypeSpec::No ||
+      (getLangOpts().OpenMP && OpenMPDirectiveParsing))
     TUK = Sema::TUK_Reference;
   else if (Tok.is(tok::l_brace) ||
            (getLangOpts().CPlusPlus && Tok.is(tok::colon)) ||
@@ -1963,7 +1965,7 @@ void Parser::ParseClassSpecifier(tok::TokenKind TagTokKind,
       Decl *D =
           SkipBody.CheckSameAsPrevious ? SkipBody.New : TagOrTempResult.get();
       // Parse the definition body.
-      ParseStructUnionBody(StartLoc, TagType, D);
+      ParseStructUnionBody(StartLoc, TagType, cast<RecordDecl>(D));
       if (SkipBody.CheckSameAsPrevious &&
           !Actions.ActOnDuplicateDefinition(DS, TagOrTempResult.get(),
                                             SkipBody)) {
@@ -2183,7 +2185,6 @@ void Parser::HandleMemberFunctionDeclDelays(Declarator& DeclaratorInfo,
     // declarations.
     auto LateMethod = new LateParsedMethodDeclaration(this, ThisDecl);
     getCurrentClass().LateParsedDeclarations.push_back(LateMethod);
-    LateMethod->TemplateScope = getCurScope()->isTemplateParamScope();
 
     // Stash the exception-specification tokens in the late-pased method.
     LateMethod->ExceptionSpecTokens = FTI.ExceptionSpecTokens;
@@ -2712,6 +2713,11 @@ Parser::ParseCXXClassMemberDeclaration(AccessSpecifier AS,
           DefinitionKind = FDK_Defaulted;
         else if (KW.is(tok::kw_delete))
           DefinitionKind = FDK_Deleted;
+        else if (KW.is(tok::code_completion)) {
+          Actions.CodeCompleteAfterFunctionEquals(DeclaratorInfo);
+          cutOffParsing();
+          return nullptr;
+        }
       }
     }
     DeclaratorInfo.setFunctionDefinitionKind(DefinitionKind);
@@ -2787,7 +2793,7 @@ Parser::ParseCXXClassMemberDeclaration(AccessSpecifier AS,
                  !DS.isFriendSpecified()) {
         // It's a default member initializer.
         if (BitfieldSize.get())
-          Diag(Tok, getLangOpts().CPlusPlus2a
+          Diag(Tok, getLangOpts().CPlusPlus20
                         ? diag::warn_cxx17_compat_bitfield_member_init
                         : diag::ext_bitfield_member_init);
         HasInClassInit = Tok.is(tok::equal) ? ICIS_CopyInit : ICIS_ListInit;
@@ -2992,7 +2998,7 @@ ExprResult Parser::ParseCXXMemberInitializer(Decl *D, bool IsFunction,
           << 0 /* default */;
       else
         Diag(ConsumeToken(), diag::err_default_special_members)
-            << getLangOpts().CPlusPlus2a;
+            << getLangOpts().CPlusPlus20;
       return ExprError();
     }
   }
@@ -3365,6 +3371,16 @@ void Parser::ParseCXXMemberSpecification(SourceLocation RecordLoc,
     // are complete and we can parse the delayed portions of method
     // declarations and the lexed inline method definitions, along with any
     // delayed attributes.
+
+    // Save the state of Sema.FPFeatures, and change the setting
+    // to the levels specified on the command line.  Previous level
+    // will be restored when the RAII object is destroyed.
+    Sema::FPFeaturesStateRAII SaveFPFeaturesState(Actions);
+    FPOptionsOverride NewOverrides;
+    Actions.CurFPFeatures = NewOverrides.applyOverrides(getLangOpts());
+    Actions.FpPragmaStack.Act(Tok.getLocation(), Sema::PSK_Reset, StringRef(),
+                              0 /*unused*/);
+
     SourceLocation SavedPrevTokLocation = PrevTokLocation;
     ParseLexedPragmas(getCurrentClass());
     ParseLexedAttributes(getCurrentClass());
@@ -3921,8 +3937,8 @@ void Parser::PopParsingClass(Sema::ParsingClassState state) {
   // after the top-level class is completely defined. Therefore, add
   // it to the list of nested classes within its parent.
   assert(getCurScope()->isClassScope() && "Nested class outside of class scope?");
-  ClassStack.top()->LateParsedDeclarations.push_back(new LateParsedClass(this, Victim));
-  Victim->TemplateScope = getCurScope()->getParent()->isTemplateParamScope();
+  ClassStack.top()->LateParsedDeclarations.push_back(
+      new LateParsedClass(this, Victim));
 }
 
 /// Try to parse an 'identifier' which appears within an attribute-token.
@@ -4377,7 +4393,7 @@ void Parser::ParseMicrosoftAttributes(ParsedAttributes &attrs,
     BalancedDelimiterTracker T(*this, tok::l_square);
     T.consumeOpen();
 
-    // Skip most ms attributes except for a whitelist.
+    // Skip most ms attributes except for a specific list.
     while (true) {
       SkipUntil(tok::r_square, tok::identifier, StopAtSemi | StopBeforeMatch);
       if (Tok.isNot(tok::identifier)) // ']', but also eof

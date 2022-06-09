@@ -8,16 +8,17 @@
 #include <map>
 
 #include "support/debug.h"
+#include "support/dyn_debug.h"
 #include "config-host.h"
-//#include "cpu.h"
-//#include "exec-all.h"
-#include "rewrite/jumptable.h"
+
+#include "insn/jumptable.h"
 //#include "imm_map.h"
 #include "i386/disas.h"
 #include "i386/insn.h"
-#include "codegen/etfg_insn.h"
-#include "rewrite/ldst_input.h"
-#include "rewrite/cfg.h"
+#include "x64/insn.h"
+#include "etfg/etfg_insn.h"
+#include "valtag/ldst_input.h"
+#include "insn/cfg.h"
 #include "rewrite/tagline.h"
 #include "expr/z3_solver.h"
 #include "cutils/imap_elem.h"
@@ -30,24 +31,25 @@
 
 #include "ppc/regs.h"
 #include "i386/regs.h"
-#include "rewrite/rdefs.h"
+#include "x64/regs.h"
+#include "insn/rdefs.h"
 #include "valtag/memset.h"
 #include "support/globals.h"
 #include "ppc/insn.h"
-#include "rewrite/src-insn.h"
+#include "insn/src-insn.h"
 
-#include "rewrite/edge_table.h"
+#include "insn/edge_table.h"
 #include "support/timers.h"
 
 #include "valtag/elf/elftypes.h"
 #include "rewrite/translation_instance.h"
 #include "rewrite/static_translate.h"
 //#include "tfg/annotate_locals_using_dwarf.h"
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 #include "rewrite/peephole.h"
 #include "superopt/harvest.h"
 #include "support/mytimer.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "valtag/nextpc.h"
 #include "support/cl.h"
 
@@ -233,6 +235,8 @@ input_file_annotate_symbols(input_exec_t *in,
   src_ulong pc;
   bool fetch;
 
+  //printf("%s() %d:\n", __func__, __LINE__);
+
   //cout << __func__ << " " << __LINE__ << endl;
   //annotated_insn_line_map = false;
   //DISABLE_FUNCTION_CALL = false;
@@ -269,9 +273,11 @@ input_file_annotate_symbols(input_exec_t *in,
   lastpc_weights = (double *)malloc(max_alloc * sizeof(double));
   ASSERT(lastpc_weights);
 
+  //printf("%s() %d: in->num_si = %zd\n", __func__, __LINE__, (size_t)in->num_si);
   int num_functions = 0;
   for (index = 0; index < (long)in->num_si; index++) {
     if (!pc2function_name(in, in->si[index].pc)) {
+      CPP_DBG_EXEC(HARVEST, printf("%s() %d: pc2function name returned false for pc %ld\n", __func__, __LINE__, (long)in->si[index].pc));
       continue;
     }
     pc = in->si[index].pc;
@@ -385,7 +391,7 @@ harvest_input_filename(char const *filename, int len, char const *log_filename, 
   cpu_set_log_filename(log_filename);
   //PRINT_PROGRESS("%s() %d: before read_input_file\n", __func__, __LINE__);
 #if ARCH_SRC == ARCH_ETFG
-  map<string, shared_ptr<tfg>> function_tfg_map = get_function_tfg_map_from_etfg_file(filename, ctx);
+  map<string, dshared_ptr<tfg>> function_tfg_map = get_function_tfg_map_from_etfg_file(filename, ctx);
   etfg_read_input_file(in, function_tfg_map);
 #else
   read_input_file(in, filename);
@@ -454,11 +460,12 @@ main(int argc, char **argv)
   //eliminate_duplicates = true;
   //annotate_locals_using_dwarf = NULL;
 
-  for (int i = 0; i < argc; i++) {
-    cout << " " << argv[i];
-  }
-  cout << endl;
-
+  CPP_DBG_EXEC(ARGV_PRINT,
+    for (int i = 0; i < argc; i++) {
+      cout << " " << argv[i];
+    }
+    cout << endl;
+  );
 
   //g_exec_name = argv[0];
   //optind = 1;
@@ -560,6 +567,8 @@ main(int argc, char **argv)
   cmd.add_arg(&functions_only);
   //cl::arg<bool> annotate_locals_using_dwarf(cl::explicit_flag, "annotate_locals_using_dwarf", false, "annotate local variables (for stack slots) using DWARF debug headers");
   //cmd.add_arg(&annotate_locals_using_dwarf);
+  cl::arg<string> debug(cl::explicit_prefix, "dyn-debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --dyn-debug=correlate=2,smt_query=1,dumptfg,decide_hoare_triple,update_invariant_state_over_edge");
+  cmd.add_arg(&debug);
   cl::arg<bool> no_eliminate_duplicates(cl::explicit_flag, "no_eliminate_duplicates", false, "do not eliminate duplicate harvested sequences");
   cmd.add_arg(&no_eliminate_duplicates);
   cl::arg<bool> allow_unsupported(cl::explicit_flag, "allow_unsupported", false, "harvest opcodes that are otherwise unsupported by the superoptimizer");
@@ -613,6 +622,9 @@ main(int argc, char **argv)
   //}
   global_timeout_secs = 2000*60*60;
   init_timers();
+
+  init_dyn_debug_from_string(debug.get_value());
+  CPP_DBG_EXEC(DYN_DEBUG, print_debug_class_levels());
 
   src_init();
   dst_init();

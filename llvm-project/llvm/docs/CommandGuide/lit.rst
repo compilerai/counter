@@ -81,6 +81,7 @@ OUTPUT OPTIONS
 .. option:: -s, --succinct
 
  Show less output, for example don't show information on tests that pass.
+ Also show a progress bar, unless ``--no-progress-bar`` is specificed.
 
 .. option:: -v, --verbose
 
@@ -158,6 +159,12 @@ EXECUTION OPTIONS
 SELECTION OPTIONS
 -----------------
 
+.. option:: --max-failures N
+
+ Stop execution after the given number ``N`` of failures.
+ An integer argument should be passed on the command line
+ prior to execution.
+
 .. option:: --max-tests=N
 
  Run at most ``N`` tests and then terminate.
@@ -165,10 +172,8 @@ SELECTION OPTIONS
 .. option:: --max-time=N
 
  Spend at most ``N`` seconds (approximately) running tests and then terminate.
-
-.. option:: --shuffle
-
- Run the tests in a random order.
+ Note that this is not an alias for :option:`--timeout`; the two are
+ different kinds of maximums.
 
 .. option:: --num-shards=M
 
@@ -186,6 +191,16 @@ SELECTION OPTIONS
  provided. The two options must be used together, and the value of ``N``
  must be in the range ``1..M``. The environment variable
  ``LIT_RUN_SHARD`` can also be used in place of this option.
+
+.. option:: --shuffle
+
+ Run the tests in a random order.
+
+.. option:: --timeout=N
+
+ Spend at most ``N`` seconds (approximately) running each individual test.
+ ``0`` means no time limit, and ``0`` is the default. Note that this is not an
+ alias for :option:`--max-time`; the two are different kinds of maximums.
 
 .. option:: --filter=REGEXP
 

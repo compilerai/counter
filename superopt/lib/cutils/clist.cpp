@@ -1,5 +1,5 @@
 #include <support/debug.h>
-#include "clist.h"
+#include "cutils/clist.h"
 
 /* Our doubly linked lists have two header elements: the "head"
    just before the first element and the "tail" just after the
@@ -32,7 +32,7 @@
    operations, which can be valuable.) */
 
 static bool is_sorted (struct clist_elem *a, struct clist_elem *b,
-                       clist_less_func *less, void *aux) UNUSED;
+                       clist_less_func *less, void *aux) MY_UNUSED;
 
 /* Returns true if ELEM is a head, false otherwise. */
 static inline bool

@@ -92,7 +92,7 @@ SingleWorkgroupReduction::matchAsPerformingReduction(
   if (genericOp.indexing_maps().getValue().size() != 2)
     return llvm::None;
 
-  // TODO(nicolasvasilache): create utility functions for these checks in Linalg
+  // TODO: create utility functions for these checks in Linalg
   // and use them.
   auto inputMap = genericOp.indexing_maps().getValue()[0].cast<AffineMapAttr>();
   auto outputMap =
@@ -132,7 +132,7 @@ LogicalResult SingleWorkgroupReduction::matchAndRewrite(
                    [](const APInt &size) { return !size.isOneValue(); }))
     return failure();
 
-  // TODO(antiagainst): Query the target environment to make sure the current
+  // TODO: Query the target environment to make sure the current
   // workload fits in a local workgroup.
 
   Value convertedInput = operands[0], convertedOutput = operands[1];
@@ -141,7 +141,7 @@ LogicalResult SingleWorkgroupReduction::matchAndRewrite(
   // Get the invocation ID.
   Value x = getLocalInvocationDimSize(genericOp, /*dim=*/0, loc, &rewriter);
 
-  // TODO(antiagainst): Load to Workgroup storage class first.
+  // TODO: Load to Workgroup storage class first.
 
   // Get the input element accessed by this invocation.
   Value inputElementPtr = spirv::getElementPtr(
@@ -164,7 +164,7 @@ LogicalResult SingleWorkgroupReduction::matchAndRewrite(
 
   // Get the output element accessed by this reduction.
   Value zero = spirv::ConstantOp::getZero(
-      typeConverter.getIndexType(rewriter.getContext()), loc, &rewriter);
+      typeConverter.getIndexType(rewriter.getContext()), loc, rewriter);
   SmallVector<Value, 1> zeroIndices(originalOutputType.getRank(), zero);
   Value outputElementPtr =
       spirv::getElementPtr(typeConverter, originalOutputType, convertedOutput,
@@ -181,18 +181,18 @@ LogicalResult SingleWorkgroupReduction::matchAndRewrite(
   Value condition = rewriter.create<spirv::GroupNonUniformElectOp>(
       loc, spirv::Scope::Subgroup);
 
-  auto createAtomicOp = [&](OpBuilder *builder) {
+  auto createAtomicOp = [&](OpBuilder &builder) {
 #define CREATE_ATOMIC_BIN_OP(opKind, spvOp)                                    \
   case linalg::RegionMatcher::BinaryOpKind::opKind: {                          \
-    builder->create<spirv::spvOp>(loc, outputElementPtr, spirv::Scope::Device, \
-                                  spirv::MemorySemantics::AcquireRelease,      \
-                                  groupOperation);                             \
+    builder.create<spirv::spvOp>(loc, outputElementPtr, spirv::Scope::Device,  \
+                                 spirv::MemorySemantics::AcquireRelease,       \
+                                 groupOperation);                              \
   } break
     switch (*binaryOpKind) { CREATE_ATOMIC_BIN_OP(IAdd, AtomicIAddOp); }
 #undef CREATE_ATOMIC_BIN_OP
   };
 
-  spirv::SelectionOp::createIfThen(loc, condition, createAtomicOp, &rewriter);
+  spirv::SelectionOp::createIfThen(loc, condition, createAtomicOp, rewriter);
 
   rewriter.eraseOp(genericOp);
   return success();

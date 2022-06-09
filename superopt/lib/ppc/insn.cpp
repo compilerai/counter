@@ -13,23 +13,23 @@
 #include "valtag/memset.h"
 #include "valtag/elf/elf.h"
 #include "rewrite/translation_instance.h"
-#include "rewrite/src-insn.h"
-#include "rewrite/transmap.h"
+#include "insn/src-insn.h"
+#include "valtag/transmap.h"
 #include "valtag/regcons.h"
 #include "valtag/regmap.h"
 #include "rewrite/bbl.h"
 #include "exec/state.h"
 #include "superopt/typestate.h"
 #include "valtag/nextpc_map.h"
-#include "rewrite/ldst_input.h"
-#include "rewrite/dst-insn.h"
+#include "valtag/ldst_input.h"
+#include "insn/dst-insn.h"
 #include "gas/opcode-ppc.h"
 
 static char as1[40960];
 static char as2[1024];
 static char as3[1024];
 
-static int gas_inited;
+//static int gas_inited;
 
 ppc_costfn_t ppc_costfns[MAX_PPC_COSTFNS];
 long ppc_num_costfns;
@@ -2008,7 +2008,7 @@ long
 ppc_iseq_canonicalize(ppc_insn_t *iseq, long iseq_len)
 {
 #if ARCH_SRC == ARCH_PPC
-  return src_iseq_eliminate_nops(iseq, iseq_len);
+  return src_iseq_eliminate_nops(iseq, nullptr, iseq_len);
 #else
   NOT_IMPLEMENTED();
 #endif
@@ -2510,6 +2510,8 @@ ppc_exregname_suffix(int groupnum, int exregnum, char const *suffix, char *buf, 
   }
   NOT_REACHED();
 }
+
+
 
 /*
 static void
@@ -4580,3 +4582,12 @@ ppc_emit_translation_marker_insns(ppc_insn_t *buf, size_t buf_size)
 {
   NOT_IMPLEMENTED();
 }
+
+size_t
+ppc_assemble_exec_iseq_using_regmap(uint8_t *buf, size_t buf_size,
+    ppc_insn_t const *exec_iseq, long exec_iseq_len, regmap_t const *dst_regmap,
+    regmap_t const *src_regmap, int d)
+{
+  NOT_IMPLEMENTED();
+}
+

@@ -28,6 +28,7 @@ def SIEncodingFamily {
   int GFX9 = 5;
   int GFX10 = 6;
   int SDWA10 = 7;
+  int GFX10_B = 8;
 }
 
 //===----------------------------------------------------------------------===//
@@ -197,6 +198,7 @@ def SIbuffer_atomic_or : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_OR">;
 def SIbuffer_atomic_xor : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_XOR">;
 def SIbuffer_atomic_inc : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_INC">;
 def SIbuffer_atomic_dec : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_DEC">;
+def SIbuffer_atomic_csub : SDBufferAtomic <"AMDGPUISD::BUFFER_ATOMIC_CSUB">;
 def SIbuffer_atomic_fadd : SDBufferAtomicNoRtn <"AMDGPUISD::BUFFER_ATOMIC_FADD", f32>;
 def SIbuffer_atomic_pk_fadd : SDBufferAtomicNoRtn <"AMDGPUISD::BUFFER_ATOMIC_PK_FADD", v2f16>;
 
@@ -264,7 +266,7 @@ def SIload_d16_hi_i8 : SDNode<"AMDGPUISD::LOAD_D16_HI_I8",
 
 def SIdenorm_mode : SDNode<"AMDGPUISD::DENORM_MODE",
   SDTypeProfile<0 ,1, [SDTCisInt<0>]>,
-  [SDNPHasChain, SDNPSideEffect, SDNPOptInGlue, SDNPOutGlue]
+  [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]
 >;
 
 //===----------------------------------------------------------------------===//
@@ -777,7 +779,7 @@ def NegSubInlineConst32 : ImmLeaf<i32, [{
   return Imm < -16 && Imm >= -64;
 }], NegateImm>;
 
-def NegSubInlineConst16 : ImmLeaf<i16, [{
+def NegSubInlineIntConst16 : ImmLeaf<i16, [{
   return Imm < -16 && Imm >= -64;
 }], NegateImm>;
 
@@ -966,7 +968,7 @@ def VOPDstS64orS32 : BoolRC {
 }
 
 // SCSrc_i1 is the operand for pseudo instructions only.
-// Boolean immeadiates shall not be exposed to codegen instructions.
+// Boolean immediates shall not be exposed to codegen instructions.
 def SCSrc_i1 : RegisterOperand<SReg_1_XEXEC> {
   let OperandNamespace = "AMDGPU";
   let OperandType = "OPERAND_REG_IMM_INT32";
@@ -1104,7 +1106,7 @@ def LWE : NamedOperandBit<"LWE", NamedMatchClass<"LWE">>;
 def exp_compr : NamedOperandBit<"ExpCompr", NamedMatchClass<"ExpCompr">>;
 def exp_vm : NamedOperandBit<"ExpVM", NamedMatchClass<"ExpVM">>;
 
-def FORMAT : NamedOperandU8<"FORMAT", NamedMatchClass<"FORMAT">>;
+def FORMAT : NamedOperandU8<"FORMAT", NamedMatchClass<"FORMAT", 0>>;
 
 def DMask : NamedOperandU16<"DMask", NamedMatchClass<"DMask">>;
 def Dim : NamedOperandU8<"Dim", NamedMatchClass<"Dim", 0>>;
@@ -1131,7 +1133,7 @@ def blgp : NamedOperandU32<"BLGP", NamedMatchClass<"BLGP">>;
 def cbsz : NamedOperandU32<"CBSZ", NamedMatchClass<"CBSZ">>;
 def abid : NamedOperandU32<"ABID", NamedMatchClass<"ABID">>;
 
-def hwreg : NamedOperandU16<"Hwreg", NamedMatchClass<"Hwreg", 0>>;
+def hwreg : NamedOperandU32<"Hwreg", NamedMatchClass<"Hwreg", 0>>;
 
 def exp_tgt : NamedOperandU32<"ExpTgt", NamedMatchClass<"ExpTgt", 0>> {
 
@@ -1374,12 +1376,13 @@ def HWREG {
   int FLAT_SCR_HI = 21;
   int XNACK_MASK = 22;
   int POPS_PACKER = 25;
+  int SHADER_CYCLES = 29;
 }
 
 class getHwRegImm<int Reg, int Offset = 0, int Size = 32> {
-  int ret = !or(Reg,
-                !or(!shl(Offset, 6),
-                    !shl(!add(Size, -1), 11)));
+  int ret = !and(!or(Reg,
+                  !or(!shl(Offset, 6),
+                      !shl(!add(Size, -1), 11))), 65535);
 }
 
 //===----------------------------------------------------------------------===//
@@ -2266,6 +2269,7 @@ def VOP_F16_F16_F16 : VOPProfile <[f16, f16, f16, untyped]>;
 def VOP_F16_F16_I16 : VOPProfile <[f16, f16, i16, untyped]>;
 def VOP_F16_F16_I32 : VOPProfile <[f16, f16, i32, untyped]>;
 def VOP_I16_I16_I16 : VOPProfile <[i16, i16, i16, untyped]>;
+def VOP_I16_I16_I16_ARITH : VOPProfile <[i16, i16, i16, untyped], 0, /*EnableClamp=*/1>;
 
 def VOP_I16_I16_I16_I16 : VOPProfile <[i16, i16, i16, i16, untyped]>;
 def VOP_F16_F16_F16_F16 : VOPProfile <[f16, f16, f16, f16, untyped]>;
@@ -2479,7 +2483,8 @@ def getMCOpcodeGen : InstrMapping {
                    [!cast<string>(SIEncodingFamily.GFX80)],
                    [!cast<string>(SIEncodingFamily.GFX9)],
                    [!cast<string>(SIEncodingFamily.GFX10)],
-                   [!cast<string>(SIEncodingFamily.SDWA10)]];
+                   [!cast<string>(SIEncodingFamily.SDWA10)],
+                   [!cast<string>(SIEncodingFamily.GFX10_B)]];
 }
 
 // Get equivalent SOPK instruction.

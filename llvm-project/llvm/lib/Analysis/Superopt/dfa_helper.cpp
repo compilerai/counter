@@ -54,23 +54,26 @@ get_counting_index_for_basicblock(llvm::BasicBlock const& v)
   NOT_REACHED();
 }
 
-unique_ptr<tfg_llvm_t>
+dshared_ptr<tfg_llvm_t>
 function2tfg(Function *F, Module *M, map<shared_ptr<tfg_edge const>, Instruction *>& eimap)
 {
   if (!g_ctx) {
     g_ctx_init();
   }
   if (!F && !M) {
-    return nullptr;
+    return dshared_ptr<tfg_llvm_t>::dshared_nullptr();
   }
   context *ctx = g_ctx;
   ValueToValueMapTy VMap;
   //unique_ptr<Module> Mcopy = CloneModule(*M, VMap);
-  sym_exec_llvm se(ctx, M, *F, false, BYTE_LEN, DWORD_LEN);
-  unique_ptr<tfg_llvm_t> ret = se.get_tfg(nullptr, nullptr, eimap);
-  pc start_pc = se.get_start_pc();
+  //sym_exec_llvm se(ctx, M, *F, dshared_ptr<tfg_llvm_t const>::dshared_nullptr()/*, false*/, BYTE_LEN, DWORD_LEN, G_SRC_KEYWORD);
+  dshared_ptr<tfg_llvm_t> ret = sym_exec_llvm::get_tfg(*F, M, F->getName().str(), ctx, dshared_ptr<tfg_llvm_t const>::dshared_nullptr(), false /*model_llvm_semantics*/, nullptr/*, nullptr*/, eimap, {}, G_SRC_KEYWORD, context::XML_OUTPUT_FORMAT_TEXT_NOCOLOR);
+  pc start_pc = sym_exec_llvm::get_start_pc(*F);
   ret->add_extra_node_at_start_pc(start_pc);
-  //cout << ret->tfg_to_string_for_eq() << "\n";
+  DYN_DEBUG(function2tfg,
+    cout << "returning tfg for function " << F->getName().str() << ":\n";
+    ret->graph_to_stream(cout);
+  );
   return ret;
 }
 

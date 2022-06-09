@@ -1,0 +1,11 @@
+# Base case is handled by the quantified UF
+
+# Induction step; (1) if the last element does not satisfy the lambda, iterator remains unchanged; (2) if the last element satisfies the lambda, the iterator is updated to the address of that element + iter_offset
+
+islast_in_container(\mem, \ml, container_array-\n, \iter, \begin_iter, \end_iter, \iter_offset, \iter_sentinel_value, \bigendian, \lambda_cond):
+  True:
+    -    islast_in_container(\mem, \ml, container_array-\n, \iter, \begin_iter, bvsub(\end_iter, \n), \iter_offset, \iter_sentinel_value, \bigendian, \lambda_cond)
+      && not(\lambda_cond(select(\mem, \ml, bvsub(\end_iter, \n), \n, \bigendian)))
+    -    islast_in_container(\mem, \ml, container_array-\n, \iter2, \begin_iter, bvsub(\end_iter, \n), \iter_offset, \iter_sentinel_value, \bigendian, \lambda_cond)
+      && \lambda_cond(select(\mem, \ml, bvsub(\end_iter, \n), \n, \bigendian))
+      && eq(\iter, bvadd(\iter_offset, bvsub(\end_iter, \n)))

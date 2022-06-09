@@ -10,7 +10,7 @@
 #include "support/cl.h"
 #include "support/debug.h"
 #include "support/utils.h"
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 #include "superopt/itable.h"
 #include "superopt/itable_position.h"
 

@@ -37,22 +37,31 @@ Value Aliases::find(Value v) {
   while (true) {
     if (v.isa<BlockArgument>())
       return v;
-    if (auto alloc = dyn_cast_or_null<AllocOp>(v.getDefiningOp())) {
-      if (isStrided(alloc.getType()))
-        return alloc.getResult();
+
+    Operation *defOp = v.getDefiningOp();
+    if (!defOp)
+      return v;
+
+    if (auto memEffect = dyn_cast<MemoryEffectOpInterface>(defOp)) {
+      // Collect all memory effects on `v`.
+      SmallVector<MemoryEffects::EffectInstance, 1> effects;
+      memEffect.getEffectsOnValue(v, effects);
+
+      // If we have the 'Allocate' memory effect on `v`, then `v` should be the
+      // original buffer.
+      if (llvm::any_of(
+              effects, [](const MemoryEffects::EffectInstance &instance) {
+                return isa<MemoryEffects::Allocate>(instance.getEffect());
+              }))
+        return v;
     }
-    if (auto slice = dyn_cast_or_null<SliceOp>(v.getDefiningOp())) {
-      auto it = aliases.insert(std::make_pair(v, find(slice.view())));
+
+    if (auto viewLikeOp = dyn_cast<ViewLikeOpInterface>(defOp)) {
+      auto it =
+          aliases.insert(std::make_pair(v, find(viewLikeOp.getViewSource())));
       return it.first->second;
     }
-    if (auto view = dyn_cast_or_null<ViewOp>(v.getDefiningOp())) {
-      auto it = aliases.insert(std::make_pair(v, view.source()));
-      return it.first->second;
-    }
-    if (auto view = dyn_cast_or_null<SubViewOp>(v.getDefiningOp())) {
-      v = view.source();
-      continue;
-    }
+
     llvm::errs() << "View alias analysis reduces to: " << v << "\n";
     llvm_unreachable("unsupported view alias case");
   }
@@ -214,7 +223,7 @@ LinalgDependenceGraph::findOperationsWithCoveringDependences(
   SmallVector<Operation *, 8> res;
   // Consider an intermediate interleaved `interim` op, look for any dependence
   // to an aliasing view on a src -> op -> dst path.
-  // TODO(ntv) we are not considering paths yet, just interleaved positions.
+  // TODO: we are not considering paths yet, just interleaved positions.
   for (auto dt : types) {
     for (auto dependence : getDependencesFrom(src, dt)) {
       auto interimPos = linalgOpPositions.lookup(dependence.dependentOpView.op);

@@ -14,7 +14,6 @@
 #include "superopt/itable_position.h"
 
 using namespace std;
-static char as1[4096000];
 
 int
 main(int argc, char **argv)

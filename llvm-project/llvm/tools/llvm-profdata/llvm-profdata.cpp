@@ -23,11 +23,12 @@
 #include "llvm/Support/Errc.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Format.h"
+#include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
-#include "llvm/Support/Threading.h"
 #include "llvm/Support/ThreadPool.h"
+#include "llvm/Support/Threading.h"
 #include "llvm/Support/WithColor.h"
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>
@@ -250,6 +251,7 @@ static void loadInput(const WeightedFile &Input, SymbolRemapper *Remapper,
         Filename);
     return;
   }
+  WC->Writer.setInstrEntryBBEnabled(Reader->instrEntryBBEnabled());
 
   for (auto &I : *Reader) {
     if (Remapper)
@@ -288,6 +290,22 @@ static void mergeWriterContexts(WriterContext *Dst, WriterContext *Src) {
     if (firstTime)
       warn(toString(make_error<InstrProfError>(IPE)));
   });
+}
+
+static void writeInstrProfile(StringRef OutputFilename,
+                              ProfileFormat OutputFormat,
+                              InstrProfWriter &Writer) {
+  std::error_code EC;
+  raw_fd_ostream Output(OutputFilename.data(), EC, sys::fs::OF_None);
+  if (EC)
+    exitWithErrorCode(EC, OutputFilename);
+
+  if (OutputFormat == PF_Text) {
+    if (Error E = Writer.writeText(Output))
+      exitWithError(std::move(E));
+  } else {
+    Writer.write(Output);
+  }
 }
 
 static void mergeInstrProfile(const WeightedFileVector &Inputs,
@@ -365,18 +383,173 @@ static void mergeInstrProfile(const WeightedFileVector &Inputs,
       (NumErrors > 0 && FailMode == failIfAnyAreInvalid))
     exitWithError("No profiles could be merged.");
 
-  std::error_code EC;
-  raw_fd_ostream Output(OutputFilename.data(), EC, sys::fs::OF_None);
-  if (EC)
-    exitWithErrorCode(EC, OutputFilename);
+  writeInstrProfile(OutputFilename, OutputFormat, Contexts[0]->Writer);
+}
 
-  InstrProfWriter &Writer = Contexts[0]->Writer;
-  if (OutputFormat == PF_Text) {
-    if (Error E = Writer.writeText(Output))
-      exitWithError(std::move(E));
-  } else {
-    Writer.write(Output);
+/// The profile entry for a function in instrumentation profile.
+struct InstrProfileEntry {
+  uint64_t MaxCount = 0;
+  float ZeroCounterRatio = 0.0;
+  InstrProfRecord *ProfRecord;
+  InstrProfileEntry(InstrProfRecord *Record);
+  InstrProfileEntry() = default;
+};
+
+InstrProfileEntry::InstrProfileEntry(InstrProfRecord *Record) {
+  ProfRecord = Record;
+  uint64_t CntNum = Record->Counts.size();
+  uint64_t ZeroCntNum = 0;
+  for (size_t I = 0; I < CntNum; ++I) {
+    MaxCount = std::max(MaxCount, Record->Counts[I]);
+    ZeroCntNum += !Record->Counts[I];
   }
+  ZeroCounterRatio = (float)ZeroCntNum / CntNum;
+}
+
+/// Either set all the counters in the instr profile entry \p IFE to -1
+/// in order to drop the profile or scale up the counters in \p IFP to
+/// be above hot threshold. We use the ratio of zero counters in the
+/// profile of a function to decide the profile is helpful or harmful
+/// for performance, and to choose whether to scale up or drop it.
+static void updateInstrProfileEntry(InstrProfileEntry &IFE,
+                                    uint64_t HotInstrThreshold,
+                                    float ZeroCounterThreshold) {
+  InstrProfRecord *ProfRecord = IFE.ProfRecord;
+  if (!IFE.MaxCount || IFE.ZeroCounterRatio > ZeroCounterThreshold) {
+    // If all or most of the counters of the function are zero, the
+    // profile is unaccountable and shuld be dropped. Reset all the
+    // counters to be -1 and PGO profile-use will drop the profile.
+    // All counters being -1 also implies that the function is hot so
+    // PGO profile-use will also set the entry count metadata to be
+    // above hot threshold.
+    for (size_t I = 0; I < ProfRecord->Counts.size(); ++I)
+      ProfRecord->Counts[I] = -1;
+    return;
+  }
+
+  // Scale up the MaxCount to be multiple times above hot threshold.
+  const unsigned MultiplyFactor = 3;
+  uint64_t Numerator = HotInstrThreshold * MultiplyFactor;
+  uint64_t Denominator = IFE.MaxCount;
+  ProfRecord->scale(Numerator, Denominator, [&](instrprof_error E) {
+    warn(toString(make_error<InstrProfError>(E)));
+  });
+}
+
+const uint64_t ColdPercentileIdx = 15;
+const uint64_t HotPercentileIdx = 11;
+
+/// Adjust the instr profile in \p WC based on the sample profile in
+/// \p Reader.
+static void
+adjustInstrProfile(std::unique_ptr<WriterContext> &WC,
+                   std::unique_ptr<sampleprof::SampleProfileReader> &Reader,
+                   unsigned SupplMinSizeThreshold, float ZeroCounterThreshold,
+                   unsigned InstrProfColdThreshold) {
+  // Function to its entry in instr profile.
+  StringMap<InstrProfileEntry> InstrProfileMap;
+  InstrProfSummaryBuilder IPBuilder(ProfileSummaryBuilder::DefaultCutoffs);
+  for (auto &PD : WC->Writer.getProfileData()) {
+    // Populate IPBuilder.
+    for (const auto &PDV : PD.getValue()) {
+      InstrProfRecord Record = PDV.second;
+      IPBuilder.addRecord(Record);
+    }
+
+    // If a function has multiple entries in instr profile, skip it.
+    if (PD.getValue().size() != 1)
+      continue;
+
+    // Initialize InstrProfileMap.
+    InstrProfRecord *R = &PD.getValue().begin()->second;
+    InstrProfileMap[PD.getKey()] = InstrProfileEntry(R);
+  }
+
+  ProfileSummary InstrPS = *IPBuilder.getSummary();
+  ProfileSummary SamplePS = Reader->getSummary();
+
+  // Compute cold thresholds for instr profile and sample profile.
+  uint64_t ColdSampleThreshold =
+      ProfileSummaryBuilder::getEntryForPercentile(
+          SamplePS.getDetailedSummary(),
+          ProfileSummaryBuilder::DefaultCutoffs[ColdPercentileIdx])
+          .MinCount;
+  uint64_t HotInstrThreshold =
+      ProfileSummaryBuilder::getEntryForPercentile(
+          InstrPS.getDetailedSummary(),
+          ProfileSummaryBuilder::DefaultCutoffs[HotPercentileIdx])
+          .MinCount;
+  uint64_t ColdInstrThreshold =
+      InstrProfColdThreshold
+          ? InstrProfColdThreshold
+          : ProfileSummaryBuilder::getEntryForPercentile(
+                InstrPS.getDetailedSummary(),
+                ProfileSummaryBuilder::DefaultCutoffs[ColdPercentileIdx])
+                .MinCount;
+
+  // Find hot/warm functions in sample profile which is cold in instr profile
+  // and adjust the profiles of those functions in the instr profile.
+  for (const auto &PD : Reader->getProfiles()) {
+    StringRef FName = PD.getKey();
+    const sampleprof::FunctionSamples &FS = PD.getValue();
+    auto It = InstrProfileMap.find(FName);
+    if (FS.getHeadSamples() > ColdSampleThreshold &&
+        It != InstrProfileMap.end() &&
+        It->second.MaxCount <= ColdInstrThreshold &&
+        FS.getBodySamples().size() >= SupplMinSizeThreshold) {
+      updateInstrProfileEntry(It->second, HotInstrThreshold,
+                              ZeroCounterThreshold);
+    }
+  }
+}
+
+/// The main function to supplement instr profile with sample profile.
+/// \Inputs contains the instr profile. \p SampleFilename specifies the
+/// sample profile. \p OutputFilename specifies the output profile name.
+/// \p OutputFormat specifies the output profile format. \p OutputSparse
+/// specifies whether to generate sparse profile. \p SupplMinSizeThreshold
+/// specifies the minimal size for the functions whose profile will be
+/// adjusted. \p ZeroCounterThreshold is the threshold to check whether
+/// a function contains too many zero counters and whether its profile
+/// should be dropped. \p InstrProfColdThreshold is the user specified
+/// cold threshold which will override the cold threshold got from the
+/// instr profile summary.
+static void supplementInstrProfile(
+    const WeightedFileVector &Inputs, StringRef SampleFilename,
+    StringRef OutputFilename, ProfileFormat OutputFormat, bool OutputSparse,
+    unsigned SupplMinSizeThreshold, float ZeroCounterThreshold,
+    unsigned InstrProfColdThreshold) {
+  if (OutputFilename.compare("-") == 0)
+    exitWithError("Cannot write indexed profdata format to stdout.");
+  if (Inputs.size() != 1)
+    exitWithError("Expect one input to be an instr profile.");
+  if (Inputs[0].Weight != 1)
+    exitWithError("Expect instr profile doesn't have weight.");
+
+  StringRef InstrFilename = Inputs[0].Filename;
+
+  // Read sample profile.
+  LLVMContext Context;
+  auto ReaderOrErr =
+      sampleprof::SampleProfileReader::create(SampleFilename.str(), Context);
+  if (std::error_code EC = ReaderOrErr.getError())
+    exitWithErrorCode(EC, SampleFilename);
+  auto Reader = std::move(ReaderOrErr.get());
+  if (std::error_code EC = Reader->read())
+    exitWithErrorCode(EC, SampleFilename);
+
+  // Read instr profile.
+  std::mutex ErrorLock;
+  SmallSet<instrprof_error, 4> WriterErrorCodes;
+  auto WC = std::make_unique<WriterContext>(OutputSparse, ErrorLock,
+                                            WriterErrorCodes);
+  loadInput(Inputs[0], nullptr, WC.get());
+  if (WC->Errors.size() > 0)
+    exitWithError(std::move(WC->Errors[0].first), InstrFilename);
+
+  adjustInstrProfile(WC, Reader, SupplMinSizeThreshold, ZeroCounterThreshold,
+                     InstrProfColdThreshold);
+  writeInstrProfile(OutputFilename, OutputFormat, WC->Writer);
 }
 
 /// Make a copy of the given function samples with all symbol names remapped
@@ -449,7 +622,7 @@ static void handleExtBinaryWriter(sampleprof::SampleProfileWriter &Writer,
                                   MemoryBuffer *Buffer,
                                   sampleprof::ProfileSymbolList &WriterList,
                                   bool CompressAllSections, bool UseMD5,
-                                  bool PartialProfile) {
+                                  bool GenPartialProfile) {
   populateProfileSymbolList(Buffer, WriterList);
   if (WriterList.size() > 0 && OutputFormat != PF_Ext_Binary)
     warn("Profile Symbol list is not empty but the output format is not "
@@ -469,9 +642,9 @@ static void handleExtBinaryWriter(sampleprof::SampleProfileWriter &Writer,
     else
       Writer.setUseMD5();
   }
-  if (PartialProfile) {
+  if (GenPartialProfile) {
     if (OutputFormat != PF_Ext_Binary)
-      warn("-partial-profile is ignored. Specify -extbinary to enable it");
+      warn("-gen-partial-profile is ignored. Specify -extbinary to enable it");
     else
       Writer.setPartialProfile();
   }
@@ -481,7 +654,7 @@ static void
 mergeSampleProfile(const WeightedFileVector &Inputs, SymbolRemapper *Remapper,
                    StringRef OutputFilename, ProfileFormat OutputFormat,
                    StringRef ProfileSymbolListFile, bool CompressAllSections,
-                   bool UseMD5, bool PartialProfile, FailureMode FailMode) {
+                   bool UseMD5, bool GenPartialProfile, FailureMode FailMode) {
   using namespace sampleprof;
   StringMap<FunctionSamples> ProfileMap;
   SmallVector<std::unique_ptr<sampleprof::SampleProfileReader>, 5> Readers;
@@ -538,7 +711,7 @@ mergeSampleProfile(const WeightedFileVector &Inputs, SymbolRemapper *Remapper,
   // Make sure Buffer lives as long as WriterList.
   auto Buffer = getInputFileBuf(ProfileSymbolListFile);
   handleExtBinaryWriter(*Writer, OutputFormat, Buffer.get(), WriterList,
-                        CompressAllSections, UseMD5, PartialProfile);
+                        CompressAllSections, UseMD5, GenPartialProfile);
   Writer->write(ProfileMap);
 }
 
@@ -670,10 +843,31 @@ static int merge_main(int argc, const char *argv[]) {
       "use-md5", cl::init(false), cl::Hidden,
       cl::desc("Choose to use MD5 to represent string in name table (only "
                "meaningful for -extbinary)"));
-  cl::opt<bool> PartialProfile(
-      "partial-profile", cl::init(false), cl::Hidden,
-      cl::desc("Set the profile to be a partial profile (only meaningful "
-               "for -extbinary)"));
+  cl::opt<bool> GenPartialProfile(
+      "gen-partial-profile", cl::init(false), cl::Hidden,
+      cl::desc("Generate a partial profile (only meaningful for -extbinary)"));
+  cl::opt<std::string> SupplInstrWithSample(
+      "supplement-instr-with-sample", cl::init(""), cl::Hidden,
+      cl::desc("Supplement an instr profile with sample profile, to correct "
+               "the profile unrepresentativeness issue. The sample "
+               "profile is the input of the flag. Output will be in instr "
+               "format (The flag only works with -instr)"));
+  cl::opt<float> ZeroCounterThreshold(
+      "zero-counter-threshold", cl::init(0.7), cl::Hidden,
+      cl::desc("For the function which is cold in instr profile but hot in "
+               "sample profile, if the ratio of the number of zero counters "
+               "divided by the the total number of counters is above the "
+               "threshold, the profile of the function will be regarded as "
+               "being harmful for performance and will be dropped. "));
+  cl::opt<unsigned> SupplMinSizeThreshold(
+      "suppl-min-size-threshold", cl::init(10), cl::Hidden,
+      cl::desc("If the size of a function is smaller than the threshold, "
+               "assume it can be inlined by PGO early inliner and it won't "
+               "be adjusted based on sample profile. "));
+  cl::opt<unsigned> InstrProfColdThreshold(
+      "instr-prof-cold-threshold", cl::init(0), cl::Hidden,
+      cl::desc("User specified cold threshold for instr profile which will "
+               "override the cold threshold got from profile summary. "));
 
   cl::ParseCommandLineOptions(argc, argv, "LLVM profile data merger\n");
 
@@ -702,13 +896,24 @@ static int merge_main(int argc, const char *argv[]) {
   if (!RemappingFile.empty())
     Remapper = SymbolRemapper::create(RemappingFile);
 
+  if (!SupplInstrWithSample.empty()) {
+    if (ProfileKind != instr)
+      exitWithError(
+          "-supplement-instr-with-sample can only work with -instr. ");
+
+    supplementInstrProfile(WeightedInputs, SupplInstrWithSample, OutputFilename,
+                           OutputFormat, OutputSparse, SupplMinSizeThreshold,
+                           ZeroCounterThreshold, InstrProfColdThreshold);
+    return 0;
+  }
+
   if (ProfileKind == instr)
     mergeInstrProfile(WeightedInputs, Remapper.get(), OutputFilename,
                       OutputFormat, OutputSparse, NumThreads, FailureMode);
   else
     mergeSampleProfile(WeightedInputs, Remapper.get(), OutputFilename,
                        OutputFormat, ProfileSymbolListFile, CompressAllSections,
-                       UseMD5, PartialProfile, FailureMode);
+                       UseMD5, GenPartialProfile, FailureMode);
 
   return 0;
 }
@@ -898,6 +1103,8 @@ static int showInstrProfile(const std::string &Filename, bool ShowCounts,
     uint64_t FuncMax = 0;
     uint64_t FuncSum = 0;
     for (size_t I = 0, E = Func.Counts.size(); I < E; ++I) {
+      if (Func.Counts[I] == (uint64_t)-1)
+        continue;
       FuncMax = std::max(FuncMax, Func.Counts[I]);
       FuncSum += Func.Counts[I];
     }
@@ -972,8 +1179,11 @@ static int showInstrProfile(const std::string &Filename, bool ShowCounts,
   if (TextFormat)
     return 0;
   std::unique_ptr<ProfileSummary> PS(Builder.getSummary());
-  OS << "Instrumentation level: "
-     << (Reader->isIRLevelProfile() ? "IR" : "Front-end") << "\n";
+  bool IsIR = Reader->isIRLevelProfile();
+  OS << "Instrumentation level: " << (IsIR ? "IR" : "Front-end");
+  if (IsIR)
+    OS << "  entry_first = " << Reader->instrEntryBBEnabled();
+  OS << "\n";
   if (ShowAllFunctions || !ShowFunction.empty())
     OS << "Functions shown: " << ShownFunctions << "\n";
   OS << "Total functions: " << PS->getNumFunctions() << "\n";
@@ -1010,15 +1220,9 @@ static int showInstrProfile(const std::string &Filename, bool ShowCounts,
   }
 
   if (ShowDetailedSummary) {
-    OS << "Detailed summary:\n";
     OS << "Total number of blocks: " << PS->getNumCounts() << "\n";
     OS << "Total count: " << PS->getTotalCount() << "\n";
-    for (auto Entry : PS->getDetailedSummary()) {
-      OS << Entry.NumCounts << " blocks with count >= " << Entry.MinCount
-         << " account for "
-         << format("%0.6g", (float)Entry.Cutoff / ProfileSummary::Scale * 100)
-         << " percentage of the total counts.\n";
-    }
+    PS->printDetailedSummary(OS);
   }
   return 0;
 }
@@ -1033,11 +1237,144 @@ static void showSectionInfo(sampleprof::SampleProfileReader *Reader,
   }
 }
 
+namespace {
+struct HotFuncInfo {
+  StringRef FuncName;
+  uint64_t TotalCount;
+  double TotalCountPercent;
+  uint64_t MaxCount;
+  uint64_t EntryCount;
+
+  HotFuncInfo()
+      : FuncName(), TotalCount(0), TotalCountPercent(0.0f), MaxCount(0),
+        EntryCount(0) {}
+
+  HotFuncInfo(StringRef FN, uint64_t TS, double TSP, uint64_t MS, uint64_t ES)
+      : FuncName(FN), TotalCount(TS), TotalCountPercent(TSP), MaxCount(MS),
+        EntryCount(ES) {}
+};
+} // namespace
+
+// Print out detailed information about hot functions in PrintValues vector.
+// Users specify titles and offset of every columns through ColumnTitle and
+// ColumnOffset. The size of ColumnTitle and ColumnOffset need to be the same
+// and at least 4. Besides, users can optionally give a HotFuncMetric string to
+// print out or let it be an empty string.
+static void dumpHotFunctionList(const std::vector<std::string> &ColumnTitle,
+                                const std::vector<int> &ColumnOffset,
+                                const std::vector<HotFuncInfo> &PrintValues,
+                                uint64_t HotFuncCount, uint64_t TotalFuncCount,
+                                uint64_t HotProfCount, uint64_t TotalProfCount,
+                                const std::string &HotFuncMetric,
+                                raw_fd_ostream &OS) {
+  assert(ColumnOffset.size() == ColumnTitle.size());
+  assert(ColumnTitle.size() >= 4);
+  assert(TotalFuncCount > 0);
+  double TotalProfPercent = 0;
+  if (TotalProfCount > 0)
+    TotalProfPercent = ((double)HotProfCount) / TotalProfCount * 100;
+
+  formatted_raw_ostream FOS(OS);
+  FOS << HotFuncCount << " out of " << TotalFuncCount
+      << " functions with profile ("
+      << format("%.2f%%", (((double)HotFuncCount) / TotalFuncCount * 100))
+      << ") are considered hot functions";
+  if (!HotFuncMetric.empty())
+    FOS << " (" << HotFuncMetric << ")";
+  FOS << ".\n";
+  FOS << HotProfCount << " out of " << TotalProfCount << " profile counts ("
+      << format("%.2f%%", TotalProfPercent) << ") are from hot functions.\n";
+
+  for (size_t I = 0; I < ColumnTitle.size(); ++I) {
+    FOS.PadToColumn(ColumnOffset[I]);
+    FOS << ColumnTitle[I];
+  }
+  FOS << "\n";
+
+  for (const HotFuncInfo &R : PrintValues) {
+    FOS.PadToColumn(ColumnOffset[0]);
+    FOS << R.TotalCount << " (" << format("%.2f%%", R.TotalCountPercent) << ")";
+    FOS.PadToColumn(ColumnOffset[1]);
+    FOS << R.MaxCount;
+    FOS.PadToColumn(ColumnOffset[2]);
+    FOS << R.EntryCount;
+    FOS.PadToColumn(ColumnOffset[3]);
+    FOS << R.FuncName << "\n";
+  }
+  return;
+}
+
+static int
+showHotFunctionList(const StringMap<sampleprof::FunctionSamples> &Profiles,
+                    ProfileSummary &PS, raw_fd_ostream &OS) {
+  using namespace sampleprof;
+
+  const uint32_t HotFuncCutoff = 990000;
+  auto &SummaryVector = PS.getDetailedSummary();
+  uint64_t MinCountThreshold = 0;
+  for (const ProfileSummaryEntry &SummaryEntry : SummaryVector) {
+    if (SummaryEntry.Cutoff == HotFuncCutoff) {
+      MinCountThreshold = SummaryEntry.MinCount;
+      break;
+    }
+  }
+  assert(MinCountThreshold != 0);
+
+  // Traverse all functions in the profile and keep only hot functions.
+  // The following loop also calculates the sum of total samples of all
+  // functions.
+  std::multimap<uint64_t, std::pair<const FunctionSamples *, const uint64_t>,
+                std::greater<uint64_t>>
+      HotFunc;
+  uint64_t ProfileTotalSample = 0;
+  uint64_t HotFuncSample = 0;
+  uint64_t HotFuncCount = 0;
+  uint64_t MaxCount = 0;
+  for (const auto &I : Profiles) {
+    const FunctionSamples &FuncProf = I.second;
+    ProfileTotalSample += FuncProf.getTotalSamples();
+    MaxCount = FuncProf.getMaxCountInside();
+
+    // MinCountThreshold is a block/line threshold computed for a given cutoff.
+    // We intentionally compare the maximum sample count in a function with this
+    // threshold to get an approximate threshold for hot functions.
+    if (MaxCount >= MinCountThreshold) {
+      HotFunc.emplace(FuncProf.getTotalSamples(),
+                      std::make_pair(&(I.second), MaxCount));
+      HotFuncSample += FuncProf.getTotalSamples();
+      ++HotFuncCount;
+    }
+  }
+
+  std::vector<std::string> ColumnTitle{"Total sample (%)", "Max sample",
+                                       "Entry sample", "Function name"};
+  std::vector<int> ColumnOffset{0, 24, 42, 58};
+  std::string Metric =
+      std::string("max sample >= ") + std::to_string(MinCountThreshold);
+  std::vector<HotFuncInfo> PrintValues;
+  for (const auto &FuncPair : HotFunc) {
+    const FunctionSamples &Func = *FuncPair.second.first;
+    double TotalSamplePercent =
+        (ProfileTotalSample > 0)
+            ? (Func.getTotalSamples() * 100.0) / ProfileTotalSample
+            : 0;
+    PrintValues.emplace_back(HotFuncInfo(
+        Func.getFuncName(), Func.getTotalSamples(), TotalSamplePercent,
+        FuncPair.second.second, Func.getEntrySamples()));
+  }
+  dumpHotFunctionList(ColumnTitle, ColumnOffset, PrintValues, HotFuncCount,
+                      Profiles.size(), HotFuncSample, ProfileTotalSample,
+                      Metric, OS);
+
+  return 0;
+}
+
 static int showSampleProfile(const std::string &Filename, bool ShowCounts,
-                             bool ShowAllFunctions,
+                             bool ShowAllFunctions, bool ShowDetailedSummary,
                              const std::string &ShowFunction,
                              bool ShowProfileSymbolList,
-                             bool ShowSectionInfoOnly, raw_fd_ostream &OS) {
+                             bool ShowSectionInfoOnly, bool ShowHotFuncList,
+                             raw_fd_ostream &OS) {
   using namespace sampleprof;
   LLVMContext Context;
   auto ReaderOrErr = SampleProfileReader::create(Filename, Context);
@@ -1065,6 +1402,15 @@ static int showSampleProfile(const std::string &Filename, bool ShowCounts,
     ReaderList->dump(OS);
   }
 
+  if (ShowDetailedSummary) {
+    auto &PS = Reader->getSummary();
+    PS.printSummary(OS);
+    PS.printDetailedSummary(OS);
+  }
+
+  if (ShowHotFuncList)
+    showHotFunctionList(Reader->getProfiles(), Reader->getSummary(), OS);
+
   return 0;
 }
 
@@ -1091,6 +1437,9 @@ static int show_main(int argc, const char *argv[]) {
       cl::desc(
           "Cutoff percentages (times 10000) for generating detailed summary"),
       cl::value_desc("800000,901000,999999"));
+  cl::opt<bool> ShowHotFuncList(
+      "hot-func-list", cl::init(false),
+      cl::desc("Show profile summary of a list of hot functions"));
   cl::opt<bool> ShowAllFunctions("all-functions", cl::init(false),
                                  cl::desc("Details for every function"));
   cl::opt<bool> ShowCS("showcs", cl::init(false),
@@ -1153,8 +1502,9 @@ static int show_main(int argc, const char *argv[]) {
                             OnlyListBelow, ShowFunction, TextFormat, OS);
   else
     return showSampleProfile(Filename, ShowCounts, ShowAllFunctions,
-                             ShowFunction, ShowProfileSymbolList,
-                             ShowSectionInfoOnly, OS);
+                             ShowDetailedSummary, ShowFunction,
+                             ShowProfileSymbolList, ShowSectionInfoOnly,
+                             ShowHotFuncList, OS);
 }
 
 int main(int argc, const char *argv[]) {

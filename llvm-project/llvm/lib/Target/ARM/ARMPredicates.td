@@ -44,6 +44,9 @@ def HasFPRegs        : Predicate<"Subtarget->hasFPRegs()">,
 def HasFPRegs16      : Predicate<"Subtarget->hasFPRegs16()">,
                                  AssemblerPredicate<(all_of FeatureFPRegs16),
                                                     "16-bit fp registers">;
+def HasNoFPRegs16    : Predicate<"!Subtarget->hasFPRegs16()">,
+                                 AssemblerPredicate<(all_of (not FeatureFPRegs16)),
+                                                    "16-bit fp registers">;
 def HasFPRegs64      : Predicate<"Subtarget->hasFPRegs64()">,
                                  AssemblerPredicate<(all_of FeatureFPRegs64),
                                                     "64-bit fp registers">;
@@ -110,6 +113,8 @@ def HasFP16FML       : Predicate<"Subtarget->hasFP16FML()">,
                                  AssemblerPredicate<(all_of FeatureFP16FML),"full half-float fml">;
 def HasBF16          : Predicate<"Subtarget->hasBF16()">,
                                  AssemblerPredicate<(all_of FeatureBF16),"BFloat16 floating point extension">;
+def HasMatMulInt8    : Predicate<"Subtarget->hasMatMulInt8()">,
+                                 AssemblerPredicate<(all_of FeatureMatMulInt8),"8-bit integer matrix multiply">;
 def HasDivideInThumb : Predicate<"Subtarget->hasDivideInThumbMode()">,
                                  AssemblerPredicate<(all_of FeatureHWDivThumb), "divide in THUMB">;
 def HasDivideInARM   : Predicate<"Subtarget->hasDivideInARMMode()">,

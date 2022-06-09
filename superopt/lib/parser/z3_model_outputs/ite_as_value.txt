@@ -1,0 +1,24 @@
+sat
+(model
+  (define-fun k!5 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00008000) #x00
+    (ite (= x!1 #x02000000) #x00
+    (ite (= x!1 #x00800000) #x00
+    (ite (= x!1 #x00000010) #x01
+      #x02)))))
+  (define-fun k!7 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000008) #x00
+    (ite (= x!1 #x00000000) #x20
+    (ite (= x!1 #x00800000) #x04
+    (ite (= x!1 #x04000000) #x20
+      #x21))))) 
+  (define-fun k!6 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000000) #x00
+    (ite (= x!1 #x00000010) #x00
+      #x00)))
+  (define-fun anmol () (Array (_ BitVec 32) (_ BitVec 8))
+    (ite (= ((as const (Array (_ BitVec 32) (_ BitVec 8))) #x00)
+                           (_ as-array k!6))
+                        (_ as-array k!7)
+                        (_ as-array k!5)))
+)

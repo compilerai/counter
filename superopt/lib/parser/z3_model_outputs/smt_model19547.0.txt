@@ -1,0 +1,7 @@
+sat
+(model 
+  (define-fun input_llvm-%den_const () (_ BitVec 32)
+    #x00000080)
+  (define-fun input_llvm-%num_const () (_ BitVec 32)
+    #xf4000000)
+)

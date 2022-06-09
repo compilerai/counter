@@ -647,7 +647,7 @@ bool llvm::stripNonLineTableDebugInfo(Module &M) {
     }
     for (auto &BB : F) {
       for (auto &I : BB) {
-        auto remapDebugLoc = [&](DebugLoc DL) -> DebugLoc {
+        auto remapDebugLoc = [&](const DebugLoc &DL) -> DebugLoc {
           auto *Scope = DL.getScope();
           MDNode *InlinedAt = DL.getInlinedAt();
           Scope = remap(Scope);
@@ -658,15 +658,10 @@ bool llvm::stripNonLineTableDebugInfo(Module &M) {
         if (I.getDebugLoc() != DebugLoc())
           I.setDebugLoc(remapDebugLoc(I.getDebugLoc()));
 
-        // Remap DILocations in untyped MDNodes (e.g., llvm.loop).
-        SmallVector<std::pair<unsigned, MDNode *>, 2> MDs;
-        I.getAllMetadata(MDs);
-        for (auto Attachment : MDs)
-          if (auto *T = dyn_cast_or_null<MDTuple>(Attachment.second))
-            for (unsigned N = 0; N < T->getNumOperands(); ++N)
-              if (auto *Loc = dyn_cast_or_null<DILocation>(T->getOperand(N)))
-                if (Loc != DebugLoc())
-                  T->replaceOperandWith(N, remapDebugLoc(Loc));
+        // Remap DILocations in llvm.loop attachments.
+        updateLoopMetadataDebugLocations(I, [&](const DILocation &Loc) {
+          return remapDebugLoc(&Loc).get();
+        });
       }
     }
   }

@@ -1,5 +1,4 @@
-! RUN: %B/test/Semantics/test_errors.sh %s %flang %t
-! OPTIONS: -fopenmp
+! RUN: %S/test_errors.sh %s %t %f18 -fopenmp
 
 ! Check OpenMP clause validity for the following directives:
 !
@@ -49,6 +48,15 @@
      enddo
   enddo
   !$omp end parallel
+
+  !ERROR: The parameter of the COLLAPSE clause must be a constant positive integer expression
+  !$omp do collapse(-1)
+  do i = 1, N
+    do j = 1, N
+      a = 3.14
+    enddo
+  enddo
+  !$omp end do
 
   a = 1.0
   !$omp parallel firstprivate(a)
@@ -388,6 +396,9 @@
   !$omp taskyield
   !$omp barrier
   !$omp taskwait
+  !$omp taskwait depend(source)
+  !ERROR: Internal: no symbol found for 'i'
+  !$omp taskwait depend(sink:i-1)
   ! !$omp target enter data map(to:arrayA) map(alloc:arrayB)
   ! !$omp target update from(arrayA) to(arrayB)
   ! !$omp target exit data map(from:arrayA) map(delete:arrayB)
@@ -395,6 +406,10 @@
   !ERROR: Internal: no symbol found for 'i'
   !$omp ordered depend(sink:i-1)
   !$omp flush (c)
+  !$omp flush acq_rel
+  !$omp flush release
+  !$omp flush acquire
+  !$omp flush release (c)
   !$omp cancel DO
   !$omp cancellation point parallel
 
@@ -446,7 +461,6 @@
   enddo
   !$omp end taskloop simd
 
-  !ERROR: REDUCTION clause is not allowed on the TASKLOOP SIMD directive
   !$omp taskloop simd reduction(+:a)
   do i = 1, N
      a = a + 3.14

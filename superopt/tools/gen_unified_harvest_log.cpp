@@ -2,7 +2,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"

@@ -288,7 +288,7 @@ bool MCStreamer::EmitCVInlineSiteIdDirective(unsigned FunctionId,
       FunctionId, IAFunc, IAFile, IALine, IACol);
 }
 
-void MCStreamer::EmitCVLocDirective(unsigned FunctionId, unsigned FileNo,
+void MCStreamer::emitCVLocDirective(unsigned FunctionId, unsigned FileNo,
                                     unsigned Line, unsigned Column,
                                     bool PrologueEnd, bool IsStmt,
                                     StringRef FileName, SMLoc Loc) {}
@@ -315,11 +315,11 @@ bool MCStreamer::checkCVLocSection(unsigned FuncId, unsigned FileNo,
   return true;
 }
 
-void MCStreamer::EmitCVLinetableDirective(unsigned FunctionId,
+void MCStreamer::emitCVLinetableDirective(unsigned FunctionId,
                                           const MCSymbol *Begin,
                                           const MCSymbol *End) {}
 
-void MCStreamer::EmitCVInlineLinetableDirective(unsigned PrimaryFunctionId,
+void MCStreamer::emitCVInlineLinetableDirective(unsigned PrimaryFunctionId,
                                                 unsigned SourceFileId,
                                                 unsigned SourceLineNum,
                                                 const MCSymbol *FnStartSym,
@@ -337,42 +337,42 @@ static void copyBytesForDefRange(SmallString<20> &BytePrefix,
   memcpy(&BytePrefix[2], &DefRangeHeader, sizeof(T));
 }
 
-void MCStreamer::EmitCVDefRangeDirective(
+void MCStreamer::emitCVDefRangeDirective(
     ArrayRef<std::pair<const MCSymbol *, const MCSymbol *>> Ranges,
     StringRef FixedSizePortion) {}
 
-void MCStreamer::EmitCVDefRangeDirective(
+void MCStreamer::emitCVDefRangeDirective(
     ArrayRef<std::pair<const MCSymbol *, const MCSymbol *>> Ranges,
     codeview::DefRangeRegisterRelHeader DRHdr) {
   SmallString<20> BytePrefix;
   copyBytesForDefRange(BytePrefix, codeview::S_DEFRANGE_REGISTER_REL, DRHdr);
-  EmitCVDefRangeDirective(Ranges, BytePrefix);
+  emitCVDefRangeDirective(Ranges, BytePrefix);
 }
 
-void MCStreamer::EmitCVDefRangeDirective(
+void MCStreamer::emitCVDefRangeDirective(
     ArrayRef<std::pair<const MCSymbol *, const MCSymbol *>> Ranges,
     codeview::DefRangeSubfieldRegisterHeader DRHdr) {
   SmallString<20> BytePrefix;
   copyBytesForDefRange(BytePrefix, codeview::S_DEFRANGE_SUBFIELD_REGISTER,
                        DRHdr);
-  EmitCVDefRangeDirective(Ranges, BytePrefix);
+  emitCVDefRangeDirective(Ranges, BytePrefix);
 }
 
-void MCStreamer::EmitCVDefRangeDirective(
+void MCStreamer::emitCVDefRangeDirective(
     ArrayRef<std::pair<const MCSymbol *, const MCSymbol *>> Ranges,
     codeview::DefRangeRegisterHeader DRHdr) {
   SmallString<20> BytePrefix;
   copyBytesForDefRange(BytePrefix, codeview::S_DEFRANGE_REGISTER, DRHdr);
-  EmitCVDefRangeDirective(Ranges, BytePrefix);
+  emitCVDefRangeDirective(Ranges, BytePrefix);
 }
 
-void MCStreamer::EmitCVDefRangeDirective(
+void MCStreamer::emitCVDefRangeDirective(
     ArrayRef<std::pair<const MCSymbol *, const MCSymbol *>> Ranges,
     codeview::DefRangeFramePointerRelHeader DRHdr) {
   SmallString<20> BytePrefix;
   copyBytesForDefRange(BytePrefix, codeview::S_DEFRANGE_FRAMEPOINTER_REL,
                        DRHdr);
-  EmitCVDefRangeDirective(Ranges, BytePrefix);
+  emitCVDefRangeDirective(Ranges, BytePrefix);
 }
 
 void MCStreamer::emitEHSymAttributes(const MCSymbol *Symbol,
@@ -461,7 +461,7 @@ MCSymbol *MCStreamer::emitCFILabel() {
 void MCStreamer::emitCFIDefCfa(int64_t Register, int64_t Offset) {
   MCSymbol *Label = emitCFILabel();
   MCCFIInstruction Instruction =
-    MCCFIInstruction::createDefCfa(Label, Register, Offset);
+      MCCFIInstruction::cfiDefCfa(Label, Register, Offset);
   MCDwarfFrameInfo *CurFrame = getCurrentDwarfFrameInfo();
   if (!CurFrame)
     return;
@@ -472,7 +472,7 @@ void MCStreamer::emitCFIDefCfa(int64_t Register, int64_t Offset) {
 void MCStreamer::emitCFIDefCfaOffset(int64_t Offset) {
   MCSymbol *Label = emitCFILabel();
   MCCFIInstruction Instruction =
-    MCCFIInstruction::createDefCfaOffset(Label, Offset);
+      MCCFIInstruction::cfiDefCfaOffset(Label, Offset);
   MCDwarfFrameInfo *CurFrame = getCurrentDwarfFrameInfo();
   if (!CurFrame)
     return;
@@ -958,7 +958,7 @@ void MCStreamer::Finish() {
   if (TS)
     TS->finish();
 
-  FinishImpl();
+  finishImpl();
 }
 
 void MCStreamer::emitAssignment(MCSymbol *Symbol, const MCExpr *Value) {
@@ -1063,6 +1063,20 @@ void MCStreamer::emitXCOFFLocalCommonSymbol(MCSymbol *LabelSym, uint64_t Size,
                                             unsigned ByteAlign) {
   llvm_unreachable("this directive only supported on XCOFF targets");
 }
+
+void MCStreamer::emitXCOFFSymbolLinkageWithVisibility(MCSymbol *Symbol,
+                                                      MCSymbolAttr Linkage,
+                                                      MCSymbolAttr Visibility) {
+  llvm_unreachable("emitXCOFFSymbolLinkageWithVisibility is only supported on "
+                   "XCOFF targets");
+}
+
+void MCStreamer::emitXCOFFRenameDirective(const MCSymbol *Name,
+                                          StringRef Rename) {
+  llvm_unreachable("emitXCOFFRenameDirective is only supported on "
+                   "XCOFF targets");
+}
+
 void MCStreamer::emitELFSize(MCSymbol *Symbol, const MCExpr *Value) {}
 void MCStreamer::emitELFSymverDirective(StringRef AliasName,
                                         const MCSymbol *Aliasee) {}
@@ -1070,7 +1084,7 @@ void MCStreamer::emitLocalCommonSymbol(MCSymbol *Symbol, uint64_t Size,
                                        unsigned ByteAlignment) {}
 void MCStreamer::emitTBSSSymbol(MCSection *Section, MCSymbol *Symbol,
                                 uint64_t Size, unsigned ByteAlignment) {}
-void MCStreamer::ChangeSection(MCSection *, const MCExpr *) {}
+void MCStreamer::changeSection(MCSection *, const MCExpr *) {}
 void MCStreamer::emitWeakReference(MCSymbol *Alias, const MCSymbol *Symbol) {}
 void MCStreamer::emitBytes(StringRef Data) {}
 void MCStreamer::emitBinaryData(StringRef Data) { emitBytes(Data); }
@@ -1091,7 +1105,7 @@ void MCStreamer::emitValueToOffset(const MCExpr *Offset, unsigned char Value,
                                    SMLoc Loc) {}
 void MCStreamer::emitBundleAlignMode(unsigned AlignPow2) {}
 void MCStreamer::emitBundleLock(bool AlignToEnd) {}
-void MCStreamer::FinishImpl() {}
+void MCStreamer::finishImpl() {}
 void MCStreamer::emitBundleUnlock() {}
 
 void MCStreamer::SwitchSection(MCSection *Section, const MCExpr *Subsection) {
@@ -1099,7 +1113,7 @@ void MCStreamer::SwitchSection(MCSection *Section, const MCExpr *Subsection) {
   MCSectionSubPair curSection = SectionStack.back().first;
   SectionStack.back().second = curSection;
   if (MCSectionSubPair(Section, Subsection) != curSection) {
-    ChangeSection(Section, Subsection);
+    changeSection(Section, Subsection);
     SectionStack.back().first = MCSectionSubPair(Section, Subsection);
     assert(!Section->hasEnded() && "Section already ended");
     MCSymbol *Sym = Section->getBeginSymbol();
@@ -1120,6 +1134,79 @@ MCSymbol *MCStreamer::endSection(MCSection *Section) {
   return Sym;
 }
 
+static VersionTuple
+targetVersionOrMinimumSupportedOSVersion(const Triple &Target,
+                                         VersionTuple TargetVersion) {
+  VersionTuple Min = Target.getMinimumSupportedOSVersion();
+  return !Min.empty() && Min > TargetVersion ? Min : TargetVersion;
+}
+
+static MCVersionMinType
+getMachoVersionMinLoadCommandType(const Triple &Target) {
+  assert(Target.isOSDarwin() && "expected a darwin OS");
+  switch (Target.getOS()) {
+  case Triple::MacOSX:
+  case Triple::Darwin:
+    return MCVM_OSXVersionMin;
+  case Triple::IOS:
+    assert(!Target.isMacCatalystEnvironment() &&
+           "mac Catalyst should use LC_BUILD_VERSION");
+    return MCVM_IOSVersionMin;
+  case Triple::TvOS:
+    return MCVM_TvOSVersionMin;
+  case Triple::WatchOS:
+    return MCVM_WatchOSVersionMin;
+  default:
+    break;
+  }
+  llvm_unreachable("unexpected OS type");
+}
+
+static VersionTuple getMachoBuildVersionSupportedOS(const Triple &Target) {
+  assert(Target.isOSDarwin() && "expected a darwin OS");
+  switch (Target.getOS()) {
+  case Triple::MacOSX:
+  case Triple::Darwin:
+    return VersionTuple(10, 14);
+  case Triple::IOS:
+    // Mac Catalyst always uses the build version load command.
+    if (Target.isMacCatalystEnvironment())
+      return VersionTuple();
+    LLVM_FALLTHROUGH;
+  case Triple::TvOS:
+    return VersionTuple(12);
+  case Triple::WatchOS:
+    return VersionTuple(5);
+  default:
+    break;
+  }
+  llvm_unreachable("unexpected OS type");
+}
+
+static MachO::PlatformType
+getMachoBuildVersionPlatformType(const Triple &Target) {
+  assert(Target.isOSDarwin() && "expected a darwin OS");
+  switch (Target.getOS()) {
+  case Triple::MacOSX:
+  case Triple::Darwin:
+    return MachO::PLATFORM_MACOS;
+  case Triple::IOS:
+    if (Target.isMacCatalystEnvironment())
+      return MachO::PLATFORM_MACCATALYST;
+    return Target.isSimulatorEnvironment() ? MachO::PLATFORM_IOSSIMULATOR
+                                           : MachO::PLATFORM_IOS;
+  case Triple::TvOS:
+    return Target.isSimulatorEnvironment() ? MachO::PLATFORM_TVOSSIMULATOR
+                                           : MachO::PLATFORM_TVOS;
+  case Triple::WatchOS:
+    return Target.isSimulatorEnvironment() ? MachO::PLATFORM_WATCHOSSIMULATOR
+                                           : MachO::PLATFORM_WATCHOS;
+  default:
+    break;
+  }
+  llvm_unreachable("unexpected OS type");
+}
+
 void MCStreamer::emitVersionForTarget(const Triple &Target,
                                       const VersionTuple &SDKVersion) {
   if (!Target.isOSBinFormatMachO() || !Target.isOSDarwin())
@@ -1128,33 +1215,37 @@ void MCStreamer::emitVersionForTarget(const Triple &Target,
   if (Target.getOSMajorVersion() == 0)
     return;
 
-  unsigned Major;
-  unsigned Minor;
-  unsigned Update;
-  if (Target.isMacCatalystEnvironment()) {
-    // Mac Catalyst always uses the build version load command.
+  unsigned Major = 0;
+  unsigned Minor = 0;
+  unsigned Update = 0;
+  switch (Target.getOS()) {
+  case Triple::MacOSX:
+  case Triple::Darwin:
+    Target.getMacOSXVersion(Major, Minor, Update);
+    break;
+  case Triple::IOS:
+  case Triple::TvOS:
     Target.getiOSVersion(Major, Minor, Update);
-    assert(Major && "A non-zero major version is expected");
-    emitBuildVersion(MachO::PLATFORM_MACCATALYST, Major, Minor, Update,
-                     SDKVersion);
-    return;
-  }
-
-  MCVersionMinType VersionType;
-  if (Target.isWatchOS()) {
-    VersionType = MCVM_WatchOSVersionMin;
+    break;
+  case Triple::WatchOS:
     Target.getWatchOSVersion(Major, Minor, Update);
-  } else if (Target.isTvOS()) {
-    VersionType = MCVM_TvOSVersionMin;
-    Target.getiOSVersion(Major, Minor, Update);
-  } else if (Target.isMacOSX()) {
-    VersionType = MCVM_OSXVersionMin;
-    if (!Target.getMacOSXVersion(Major, Minor, Update))
-      Major = 0;
-  } else {
-    VersionType = MCVM_IOSVersionMin;
-    Target.getiOSVersion(Major, Minor, Update);
+    break;
+  default:
+    llvm_unreachable("unexpected OS type");
   }
-  if (Major != 0)
-    emitVersionMin(VersionType, Major, Minor, Update, SDKVersion);
+  assert(Major != 0 && "A non-zero major version is expected");
+  auto LinkedTargetVersion = targetVersionOrMinimumSupportedOSVersion(
+      Target, VersionTuple(Major, Minor, Update));
+  auto BuildVersionOSVersion = getMachoBuildVersionSupportedOS(Target);
+  if (BuildVersionOSVersion.empty() ||
+      LinkedTargetVersion >= BuildVersionOSVersion)
+    return emitBuildVersion(getMachoBuildVersionPlatformType(Target),
+                            LinkedTargetVersion.getMajor(),
+                            *LinkedTargetVersion.getMinor(),
+                            *LinkedTargetVersion.getSubminor(), SDKVersion);
+
+  emitVersionMin(getMachoVersionMinLoadCommandType(Target),
+                 LinkedTargetVersion.getMajor(),
+                 *LinkedTargetVersion.getMinor(),
+                 *LinkedTargetVersion.getSubminor(), SDKVersion);
 }

@@ -49,6 +49,7 @@ class FunctionType;
 class GVMaterializer;
 class LLVMContext;
 class MemoryBuffer;
+class ModuleSummaryIndex;
 class Pass;
 class RandomNumberGenerator;
 template <class PtrType> class SmallPtrSetImpl;
@@ -158,6 +159,11 @@ public:
   /// Checks if Metadata represents a valid ModFlagBehavior, and stores the
   /// converted result in MFB.
   static bool isValidModFlagBehavior(Metadata *MD, ModFlagBehavior &MFB);
+
+  /// Check if the given module flag metadata represents a valid module flag,
+  /// and store the flag behavior, the key string and the value metadata.
+  static bool isValidModuleFlag(const MDNode &ModFlag, ModFlagBehavior &MFB,
+                                MDString *&Key, Metadata *&Val);
 
   struct ModuleFlagEntry {
     ModFlagBehavior Behavior;
@@ -496,10 +502,12 @@ public:
   void addModuleFlag(ModFlagBehavior Behavior, StringRef Key, Constant *Val);
   void addModuleFlag(ModFlagBehavior Behavior, StringRef Key, uint32_t Val);
   void addModuleFlag(MDNode *Node);
+  /// Like addModuleFlag but replaces the old module flag if it already exists.
+  void setModuleFlag(ModFlagBehavior Behavior, StringRef Key, Metadata *Val);
 
-/// @}
-/// @name Materialization
-/// @{
+  /// @}
+  /// @name Materialization
+  /// @{
 
   /// Sets the GVMaterializer to GVM. This module must not yet have a
   /// Materializer. To reset the materializer for a module that already has one,
@@ -588,6 +596,7 @@ public:
   const_global_iterator global_begin() const { return GlobalList.begin(); }
   global_iterator       global_end  ()       { return GlobalList.end(); }
   const_global_iterator global_end  () const { return GlobalList.end(); }
+  size_t                global_size () const { return GlobalList.size(); }
   bool                  global_empty() const { return GlobalList.empty(); }
 
   iterator_range<global_iterator> globals() {
@@ -853,6 +862,7 @@ public:
 
   /// Returns whether semantic interposition is to be respected.
   bool getSemanticInterposition() const;
+  bool noSemanticInterposition() const;
 
   /// Set whether semantic interposition is to be respected.
   void setSemanticInterposition(bool);
@@ -877,6 +887,10 @@ public:
 
   /// Take ownership of the given memory buffer.
   void setOwnedMemoryBuffer(std::unique_ptr<MemoryBuffer> MB);
+
+  /// Set the partial sample profile ratio in the profile summary module flag,
+  /// if applicable.
+  void setPartialSampleProfileRatio(const ModuleSummaryIndex &Index);
 
   //sorav
   std::string get_llvm_header_as_string() const;

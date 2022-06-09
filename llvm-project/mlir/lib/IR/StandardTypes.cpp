@@ -72,20 +72,45 @@ bool Type::isUnsignedInteger(unsigned width) {
 }
 
 bool Type::isSignlessIntOrIndex() {
-  return isa<IndexType>() || isSignlessInteger();
+  return isSignlessInteger() || isa<IndexType>();
 }
 
 bool Type::isSignlessIntOrIndexOrFloat() {
-  return isa<IndexType>() || isSignlessInteger() || isa<FloatType>();
+  return isSignlessInteger() || isa<IndexType, FloatType>();
 }
 
 bool Type::isSignlessIntOrFloat() {
   return isSignlessInteger() || isa<FloatType>();
 }
 
-bool Type::isIntOrFloat() { return isa<IntegerType>() || isa<FloatType>(); }
+bool Type::isIntOrIndex() { return isa<IntegerType>() || isIndex(); }
+
+bool Type::isIntOrFloat() { return isa<IntegerType, FloatType>(); }
 
 bool Type::isIntOrIndexOrFloat() { return isIntOrFloat() || isIndex(); }
+
+//===----------------------------------------------------------------------===//
+/// ComplexType
+//===----------------------------------------------------------------------===//
+
+ComplexType ComplexType::get(Type elementType) {
+  return Base::get(elementType.getContext(), StandardTypes::Complex,
+                   elementType);
+}
+
+ComplexType ComplexType::getChecked(Type elementType, Location location) {
+  return Base::getChecked(location, StandardTypes::Complex, elementType);
+}
+
+/// Verify the construction of an integer type.
+LogicalResult ComplexType::verifyConstructionInvariants(Location loc,
+                                                        Type elementType) {
+  if (!elementType.isIntOrFloat())
+    return emitError(loc, "invalid element type for complex");
+  return success();
+}
+
+Type ComplexType::getElementType() { return getImpl()->elementType; }
 
 //===----------------------------------------------------------------------===//
 // Integer Type
@@ -132,12 +157,7 @@ unsigned FloatType::getWidth() {
 /// Returns the floating semantics for the given type.
 const llvm::fltSemantics &FloatType::getFloatSemantics() {
   if (isBF16())
-    // Treat BF16 like a double. This is unfortunate but BF16 fltSemantics is
-    // not defined in LLVM.
-    // TODO(jpienaar): add BF16 to LLVM? fltSemantics are internal to APFloat.cc
-    // else one could add it.
-    //  static const fltSemantics semBF16 = {127, -126, 8, 16};
-    return APFloat::IEEEdouble();
+    return APFloat::BFloat();
   if (isF16())
     return APFloat::IEEEhalf();
   if (isF32())
@@ -179,7 +199,9 @@ int64_t ShapedType::getNumElements() const {
 
 int64_t ShapedType::getRank() const { return getShape().size(); }
 
-bool ShapedType::hasRank() const { return !isa<UnrankedTensorType>(); }
+bool ShapedType::hasRank() const {
+  return !isa<UnrankedMemRefType, UnrankedTensorType>();
+}
 
 int64_t ShapedType::getDimSize(unsigned idx) const {
   assert(idx < getRank() && "invalid index for shaped type");
@@ -211,7 +233,7 @@ int64_t ShapedType::getSizeInBits() const {
   // Tensors can have vectors and other tensors as elements, other shaped types
   // cannot.
   assert(isa<TensorType>() && "unsupported element type");
-  assert((elementType.isa<VectorType>() || elementType.isa<TensorType>()) &&
+  assert((elementType.isa<VectorType, TensorType>()) &&
          "unsupported tensor element type");
   return getNumElements() * elementType.cast<ShapedType>().getSizeInBits();
 }
@@ -376,8 +398,8 @@ MemRefType MemRefType::getImpl(ArrayRef<int64_t> shape, Type elementType,
   auto *context = elementType.getContext();
 
   // Check that memref is formed from allowed types.
-  if (!elementType.isIntOrFloat() && !elementType.isa<VectorType>() &&
-      !elementType.isa<ComplexType>())
+  if (!elementType.isIntOrIndexOrFloat() &&
+      !elementType.isa<VectorType, ComplexType>())
     return emitOptionalError(location, "invalid memref element type"),
            MemRefType();
 
@@ -454,8 +476,8 @@ LogicalResult
 UnrankedMemRefType::verifyConstructionInvariants(Location loc, Type elementType,
                                                  unsigned memorySpace) {
   // Check that memref is formed from allowed types.
-  if (!elementType.isIntOrFloat() && !elementType.isa<VectorType>() &&
-      !elementType.isa<ComplexType>())
+  if (!elementType.isIntOrFloat() &&
+      !elementType.isa<VectorType, ComplexType>())
     return emitError(loc, "invalid memref element type");
   return success();
 }
@@ -528,7 +550,7 @@ LogicalResult mlir::getStridesAndOffset(MemRefType t,
   // For now strides are only computed on a single affine map with a single
   // result (i.e. the closed subset of linearization maps that are compatible
   // with striding semantics).
-  // TODO(ntv): support more forms on a per-need basis.
+  // TODO: support more forms on a per-need basis.
   if (affineMaps.size() > 1)
     return failure();
   if (affineMaps.size() == 1 && affineMaps[0].getNumResults() != 1)
@@ -575,8 +597,8 @@ LogicalResult mlir::getStridesAndOffset(MemRefType t,
 
   /// In practice, a strided memref must be internally non-aliasing. Test
   /// against 0 as a proxy.
-  /// TODO(ntv) static cases can have more advanced checks.
-  /// TODO(ntv) dynamic cases would require a way to compare symbolic
+  /// TODO: static cases can have more advanced checks.
+  /// TODO: dynamic cases would require a way to compare symbolic
   /// expressions and would probably need an affine set context propagated
   /// everywhere.
   if (llvm::any_of(strides, [](AffineExpr e) {
@@ -609,29 +631,6 @@ LogicalResult mlir::getStridesAndOffset(MemRefType t,
   }
   return success();
 }
-
-//===----------------------------------------------------------------------===//
-/// ComplexType
-//===----------------------------------------------------------------------===//
-
-ComplexType ComplexType::get(Type elementType) {
-  return Base::get(elementType.getContext(), StandardTypes::Complex,
-                   elementType);
-}
-
-ComplexType ComplexType::getChecked(Type elementType, Location location) {
-  return Base::getChecked(location, StandardTypes::Complex, elementType);
-}
-
-/// Verify the construction of an integer type.
-LogicalResult ComplexType::verifyConstructionInvariants(Location loc,
-                                                        Type elementType) {
-  if (!elementType.isa<FloatType>() && !elementType.isSignlessInteger())
-    return emitError(loc, "invalid element type for complex");
-  return success();
-}
-
-Type ComplexType::getElementType() { return getImpl()->elementType; }
 
 //===----------------------------------------------------------------------===//
 /// TupleType
@@ -728,35 +727,55 @@ MemRefType mlir::canonicalizeStridedLayout(MemRefType t) {
 }
 
 AffineExpr mlir::makeCanonicalStridedLayoutExpr(ArrayRef<int64_t> sizes,
+                                                ArrayRef<AffineExpr> exprs,
                                                 MLIRContext *context) {
   AffineExpr expr;
   bool dynamicPoisonBit = false;
+  unsigned numDims = 0;
   unsigned nSymbols = 0;
+  // Compute the number of symbols and dimensions of the passed exprs.
+  for (AffineExpr expr : exprs) {
+    expr.walk([&numDims, &nSymbols](AffineExpr d) {
+      if (AffineDimExpr dim = d.dyn_cast<AffineDimExpr>())
+        numDims = std::max(numDims, dim.getPosition() + 1);
+      else if (AffineSymbolExpr symbol = d.dyn_cast<AffineSymbolExpr>())
+        nSymbols = std::max(nSymbols, symbol.getPosition() + 1);
+    });
+  }
   int64_t runningSize = 1;
-  unsigned rank = sizes.size();
-  for (auto en : llvm::enumerate(llvm::reverse(sizes))) {
-    auto size = en.value();
-    auto position = rank - 1 - en.index();
+  for (auto en : llvm::zip(llvm::reverse(exprs), llvm::reverse(sizes))) {
+    int64_t size = std::get<1>(en);
     // Degenerate case, no size =-> no stride
     if (size == 0)
       continue;
-    auto d = getAffineDimExpr(position, context);
-    // Static case: stride = runningSize and runningSize *= size.
-    if (!dynamicPoisonBit) {
-      auto cst = getAffineConstantExpr(runningSize, context);
-      expr = expr ? expr + cst * d : cst * d;
-      if (size > 0)
-        runningSize *= size;
-      else
-        // From now on bail into dynamic mode.
-        dynamicPoisonBit = true;
-      continue;
-    }
-    // Dynamic case, new symbol for each new stride.
-    auto sym = getAffineSymbolExpr(nSymbols++, context);
-    expr = expr ? expr + d * sym : d * sym;
+    AffineExpr dimExpr = std::get<0>(en);
+    AffineExpr stride = dynamicPoisonBit
+                            ? getAffineSymbolExpr(nSymbols++, context)
+                            : getAffineConstantExpr(runningSize, context);
+    expr = expr ? expr + dimExpr * stride : dimExpr * stride;
+    if (size > 0)
+      runningSize *= size;
+    else
+      dynamicPoisonBit = true;
   }
-  return simplifyAffineExpr(expr, rank, nSymbols);
+  return simplifyAffineExpr(expr, numDims, nSymbols);
+}
+
+/// Return a version of `t` with a layout that has all dynamic offset and
+/// strides. This is used to erase the static layout.
+MemRefType mlir::eraseStridedLayout(MemRefType t) {
+  auto val = ShapedType::kDynamicStrideOrOffset;
+  return MemRefType::Builder(t).setAffineMaps(makeStridedLinearLayoutMap(
+      SmallVector<int64_t, 4>(t.getRank(), val), val, t.getContext()));
+}
+
+AffineExpr mlir::makeCanonicalStridedLayoutExpr(ArrayRef<int64_t> sizes,
+                                                MLIRContext *context) {
+  SmallVector<AffineExpr, 4> exprs;
+  exprs.reserve(sizes.size());
+  for (auto dim : llvm::seq<unsigned>(0, sizes.size()))
+    exprs.push_back(getAffineDimExpr(dim, context));
+  return makeCanonicalStridedLayoutExpr(sizes, exprs, context);
 }
 
 /// Return true if the layout for `t` is compatible with strided semantics.

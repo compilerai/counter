@@ -11,7 +11,7 @@ module attributes {gpu.container_module} {
       %0 = spv._address_of @kernel_arg_0 : !spv.ptr<!spv.struct<!spv.array<12 x f32, stride=4> [0]>, StorageBuffer>
       %2 = spv.constant 0 : i32
       %3 = spv._address_of @kernel_arg_0 : !spv.ptr<!spv.struct<!spv.array<12 x f32, stride=4> [0]>, StorageBuffer>
-      %4 = spv.AccessChain %0[%2, %2] : !spv.ptr<!spv.struct<!spv.array<12 x f32, stride=4> [0]>, StorageBuffer>
+      %4 = spv.AccessChain %0[%2, %2] : !spv.ptr<!spv.struct<!spv.array<12 x f32, stride=4> [0]>, StorageBuffer>, i32, i32
       %5 = spv.Load "StorageBuffer" %4 : f32
       spv.Return
     }
@@ -26,7 +26,7 @@ module attributes {gpu.container_module} {
   func @foo() {
     %0 = alloc() : memref<12xf32>
     %c1 = constant 1 : index
-    "gpu.launch_func"(%c1, %c1, %c1, %c1, %c1, %c1, %0) {kernel = "kernel", kernel_module = @kernels} : (index, index, index, index, index, index, memref<12xf32>) -> ()
+    "gpu.launch_func"(%c1, %c1, %c1, %c1, %c1, %c1, %0) {kernel = @kernels::@kernel} : (index, index, index, index, index, index, memref<12xf32>) -> ()
     return
   }
 }

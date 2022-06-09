@@ -1498,7 +1498,8 @@ ASTNodeImporter::VisitPackExpansionType(const PackExpansionType *T) {
     return ToPatternOrErr.takeError();
 
   return Importer.getToContext().getPackExpansionType(*ToPatternOrErr,
-                                                      T->getNumExpansions());
+                                                      T->getNumExpansions(),
+                                                      /*ExpactPack=*/false);
 }
 
 ExpectedType ASTNodeImporter::VisitDependentTemplateSpecializationType(
@@ -1890,6 +1891,20 @@ Error ASTNodeImporter::ImportDefinition(
         // set in CXXRecordDecl::CreateLambda.  We must import the contained
         // decls here and finish the definition.
         (To->isLambda() && shouldForceImportDeclContext(Kind))) {
+      if (To->isLambda()) {
+        auto *FromCXXRD = cast<CXXRecordDecl>(From);
+        SmallVector<LambdaCapture, 8> ToCaptures;
+        ToCaptures.reserve(FromCXXRD->capture_size());
+        for (const auto &FromCapture : FromCXXRD->captures()) {
+          if (auto ToCaptureOrErr = import(FromCapture))
+            ToCaptures.push_back(*ToCaptureOrErr);
+          else
+            return ToCaptureOrErr.takeError();
+        }
+        cast<CXXRecordDecl>(To)->setCaptures(Importer.getToContext(),
+                                             ToCaptures);
+      }
+
       Error Result = ImportDeclContext(From, /*ForceImport=*/true);
       // Finish the definition of the lambda, set isBeingDefined to false.
       if (To->isLambda())
@@ -2782,7 +2797,7 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
         return CDeclOrErr.takeError();
       D2CXX->setLambdaMangling(DCXX->getLambdaManglingNumber(), *CDeclOrErr,
                                DCXX->hasKnownLambdaInternalLinkage());
-    } else if (DCXX->isInjectedClassName()) {
+   } else if (DCXX->isInjectedClassName()) {
       // We have to be careful to do a similar dance to the one in
       // Sema::ActOnStartCXXMemberDeclarations
       const bool DelayTypeCreation = true;
@@ -3633,6 +3648,54 @@ ExpectedDecl ASTNodeImporter::VisitIndirectFieldDecl(IndirectFieldDecl *D) {
   return ToIndirectField;
 }
 
+/// Used as return type of getFriendCountAndPosition.
+struct FriendCountAndPosition {
+  /// Number of similar looking friends.
+  unsigned int TotalCount;
+  /// Index of the specific FriendDecl.
+  unsigned int IndexOfDecl;
+};
+
+template <class T>
+static FriendCountAndPosition getFriendCountAndPosition(
+    const FriendDecl *FD,
+    llvm::function_ref<T(const FriendDecl *)> GetCanTypeOrDecl) {
+  unsigned int FriendCount = 0;
+  llvm::Optional<unsigned int> FriendPosition;
+  const auto *RD = cast<CXXRecordDecl>(FD->getLexicalDeclContext());
+
+  T TypeOrDecl = GetCanTypeOrDecl(FD);
+
+  for (const FriendDecl *FoundFriend : RD->friends()) {
+    if (FoundFriend == FD) {
+      FriendPosition = FriendCount;
+      ++FriendCount;
+    } else if (!FoundFriend->getFriendDecl() == !FD->getFriendDecl() &&
+               GetCanTypeOrDecl(FoundFriend) == TypeOrDecl) {
+      ++FriendCount;
+    }
+  }
+
+  assert(FriendPosition && "Friend decl not found in own parent.");
+
+  return {FriendCount, *FriendPosition};
+}
+
+static FriendCountAndPosition getFriendCountAndPosition(const FriendDecl *FD) {
+  if (FD->getFriendType())
+    return getFriendCountAndPosition<QualType>(FD, [](const FriendDecl *F) {
+      if (TypeSourceInfo *TSI = F->getFriendType())
+        return TSI->getType().getCanonicalType();
+      llvm_unreachable("Wrong friend object type.");
+    });
+  else
+    return getFriendCountAndPosition<Decl *>(FD, [](const FriendDecl *F) {
+      if (Decl *D = F->getFriendDecl())
+        return D->getCanonicalDecl();
+      llvm_unreachable("Wrong friend object type.");
+    });
+}
+
 ExpectedDecl ASTNodeImporter::VisitFriendDecl(FriendDecl *D) {
   // Import the major distinguishing characteristics of a declaration.
   DeclContext *DC, *LexicalDC;
@@ -3641,25 +3704,37 @@ ExpectedDecl ASTNodeImporter::VisitFriendDecl(FriendDecl *D) {
 
   // Determine whether we've already imported this decl.
   // FriendDecl is not a NamedDecl so we cannot use lookup.
-  auto *RD = cast<CXXRecordDecl>(DC);
+  // We try to maintain order and count of redundant friend declarations.
+  const auto *RD = cast<CXXRecordDecl>(DC);
   FriendDecl *ImportedFriend = RD->getFirstFriend();
+  SmallVector<FriendDecl *, 2> ImportedEquivalentFriends;
 
   while (ImportedFriend) {
+    bool Match = false;
     if (D->getFriendDecl() && ImportedFriend->getFriendDecl()) {
-      if (IsStructuralMatch(D->getFriendDecl(), ImportedFriend->getFriendDecl(),
-                            /*Complain=*/false))
-        return Importer.MapImported(D, ImportedFriend);
-
+      Match =
+          IsStructuralMatch(D->getFriendDecl(), ImportedFriend->getFriendDecl(),
+                            /*Complain=*/false);
     } else if (D->getFriendType() && ImportedFriend->getFriendType()) {
-      if (Importer.IsStructurallyEquivalent(
-            D->getFriendType()->getType(),
-            ImportedFriend->getFriendType()->getType(), true))
-        return Importer.MapImported(D, ImportedFriend);
+      Match = Importer.IsStructurallyEquivalent(
+          D->getFriendType()->getType(),
+          ImportedFriend->getFriendType()->getType(), /*Complain=*/false);
     }
+    if (Match)
+      ImportedEquivalentFriends.push_back(ImportedFriend);
+
     ImportedFriend = ImportedFriend->getNextFriend();
   }
+  FriendCountAndPosition CountAndPosition = getFriendCountAndPosition(D);
+
+  assert(ImportedEquivalentFriends.size() <= CountAndPosition.TotalCount &&
+         "Class with non-matching friends is imported, ODR check wrong?");
+  if (ImportedEquivalentFriends.size() == CountAndPosition.TotalCount)
+    return Importer.MapImported(
+        D, ImportedEquivalentFriends[CountAndPosition.IndexOfDecl]);
 
   // Not found. Create it.
+  // The declarations will be put into order later by ImportDeclContext.
   FriendDecl::FriendUnion ToFU;
   if (NamedDecl *FriendD = D->getFriendDecl()) {
     NamedDecl *ToFriendD;
@@ -4685,11 +4760,10 @@ Error ASTNodeImporter::ImportDefinition(
       return ToImplOrErr.takeError();
   }
 
-  if (shouldForceImportDeclContext(Kind)) {
-    // Import all of the members of this class.
-    if (Error Err = ImportDeclContext(From, /*ForceImport=*/true))
-      return Err;
-  }
+  // Import all of the members of this class.
+  if (Error Err = ImportDeclContext(From, /*ForceImport=*/true))
+    return Err;
+
   return Error::success();
 }
 
@@ -6044,11 +6118,13 @@ ExpectedStmt ASTNodeImporter::VisitWhileStmt(WhileStmt *S) {
   auto ToCond = importChecked(Err, S->getCond());
   auto ToBody = importChecked(Err, S->getBody());
   auto ToWhileLoc = importChecked(Err, S->getWhileLoc());
+  auto ToLParenLoc = importChecked(Err, S->getLParenLoc());
+  auto ToRParenLoc = importChecked(Err, S->getRParenLoc());
   if (Err)
     return std::move(Err);
 
   return WhileStmt::Create(Importer.getToContext(), ToConditionVariable, ToCond,
-                           ToBody, ToWhileLoc);
+                           ToBody, ToWhileLoc, ToLParenLoc, ToRParenLoc);
 }
 
 ExpectedStmt ASTNodeImporter::VisitDoStmt(DoStmt *S) {
@@ -6660,9 +6736,10 @@ ExpectedStmt ASTNodeImporter::VisitUnaryOperator(UnaryOperator *E) {
   if (Err)
     return std::move(Err);
 
-  return new (Importer.getToContext()) UnaryOperator(
-      ToSubExpr, E->getOpcode(), ToType, E->getValueKind(), E->getObjectKind(),
-      ToOperatorLoc, E->canOverflow());
+  return UnaryOperator::Create(
+      Importer.getToContext(), ToSubExpr, E->getOpcode(), ToType,
+      E->getValueKind(), E->getObjectKind(), ToOperatorLoc, E->canOverflow(),
+      E->getFPOptionsOverride());
 }
 
 ExpectedStmt
@@ -7262,7 +7339,8 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
     return std::move(Err);
 
   return CXXMemberCallExpr::Create(Importer.getToContext(), ToCallee, ToArgs,
-                                   ToType, E->getValueKind(), ToRParenLoc);
+                                   ToType, E->getValueKind(), ToRParenLoc,
+                                   E->getFPFeatures());
 }
 
 ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
@@ -7572,8 +7650,8 @@ ExpectedStmt ASTNodeImporter::VisitCallExpr(CallExpr *E) {
   }
 
   return CallExpr::Create(Importer.getToContext(), ToCallee, ToArgs, ToType,
-                          E->getValueKind(), ToRParenLoc, /*MinNumArgs=*/0,
-                          E->getADLCallKind());
+                          E->getValueKind(), ToRParenLoc, E->getFPFeatures(),
+                          /*MinNumArgs=*/0, E->getADLCallKind());
 }
 
 ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
@@ -7587,15 +7665,6 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
   if (!ToCallOpOrErr)
     return ToCallOpOrErr.takeError();
 
-  SmallVector<LambdaCapture, 8> ToCaptures;
-  ToCaptures.reserve(E->capture_size());
-  for (const auto &FromCapture : E->captures()) {
-    if (auto ToCaptureOrErr = import(FromCapture))
-      ToCaptures.push_back(*ToCaptureOrErr);
-    else
-      return ToCaptureOrErr.takeError();
-  }
-
   SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
   if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
     return std::move(Err);
@@ -7607,11 +7676,11 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
   if (Err)
     return std::move(Err);
 
-  return LambdaExpr::Create(
-      Importer.getToContext(), ToClass, ToIntroducerRange,
-      E->getCaptureDefault(), ToCaptureDefaultLoc, ToCaptures,
-      E->hasExplicitParameters(), E->hasExplicitResultType(), ToCaptureInits,
-      ToEndLoc, E->containsUnexpandedParameterPack());
+  return LambdaExpr::Create(Importer.getToContext(), ToClass, ToIntroducerRange,
+                            E->getCaptureDefault(), ToCaptureDefaultLoc,
+                            E->hasExplicitParameters(),
+                            E->hasExplicitResultType(), ToCaptureInits,
+                            ToEndLoc, E->containsUnexpandedParameterPack());
 }
 
 
@@ -8176,15 +8245,22 @@ Expected<DeclContext *> ASTImporter::ImportContext(DeclContext *FromDC) {
   // need it to have a definition.
   if (auto *ToRecord = dyn_cast<RecordDecl>(ToDC)) {
     auto *FromRecord = cast<RecordDecl>(FromDC);
-    if (ToRecord->isCompleteDefinition()) {
-      // Do nothing.
-    } else if (FromRecord->isCompleteDefinition()) {
+    if (ToRecord->isCompleteDefinition())
+      return ToDC;
+
+    // If FromRecord is not defined we need to force it to be.
+    // Simply calling CompleteDecl(...) for a RecordDecl will break some cases
+    // it will start the definition but we never finish it.
+    // If there are base classes they won't be imported and we will
+    // be missing anything that we inherit from those bases.
+    if (FromRecord->getASTContext().getExternalSource() &&
+        !FromRecord->isCompleteDefinition())
+      FromRecord->getASTContext().getExternalSource()->CompleteType(FromRecord);
+
+    if (FromRecord->isCompleteDefinition())
       if (Error Err = ASTNodeImporter(*this).ImportDefinition(
           FromRecord, ToRecord, ASTNodeImporter::IDK_Basic))
         return std::move(Err);
-    } else {
-      CompleteDecl(ToRecord);
-    }
   } else if (auto *ToEnum = dyn_cast<EnumDecl>(ToDC)) {
     auto *FromEnum = cast<EnumDecl>(FromDC);
     if (ToEnum->isCompleteDefinition()) {
@@ -8553,7 +8629,7 @@ Expected<FileID> ASTImporter::Import(FileID FromID, bool IsBuiltin) {
   } else {
     const SrcMgr::ContentCache *Cache = FromSLoc.getFile().getContentCache();
 
-    if (!IsBuiltin) {
+    if (!IsBuiltin && !Cache->BufferOverridden) {
       // Include location of this file.
       ExpectedSLoc ToIncludeLoc = Import(FromSLoc.getFile().getIncludeLoc());
       if (!ToIncludeLoc)

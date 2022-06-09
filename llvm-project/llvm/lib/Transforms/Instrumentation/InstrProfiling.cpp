@@ -110,6 +110,12 @@ cl::opt<bool> AtomicCounterUpdatePromoted(
              " for promoted counters only"),
     cl::init(false));
 
+cl::opt<bool> AtomicFirstCounter(
+    "atomic-first-counter", cl::ZeroOrMore,
+    cl::desc("Use atomic fetch add for first counter in a function (usually "
+             "the entry counter)"),
+    cl::init(false));
+
 // If the option is not specified, the default behavior about whether
 // counter promotion is done depends on how instrumentaiton lowering
 // pipeline is setup, i.e., the default value of true of this option
@@ -144,6 +150,10 @@ cl::opt<bool> IterativeCounterPromotion(
     cl::ZeroOrMore, "iterative-counter-promotion", cl::init(true),
     cl::desc("Allow counter promotion across the whole loop nest."));
 
+cl::opt<bool> SkipRetExitBlock(
+    cl::ZeroOrMore, "skip-ret-exit-block", cl::init(true),
+    cl::desc("Suppress counter promotion if exit blocks contain ret."));
+
 class InstrProfilingLegacyPass : public ModulePass {
   InstrProfiling InstrProf;
 
@@ -152,7 +162,9 @@ public:
 
   InstrProfilingLegacyPass() : ModulePass(ID) {}
   InstrProfilingLegacyPass(const InstrProfOptions &Options, bool IsCS = false)
-      : ModulePass(ID), InstrProf(Options, IsCS) {}
+      : ModulePass(ID), InstrProf(Options, IsCS) {
+    initializeInstrProfilingLegacyPassPass(*PassRegistry::getPassRegistry());
+  }
 
   StringRef getPassName() const override {
     return "Frontend instrumentation-based coverage lowering";
@@ -264,6 +276,18 @@ public:
     // Skip 'infinite' loops:
     if (ExitBlocks.size() == 0)
       return false;
+
+    // Skip if any of the ExitBlocks contains a ret instruction.
+    // This is to prevent dumping of incomplete profile -- if the
+    // the loop is a long running loop and dump is called in the middle
+    // of the loop, the result profile is incomplete.
+    // FIXME: add other heuristics to detect long running loops.
+    if (SkipRetExitBlock) {
+      for (auto BB : ExitBlocks)
+        if (dyn_cast<ReturnInst>(BB->getTerminator()) != nullptr)
+          return false;
+    }
+
     unsigned MaxProm = getMaxNumOfPromotionsInLoop(&L);
     if (MaxProm == 0)
       return false;
@@ -694,7 +718,8 @@ void InstrProfiling::lowerIncrement(InstrProfIncrementInst *Inc) {
     Addr = Builder.CreateIntToPtr(Add, Int64PtrTy);
   }
 
-  if (Options.Atomic || AtomicCounterUpdateAll) {
+  if (Options.Atomic || AtomicCounterUpdateAll ||
+      (Index == 0 && AtomicFirstCounter)) {
     Builder.CreateAtomicRMW(AtomicRMWInst::Add, Addr, Inc->getStep(),
                             AtomicOrdering::Monotonic);
   } else {
@@ -1032,9 +1057,9 @@ void InstrProfiling::emitRegistration() {
 }
 
 bool InstrProfiling::emitRuntimeHook() {
-  // We expect the linker to be invoked with -u<hook_var> flag for linux,
-  // for which case there is no need to emit the user function.
-  if (TT.isOSLinux())
+  // We expect the linker to be invoked with -u<hook_var> flag for Linux or
+  // Fuchsia, in which case there is no need to emit the user function.
+  if (TT.isOSLinux() || TT.isOSFuchsia())
     return false;
 
   // If the module's provided its own runtime, we don't need to do anything.

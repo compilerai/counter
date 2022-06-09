@@ -38,28 +38,6 @@ using namespace llvm;
 // Calling Convention Implementation
 //===----------------------------------------------------------------------===//
 
-static bool allocateFloat(unsigned ValNo, MVT ValVT, MVT LocVT,
-                          CCValAssign::LocInfo LocInfo,
-                          ISD::ArgFlagsTy ArgFlags, CCState &State) {
-  switch (LocVT.SimpleTy) {
-  case MVT::f32: {
-    // Allocate stack like below
-    //    0      4
-    //    +------+------+
-    //    | empty| float|
-    //    +------+------+
-    // Use align=8 for dummy area to align the beginning of these 2 area.
-    State.AllocateStack(4, 8); // for empty area
-    // Use align=4 for value to place it at just after the dummy area.
-    unsigned Offset = State.AllocateStack(4, 4); // for float value area
-    State.addLoc(CCValAssign::getMem(ValNo, ValVT, Offset, LocVT, LocInfo));
-    return true;
-  }
-  default:
-    return false;
-  }
-}
-
 #include "VEGenCallingConv.inc"
 
 bool VETargetLowering::CanLowerReturn(
@@ -109,6 +87,22 @@ VETargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
     case CCValAssign::AExt:
       OutVal = DAG.getNode(ISD::ANY_EXTEND, DL, VA.getLocVT(), OutVal);
       break;
+    case CCValAssign::BCvt: {
+      // Convert a float return value to i64 with padding.
+      //     63     31   0
+      //    +------+------+
+      //    | float|   0  |
+      //    +------+------+
+      assert(VA.getLocVT() == MVT::i64);
+      assert(VA.getValVT() == MVT::f32);
+      SDValue Undef = SDValue(
+          DAG.getMachineNode(TargetOpcode::IMPLICIT_DEF, DL, MVT::i64), 0);
+      SDValue Sub_f32 = DAG.getTargetConstant(VE::sub_f32, DL, MVT::i32);
+      OutVal = SDValue(DAG.getMachineNode(TargetOpcode::INSERT_SUBREG, DL,
+                                          MVT::i64, Undef, OutVal, Sub_f32),
+                       0);
+      break;
+    }
     default:
       llvm_unreachable("Unknown loc info!");
     }
@@ -147,7 +141,7 @@ SDValue VETargetLowering::LowerFormalArguments(
   CCState CCInfo(CallConv, IsVarArg, DAG.getMachineFunction(), ArgLocs,
                  *DAG.getContext());
   // Allocate the preserved area first.
-  CCInfo.AllocateStack(ArgsPreserved, 8);
+  CCInfo.AllocateStack(ArgsPreserved, Align(8));
   // We already allocated the preserved area, so the stack offset computed
   // by CC_VE would be correct now.
   CCInfo.AnalyzeFormalArguments(Ins, CC_VE);
@@ -179,6 +173,20 @@ SDValue VETargetLowering::LowerFormalArguments(
         Arg = DAG.getNode(ISD::AssertZext, DL, VA.getLocVT(), Arg,
                           DAG.getValueType(VA.getValVT()));
         break;
+      case CCValAssign::BCvt: {
+        // Extract a float argument from i64 with padding.
+        //     63     31   0
+        //    +------+------+
+        //    | float|   0  |
+        //    +------+------+
+        assert(VA.getLocVT() == MVT::i64);
+        assert(VA.getValVT() == MVT::f32);
+        SDValue Sub_f32 = DAG.getTargetConstant(VE::sub_f32, DL, MVT::i32);
+        Arg = SDValue(DAG.getMachineNode(TargetOpcode::EXTRACT_SUBREG, DL,
+                                         MVT::f32, Arg, Sub_f32),
+                      0);
+        break;
+      }
       default:
         break;
       }
@@ -197,6 +205,20 @@ SDValue VETargetLowering::LowerFormalArguments(
     // beginning of the arguments area at %fp+176.
     unsigned Offset = VA.getLocMemOffset() + ArgsBaseOffset;
     unsigned ValSize = VA.getValVT().getSizeInBits() / 8;
+
+    // Adjust offset for a float argument by adding 4 since the argument is
+    // stored in 8 bytes buffer with offset like below.  LLVM generates
+    // 4 bytes load instruction, so need to adjust offset here.  This
+    // adjustment is required in only LowerFormalArguments.  In LowerCall,
+    // a float argument is converted to i64 first, and stored as 8 bytes
+    // data, which is required by ABI, so no need for adjustment.
+    //    0      4
+    //    +------+------+
+    //    | empty| float|
+    //    +------+------+
+    if (VA.getValVT() == MVT::f32)
+      Offset += 4;
+
     int FI = MF.getFrameInfo().CreateFixedObject(ValSize, Offset, true);
     InVals.push_back(
         DAG.getLoad(VA.getValVT(), DL, Chain,
@@ -267,7 +289,7 @@ SDValue VETargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   CCState CCInfo(CLI.CallConv, CLI.IsVarArg, DAG.getMachineFunction(), ArgLocs,
                  *DAG.getContext());
   // Allocate the preserved area first.
-  CCInfo.AllocateStack(ArgsPreserved, 8);
+  CCInfo.AllocateStack(ArgsPreserved, Align(8));
   // We already allocated the preserved area, so the stack offset computed
   // by CC_VE would be correct now.
   CCInfo.AnalyzeCallOperands(CLI.Outs, CC_VE);
@@ -371,6 +393,22 @@ SDValue VETargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
     case CCValAssign::AExt:
       Arg = DAG.getNode(ISD::ANY_EXTEND, DL, VA.getLocVT(), Arg);
       break;
+    case CCValAssign::BCvt: {
+      // Convert a float argument to i64 with padding.
+      //     63     31   0
+      //    +------+------+
+      //    | float|   0  |
+      //    +------+------+
+      assert(VA.getLocVT() == MVT::i64);
+      assert(VA.getValVT() == MVT::f32);
+      SDValue Undef = SDValue(
+          DAG.getMachineNode(TargetOpcode::IMPLICIT_DEF, DL, MVT::i64), 0);
+      SDValue Sub_f32 = DAG.getTargetConstant(VE::sub_f32, DL, MVT::i32);
+      Arg = SDValue(DAG.getMachineNode(TargetOpcode::INSERT_SUBREG, DL,
+                                       MVT::i64, Undef, Arg, Sub_f32),
+                    0);
+      break;
+    }
     }
 
     if (VA.isRegLoc()) {
@@ -488,6 +526,20 @@ SDValue VETargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
       RV = DAG.getNode(ISD::AssertZext, DL, VA.getLocVT(), RV,
                        DAG.getValueType(VA.getValVT()));
       break;
+    case CCValAssign::BCvt: {
+      // Extract a float return value from i64 with padding.
+      //     63     31   0
+      //    +------+------+
+      //    | float|   0  |
+      //    +------+------+
+      assert(VA.getLocVT() == MVT::i64);
+      assert(VA.getValVT() == MVT::f32);
+      SDValue Sub_f32 = DAG.getTargetConstant(VE::sub_f32, DL, MVT::i32);
+      RV = SDValue(DAG.getMachineNode(TargetOpcode::EXTRACT_SUBREG, DL,
+                                      MVT::f32, RV, Sub_f32),
+                   0);
+      break;
+    }
     default:
       break;
     }
@@ -528,6 +580,30 @@ bool VETargetLowering::allowsMisalignedMemoryAccesses(EVT VT,
     // It's fast anytime on VE
     *Fast = true;
   }
+  return true;
+}
+
+bool VETargetLowering::hasAndNot(SDValue Y) const {
+  EVT VT = Y.getValueType();
+
+  // VE doesn't have vector and not instruction.
+  if (VT.isVector())
+    return false;
+
+  // VE allows different immediate values for X and Y where ~X & Y.
+  // Only simm7 works for X, and only mimm works for Y on VE.  However, this
+  // function is used to check whether an immediate value is OK for and-not
+  // instruction as both X and Y.  Generating additional instruction to
+  // retrieve an immediate value is no good since the purpose of this
+  // function is to convert a series of 3 instructions to another series of
+  // 3 instructions with better parallelism.  Therefore, we return false
+  // for all immediate values now.
+  // FIXME: Change hasAndNot function to have two operands to make it work
+  //        correctly with Aurora VE.
+  if (isa<ConstantSDNode>(Y))
+    return false;
+
+  // It's ok for generic registers.
   return true;
 }
 
@@ -582,6 +658,11 @@ VETargetLowering::VETargetLowering(const TargetMachine &TM,
   setOperationAction(ISD::VACOPY, MVT::Other, Expand);
   setOperationAction(ISD::VAEND, MVT::Other, Expand);
   /// } VAARG handling
+
+  /// Stack {
+  setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i32, Custom);
+  setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i64, Custom);
+  /// } Stack
 
   /// Int Ops {
   for (MVT IntVT : {MVT::i32, MVT::i64}) {
@@ -641,6 +722,7 @@ const char *VETargetLowering::getTargetNodeName(unsigned Opcode) const {
     TARGET_NODE_CASE(Lo)
     TARGET_NODE_CASE(Hi)
     TARGET_NODE_CASE(GETFUNPLT)
+    TARGET_NODE_CASE(GETSTACKTOP)
     TARGET_NODE_CASE(GETTLSADDR)
     TARGET_NODE_CASE(CALL)
     TARGET_NODE_CASE(RET_FLAG)
@@ -860,12 +942,79 @@ SDValue VETargetLowering::LowerVAARG(SDValue Op, SelectionDAG &DAG) const {
                      std::min(PtrVT.getSizeInBits(), VT.getSizeInBits()) / 8);
 }
 
+SDValue VETargetLowering::lowerDYNAMIC_STACKALLOC(SDValue Op,
+                                                  SelectionDAG &DAG) const {
+  // Generate following code.
+  //   (void)__llvm_grow_stack(size);
+  //   ret = GETSTACKTOP;        // pseudo instruction
+  SDLoc DL(Op);
+
+  // Get the inputs.
+  SDNode *Node = Op.getNode();
+  SDValue Chain = Op.getOperand(0);
+  SDValue Size = Op.getOperand(1);
+  MaybeAlign Alignment(Op.getConstantOperandVal(2));
+  EVT VT = Node->getValueType(0);
+
+  // Chain the dynamic stack allocation so that it doesn't modify the stack
+  // pointer when other instructions are using the stack.
+  Chain = DAG.getCALLSEQ_START(Chain, 0, 0, DL);
+
+  const TargetFrameLowering &TFI = *Subtarget->getFrameLowering();
+  Align StackAlign = TFI.getStackAlign();
+  bool NeedsAlign = Alignment.valueOrOne() > StackAlign;
+
+  // Prepare arguments
+  TargetLowering::ArgListTy Args;
+  TargetLowering::ArgListEntry Entry;
+  Entry.Node = Size;
+  Entry.Ty = Entry.Node.getValueType().getTypeForEVT(*DAG.getContext());
+  Args.push_back(Entry);
+  if (NeedsAlign) {
+    Entry.Node = DAG.getConstant(~(Alignment->value() - 1ULL), DL, VT);
+    Entry.Ty = Entry.Node.getValueType().getTypeForEVT(*DAG.getContext());
+    Args.push_back(Entry);
+  }
+  Type *RetTy = Type::getVoidTy(*DAG.getContext());
+
+  EVT PtrVT = Op.getValueType();
+  SDValue Callee;
+  if (NeedsAlign) {
+    Callee = DAG.getTargetExternalSymbol("__ve_grow_stack_align", PtrVT, 0);
+  } else {
+    Callee = DAG.getTargetExternalSymbol("__ve_grow_stack", PtrVT, 0);
+  }
+
+  TargetLowering::CallLoweringInfo CLI(DAG);
+  CLI.setDebugLoc(DL)
+      .setChain(Chain)
+      .setCallee(CallingConv::PreserveAll, RetTy, Callee, std::move(Args))
+      .setDiscardResult(true);
+  std::pair<SDValue, SDValue> pair = LowerCallTo(CLI);
+  Chain = pair.second;
+  SDValue Result = DAG.getNode(VEISD::GETSTACKTOP, DL, VT, Chain);
+  if (NeedsAlign) {
+    Result = DAG.getNode(ISD::ADD, DL, VT, Result,
+                         DAG.getConstant((Alignment->value() - 1ULL), DL, VT));
+    Result = DAG.getNode(ISD::AND, DL, VT, Result,
+                         DAG.getConstant(~(Alignment->value() - 1ULL), DL, VT));
+  }
+  //  Chain = Result.getValue(1);
+  Chain = DAG.getCALLSEQ_END(Chain, DAG.getIntPtrConstant(0, DL, true),
+                             DAG.getIntPtrConstant(0, DL, true), SDValue(), DL);
+
+  SDValue Ops[2] = {Result, Chain};
+  return DAG.getMergeValues(Ops, DL);
+}
+
 SDValue VETargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   switch (Op.getOpcode()) {
   default:
     llvm_unreachable("Should not custom lower this!");
   case ISD::BlockAddress:
     return LowerBlockAddress(Op, DAG);
+  case ISD::DYNAMIC_STACKALLOC:
+    return lowerDYNAMIC_STACKALLOC(Op, DAG);
   case ISD::GlobalAddress:
     return LowerGlobalAddress(Op, DAG);
   case ISD::GlobalTLSAddress:

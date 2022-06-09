@@ -29,6 +29,7 @@ add_lldb_library(liblldb SHARED ${option_framework}
   SBBreakpointOptionCommon.cpp
   SBBroadcaster.cpp
   SBCommandInterpreter.cpp
+  SBCommandInterpreterRunOptions.cpp
   SBCommandReturnObject.cpp
   SBCommunication.cpp
   SBCompileUnit.cpp
@@ -120,9 +121,11 @@ if(LLDB_ENABLE_PYTHON AND (BUILD_SHARED_LIBS OR LLVM_LINK_LLVM_DYLIB) AND UNIX A
   set_property(TARGET liblldb APPEND PROPERTY INSTALL_RPATH "\$ORIGIN/../../../../lib${LLVM_LIBDIR_SUFFIX}")
 endif()
 
-if (MSVC)
-  set_source_files_properties(SBReproducer.cpp PROPERTIES COMPILE_FLAGS /bigobj)
+if(PYTHON_RPATH)
+  set_property(TARGET liblldb APPEND PROPERTY INSTALL_RPATH "${PYTHON_RPATH}")
+  set_property(TARGET liblldb APPEND PROPERTY BUILD_RPATH   "${PYTHON_RPATH}")
 endif()
+
 
 if(lldb_python_wrapper)
   add_dependencies(liblldb swig_wrapper)

@@ -6,7 +6,7 @@
 #include "valtag/regcons.h"
 #include "superopt/superopt.h"
 #include "i386/insntypes.h"
-#include "rewrite/src-insn.h"
+#include "insn/src-insn.h"
 #include "cutils/chash.h"
 #include "sym_exec/sym_exec.h"
 #include "eq/quota.h"

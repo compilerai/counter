@@ -1,0 +1,23 @@
+at
+(model 
+)
+(let ((a!1 (ite (= PolymorphicClass!val!6 PolymorphicClass!val!9)
+                PolymorphicClass!val!9
+                (ite (= PolymorphicClass!val!6 PolymorphicClass!val!14)
+                     PolymorphicClass!val!14
+                     (ite (= PolymorphicClass!val!6 PolymorphicClass!val!0)
+                          PolymorphicClass!val!0
+                          PolymorphicClass!val!6)))))
+(let ((a!2 (ite (= PolymorphicClass!val!6 PolymorphicClass!val!7)
+                PolymorphicClass!val!7
+                (ite (= PolymorphicClass!val!6 PolymorphicClass!val!8)
+                     PolymorphicClass!val!8
+                     (ite (= PolymorphicClass!val!6 PolymorphicClass!val!10)
+                          PolymorphicClass!val!10
+                          a!1)))))
+(let ((a!3 (ite (= PolymorphicClass!val!6 PolymorphicClass!val!15)
+                PolymorphicClass!val!15
+                (ite (= PolymorphicClass!val!6 PolymorphicClass!val!2)
+                     PolymorphicClass!val!2
+                     a!2))))
+          (or (= a!3 PolymorphicClass!val!0) (= a!3 PolymorphicClass!val!1)))))

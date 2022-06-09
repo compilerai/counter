@@ -155,7 +155,7 @@ void SCUDO_PREFIX(malloc_postinit)() {
                  SCUDO_PREFIX(malloc_enable));
 }
 
-INTERFACE WEAK int SCUDO_PREFIX(mallopt)(int param, UNUSED int value) {
+INTERFACE WEAK int SCUDO_PREFIX(mallopt)(int param, int value) {
   if (param == M_DECAY_TIME) {
     if (SCUDO_ANDROID) {
       if (value == 0) {
@@ -173,8 +173,26 @@ INTERFACE WEAK int SCUDO_PREFIX(mallopt)(int param, UNUSED int value) {
   } else if (param == M_PURGE) {
     SCUDO_ALLOCATOR.releaseToOS();
     return 1;
+  } else {
+    scudo::Option option;
+    switch (param) {
+    case M_MEMTAG_TUNING:
+      option = scudo::Option::MemtagTuning;
+      break;
+    case M_CACHE_COUNT_MAX:
+      option = scudo::Option::MaxCacheEntriesCount;
+      break;
+    case M_CACHE_SIZE_MAX:
+      option = scudo::Option::MaxCacheEntrySize;
+      break;
+    case M_TSDS_COUNT_MAX:
+      option = scudo::Option::MaxTSDsCount;
+      break;
+    default:
+      return 0;
+    }
+    return SCUDO_ALLOCATOR.setOption(option, static_cast<scudo::sptr>(value));
   }
-  return 0;
 }
 
 INTERFACE WEAK void *SCUDO_PREFIX(aligned_alloc)(size_t alignment,
@@ -226,6 +244,21 @@ INTERFACE WEAK void SCUDO_PREFIX(malloc_disable_memory_tagging)() {
 INTERFACE WEAK void
 SCUDO_PREFIX(malloc_set_track_allocation_stacks)(int track) {
   SCUDO_ALLOCATOR.setTrackAllocationStacks(track);
+}
+
+// Sets whether scudo zero-initializes all allocated memory. The program must
+// be single threaded at the point when the function is called.
+INTERFACE WEAK void SCUDO_PREFIX(malloc_set_zero_contents)(int zero_contents) {
+  SCUDO_ALLOCATOR.setFillContents(zero_contents ? scudo::ZeroFill
+                                                : scudo::NoFill);
+}
+
+// Sets whether scudo pattern-initializes all allocated memory. The program must
+// be single threaded at the point when the function is called.
+INTERFACE WEAK void
+SCUDO_PREFIX(malloc_set_pattern_fill_contents)(int pattern_fill_contents) {
+  SCUDO_ALLOCATOR.setFillContents(
+      pattern_fill_contents ? scudo::PatternOrZeroFill : scudo::NoFill);
 }
 
 } // extern "C"

@@ -29,6 +29,7 @@
 //using namespace llvm;
 using namespace std;
 
+#if ARCH_SRC == ARCH_ETFG && ARCH_DST == ARCH_I386
 //void *mem32 = NULL;
 //void *mem32_start = (void *)0x700000000000;
 dyn_debug_state_t dyn_debug_state_t::dyn_debug_state;
@@ -538,3 +539,4 @@ dyn_debug_state_t::dyn_debug_state_read_globals_argc_argv(void)
   argvs.argv_values = argv_values;
   return make_pair(globals, argvs);
 }
+#endif

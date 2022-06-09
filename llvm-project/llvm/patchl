@@ -1,0 +1,35 @@
+diff --git a/llvm/lib/Analysis/Superopt/sym_exec_llvm.cpp b/llvm/lib/Analysis/Superopt/sym_exec_llvm.cpp
+index 379ac964a32..c8c0b12ac4f 100644
+--- a/llvm/lib/Analysis/Superopt/sym_exec_llvm.cpp
++++ b/llvm/lib/Analysis/Superopt/sym_exec_llvm.cpp
+@@ -1477,13 +1477,16 @@ void sym_exec_llvm::exec(const state& state_in, const llvm::Instruction& I, dsha
+       local_size_expr = m_ctx->mk_bv_const(get_word_length(), local_size);
+     }
+ 
+-    expr_ref alloca_ptr = m_ctx->mk_alloca_ptr(state_get_expr(state_in, m_mem_reg, this->get_mem_sort()), ml_local, local_size_expr);
++    //expr_ref alloca_ptr = m_ctx->mk_alloca_ptr(state_get_expr(state_in, m_mem_reg, this->get_mem_sort()), ml_local, local_size_expr);
++    expr_ref local_alloc_count_var = state_get_expr(state_in, m_local_alloc_count_varname, m_ctx->mk_count_sort());
++    expr_ref alloca_ptr = m_ctx->mk_alloca_ptr(local_alloc_count_var, ml_local);
+     // memory <- alloca
+     // name <- alloca_ptr
+     // local_size.id <- size expr
+     state_set_expr(state_out, m_mem_reg, m_ctx->mk_alloca(state_get_expr(state_in, m_mem_reg, this->get_mem_sort()), ml_local, alloca_ptr, local_size_expr));
+     state_set_expr(state_out, name, alloca_ptr);
+     state_set_expr(state_out, local_size_str, local_size_expr);
++    state_set_expr(state_out, m_local_alloc_count_varname, m_ctx->mk_increment_count(local_alloc_count_var));
+ 
+     // intermediate edge
+     dshared_ptr<tfg_node> intermediate_node = get_next_intermediate_subsubindex_pc_node(t, from_node);
+diff --git a/llvm/lib/Analysis/Superopt/sym_exec_llvm.h b/llvm/lib/Analysis/Superopt/sym_exec_llvm.h
+index b7d2ec7451e..b70cf98b588 100644
+--- a/llvm/lib/Analysis/Superopt/sym_exec_llvm.h
++++ b/llvm/lib/Analysis/Superopt/sym_exec_llvm.h
+@@ -213,6 +213,8 @@ private:
+ 
+   //see https://docs.microsoft.com/en-us/cpp/build/x64-calling-convention?view=msvc-160 where it says that the value is ROUND_TO_NEAREST at the start of program execution (x86 calling conventions).  XXX: We are taking some liberty here by extending this assumption to the start of every function; a more precise way to model this would involve using a variable (instead of a constant) for the rounding mode at the start pc
+   expr_ref m_rounding_mode_at_start_pc;
++
++  string const m_local_alloc_count_varname = "local_alloc_count";
+ };
+ 
+ #endif

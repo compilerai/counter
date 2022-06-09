@@ -85,10 +85,19 @@ std::size_t RemoveCarriageReturns(llvm::MutableArrayRef<char> buf) {
       break;
     }
     std::size_t chunk = crcp - p;
+    auto advance{chunk + 1};
+    if (chunk + 1 >= bytes || crcp[1] == '\n') {
+      // CR followed by LF or EOF: omit
+    } else if ((chunk == 0 && p == buf.data()) || crcp[-1] == '\n') {
+      // CR preceded by LF or BOF: omit
+    } else {
+      // CR in line: retain
+      ++chunk;
+    }
     std::memmove(buffer + wrote, p, chunk);
     wrote += chunk;
-    p += chunk + 1;
-    bytes -= chunk + 1;
+    p += advance;
+    bytes -= advance;
   }
   return wrote;
 }
@@ -127,12 +136,19 @@ bool SourceFile::ReadStandardInput(llvm::raw_ostream &error) {
 }
 
 void SourceFile::ReadFile() {
-  if (buf_->getBuffer().size() == 0) {
-    Close();
-    buf_ = llvm::WritableMemoryBuffer::getNewUninitMemBuffer(1);
-    buf_->getBuffer()[0] = '\n';
-  }
   buf_end_ = RemoveCarriageReturns(buf_->getBuffer());
+  if (content().size() == 0 || content().back() != '\n') {
+    // Don't bother to copy if we have spare memory
+    if (content().size() >= buf_->getBufferSize()) {
+      auto tmp_buf{llvm::WritableMemoryBuffer::getNewUninitMemBuffer(
+          content().size() + 1)};
+      llvm::copy(content(), tmp_buf->getBufferStart());
+      Close();
+      buf_ = std::move(tmp_buf);
+    }
+    buf_end_++;
+    buf_->getBuffer()[buf_end_ - 1] = '\n';
+  }
   IdentifyPayload();
   RecordLineStarts();
 }

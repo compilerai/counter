@@ -48,8 +48,6 @@
 
 namespace llvm {
 
-class LoopVectorizationLegality;
-class LoopVectorizationCostModel;
 class BasicBlock;
 class DominatorTree;
 class InnerLoopVectorizer;
@@ -59,6 +57,7 @@ class raw_ostream;
 class Value;
 class VPBasicBlock;
 class VPRegionBlock;
+class VPSlotTracker;
 class VPlan;
 class VPlanSlp;
 
@@ -271,10 +270,20 @@ struct VPTransformState {
     return Callback.getOrCreateVectorValues(VPValue2Value[Def], Part);
   }
 
-  /// Get the generated Value for a given VPValue and given Part and Lane. Note
-  /// that as per-lane Defs are still created by ILV and managed in its ValueMap
-  /// this method currently just delegates the call to ILV.
+  /// Get the generated Value for a given VPValue and given Part and Lane.
   Value *get(VPValue *Def, const VPIteration &Instance) {
+    // If the Def is managed directly by VPTransformState, extract the lane from
+    // the relevant part. Note that currently only VPInstructions and external
+    // defs are managed by VPTransformState. Other Defs are still created by ILV
+    // and managed in its ValueMap. For those this method currently just
+    // delegates the call to ILV below.
+    if (Data.PerPartOutput.count(Def)) {
+      auto *VecPart = Data.PerPartOutput[Def][Instance.Part];
+      // TODO: Cache created scalar values.
+      return Builder.CreateExtractElement(VecPart,
+                                          Builder.getInt32(Instance.Lane));
+    }
+
     return Callback.getOrCreateScalarValue(VPValue2Value[Def], Instance);
   }
 
@@ -637,7 +646,6 @@ public:
   virtual void execute(struct VPTransformState &State) = 0;
 
   /// Each recipe prints itself.
-  void print(raw_ostream &O, const Twine &Indent);
   virtual void print(raw_ostream &O, const Twine &Indent,
                      VPSlotTracker &SlotTracker) const = 0;
 
@@ -677,6 +685,7 @@ public:
     ICmpULE,
     SLPLoad,
     SLPStore,
+    ActiveLaneMask,
   };
 
 private:
@@ -768,8 +777,13 @@ class VPWidenRecipe : public VPRecipeBase {
   /// Hold the instruction to be widened.
   Instruction &Ingredient;
 
+  /// Hold VPValues for the operands of the ingredient.
+  VPUser User;
+
 public:
-  VPWidenRecipe(Instruction &I) : VPRecipeBase(VPWidenSC), Ingredient(I) {}
+  template <typename IterT>
+  VPWidenRecipe(Instruction &I, iterator_range<IterT> Operands)
+      : VPRecipeBase(VPWidenSC), Ingredient(I), User(Operands) {}
 
   ~VPWidenRecipe() override = default;
 
@@ -820,15 +834,17 @@ private:
   /// Hold the select to be widened.
   SelectInst &Ingredient;
 
+  /// Hold VPValues for the operands of the select.
+  VPUser User;
+
   /// Is the condition of the select loop invariant?
   bool InvariantCond;
 
-  /// Hold VPValues for the arguments of the call.
-  VPUser User;
-
 public:
-  VPWidenSelectRecipe(SelectInst &I, bool InvariantCond)
-      : VPRecipeBase(VPWidenSelectSC), Ingredient(I),
+  template <typename IterT>
+  VPWidenSelectRecipe(SelectInst &I, iterator_range<IterT> Operands,
+                      bool InvariantCond)
+      : VPRecipeBase(VPWidenSelectSC), Ingredient(I), User(Operands),
         InvariantCond(InvariantCond) {}
 
   ~VPWidenSelectRecipe() override = default;
@@ -849,12 +865,18 @@ public:
 /// A recipe for handling GEP instructions.
 class VPWidenGEPRecipe : public VPRecipeBase {
   GetElementPtrInst *GEP;
+
+  /// Hold VPValues for the base and indices of the GEP.
+  VPUser User;
+
   bool IsPtrLoopInvariant;
   SmallBitVector IsIndexLoopInvariant;
 
 public:
-  VPWidenGEPRecipe(GetElementPtrInst *GEP, Loop *OrigLoop)
-      : VPRecipeBase(VPWidenGEPSC), GEP(GEP),
+  template <typename IterT>
+  VPWidenGEPRecipe(GetElementPtrInst *GEP, iterator_range<IterT> Operands,
+                   Loop *OrigLoop)
+      : VPRecipeBase(VPWidenGEPSC), GEP(GEP), User(Operands),
         IsIndexLoopInvariant(GEP->getNumIndices(), false) {
     IsPtrLoopInvariant = OrigLoop->isLoopInvariant(GEP->getPointerOperand());
     for (auto Index : enumerate(GEP->indices()))
@@ -1018,6 +1040,9 @@ class VPReplicateRecipe : public VPRecipeBase {
   /// The instruction being replicated.
   Instruction *Ingredient;
 
+  /// Hold VPValues for the operands of the ingredient.
+  VPUser User;
+
   /// Indicator if only a single replica per lane is needed.
   bool IsUniform;
 
@@ -1028,9 +1053,11 @@ class VPReplicateRecipe : public VPRecipeBase {
   bool AlsoPack;
 
 public:
-  VPReplicateRecipe(Instruction *I, bool IsUniform, bool IsPredicated = false)
-      : VPRecipeBase(VPReplicateSC), Ingredient(I), IsUniform(IsUniform),
-        IsPredicated(IsPredicated) {
+  template <typename IterT>
+  VPReplicateRecipe(Instruction *I, iterator_range<IterT> Operands,
+                    bool IsUniform, bool IsPredicated = false)
+      : VPRecipeBase(VPReplicateSC), Ingredient(I), User(Operands),
+        IsUniform(IsUniform), IsPredicated(IsPredicated) {
     // Retain the previous behavior of predicateInstructions(), where an
     // insert-element of a predicated instruction got hoisted into the
     // predicated basic block iff it was its only user. This is achieved by
@@ -1060,12 +1087,12 @@ public:
 
 /// A recipe for generating conditional branches on the bits of a mask.
 class VPBranchOnMaskRecipe : public VPRecipeBase {
-  std::unique_ptr<VPUser> User;
+  VPUser User;
 
 public:
   VPBranchOnMaskRecipe(VPValue *BlockInMask) : VPRecipeBase(VPBranchOnMaskSC) {
     if (BlockInMask) // nullptr means all-one mask.
-      User.reset(new VPUser({BlockInMask}));
+      User.addOperand(BlockInMask);
   }
 
   /// Method to support type inquiry through isa, cast, and dyn_cast.
@@ -1081,11 +1108,19 @@ public:
   void print(raw_ostream &O, const Twine &Indent,
              VPSlotTracker &SlotTracker) const override {
     O << " +\n" << Indent << "\"BRANCH-ON-MASK ";
-    if (User)
-      User->getOperand(0)->print(O, SlotTracker);
+    if (VPValue *Mask = getMask())
+      Mask->print(O, SlotTracker);
     else
       O << " All-One";
     O << "\\l\"";
+  }
+
+  /// Return the mask used by this recipe. Note that a full mask is represented
+  /// by a nullptr.
+  VPValue *getMask() const {
+    assert(User.getNumOperands() <= 1 && "should have either 0 or 1 operands");
+    // Mask is optional.
+    return User.getNumOperands() == 1 ? User.getOperand(0) : nullptr;
   }
 };
 
@@ -1496,7 +1531,6 @@ struct GraphTraits<Inverse<VPRegionBlock *>>
   }
 };
 
-class VPSlotTracker;
 /// VPlan models a candidate for vectorization, encoding various decisions take
 /// to produce efficient output IR, including which branches, basic-blocks and
 /// output IR instructions to generate, and their cost. VPlan holds a
@@ -1546,10 +1580,9 @@ public:
     if (Entry)
       VPBlockBase::deleteCFG(Entry);
     for (auto &MapEntry : Value2VPValue)
-      if (MapEntry.second != BackedgeTakenCount)
-        delete MapEntry.second;
+      delete MapEntry.second;
     if (BackedgeTakenCount)
-      delete BackedgeTakenCount; // Delete once, if in Value2VPValue or not.
+      delete BackedgeTakenCount;
     for (VPValue *Def : VPExternalDefs)
       delete Def;
     for (VPValue *CBV : VPCBVs)
@@ -1619,6 +1652,16 @@ public:
 
   /// Dump the plan to stderr (for debugging).
   void dump() const;
+
+  /// Returns a range mapping the values the range \p Operands to their
+  /// corresponding VPValues.
+  iterator_range<mapped_iterator<Use *, std::function<VPValue *(Value *)>>>
+  mapToVPValues(User::op_range Operands) {
+    std::function<VPValue *(Value *)> Fn = [this](Value *Op) {
+      return getOrAddVPValue(Op);
+    };
+    return map_range(Operands, Fn);
+  }
 
 private:
   /// Add to the given dominator tree the header block and every new basic block

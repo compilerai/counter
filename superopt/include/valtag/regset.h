@@ -5,8 +5,10 @@
 #include "support/src-defs.h"
 //#include "i386/insntypes.h"
 #include "i386/regs.h"
+#include "x64/regs.h"
 #include "ppc/regs.h"
-#include "codegen/etfg_regs.h"
+#include "x64/insntypes.h"
+#include "etfg/etfg_regs.h"
 #include "support/src_tag.h"
 #include "support/consts.h"
 #include "support/types.h"
@@ -34,6 +36,7 @@ typedef struct regset_t {
   void regset_round_up_bitmaps_to_byte_size();
   string to_string() const;
   bool operator!=(regset_t const &other) const;
+  bool operator==(regset_t const &other) const;
 } regset_t;
 
 uint64_t regset_get_elem(regset_t const *regset, exreg_group_id_t group_id, reg_identifier_t reg_id);

@@ -1,8 +1,9 @@
 #pragma once
-//#include "gsupport/pc.h"
-#include "expr/expr.h"
-#include "graph/graph_cp_location.h"
 #include "support/types.h"
+
+#include "expr/expr.h"
+
+#include "graph/graph_cp_location.h"
 
 namespace eqspace {
 
@@ -79,25 +80,25 @@ private:
 class sprel_map_t {
 private:
   map<graph_loc_id_t, sprel_status_t> m_map;  //(loc_id --> status)
-  map<graph_loc_id_t, expr_ref> const &m_locid2expr_map;
+  //map<graph_loc_id_t, expr_ref> const &m_locid2expr_map;
   map<expr_id_t, pair<expr_ref, expr_ref>> m_submap;
-  consts_struct_t const &m_cs;
+  //consts_struct_t const &m_cs;
 
-  void sprel_map_update_submap();
+  void sprel_map_update_submap(map<graph_loc_id_t, expr_ref> const& locid2expr_map);
 public:
-  sprel_map_t(map<graph_loc_id_t, expr_ref> const &locid2expr_map, consts_struct_t const &cs) : m_locid2expr_map(locid2expr_map), m_cs(cs) {}
-  sprel_map_t(sprel_map_t const &other) : m_map(other.m_map), m_locid2expr_map(other.m_locid2expr_map), m_submap(other.m_submap), m_cs(other.m_cs) {}
+  sprel_map_t(/*map<graph_loc_id_t, expr_ref> const &locid2expr_map*//*, consts_struct_t const &cs*/) /*: m_locid2expr_map(locid2expr_map)*//*, m_cs(cs)*/ {}
+  sprel_map_t(sprel_map_t const &other) : m_map(other.m_map)/*, m_locid2expr_map(other.m_locid2expr_map)*/, m_submap(other.m_submap)/*, m_cs(other.m_cs)*/ {}
   void operator=(sprel_map_t const &other)
   {
-    ASSERT(&m_cs == &other.m_cs);
-    ASSERT(m_locid2expr_map == other.m_locid2expr_map);
+    //ASSERT(&m_cs == &other.m_cs);
+    //ASSERT(m_locid2expr_map == other.m_locid2expr_map);
     m_map = other.m_map;
     m_submap = other.m_submap;
   }
-  void sprel_map_add_constant_mapping(graph_loc_id_t loc_id, expr_ref const &e)
+  void sprel_map_add_constant_mapping(graph_loc_id_t loc_id, expr_ref const &e, map<graph_loc_id_t, expr_ref> const& locid2expr_map)
   {
     m_map[loc_id] = sprel_status_t::constant(e);
-    sprel_map_update_submap();
+    sprel_map_update_submap(locid2expr_map);
   }
   void sprel_map_set_remaining_mappings_to_bottom(map<graph_loc_id_t, graph_cp_location> const &locs)
   {
@@ -107,7 +108,7 @@ public:
       }
     }
   }
-  void set_sprel_mappings(map<graph_loc_id_t, sprel_status_t> const &loc_ids);
+  void set_sprel_mappings(map<graph_loc_id_t, sprel_status_t> const &loc_ids, map<graph_loc_id_t, expr_ref> const& locid2expr_map);
   /*void add_mapping(graph_loc_id_t loc_id, sprel_status_t const &s)
   {
     m_map[loc_id] = s;
@@ -131,7 +132,7 @@ public:
   //unordered_set<predicate> sprel_map_get_assumes(/*map<graph_loc_id_t, expr_ref> const &locid2expr_map*/) const;
   string to_string(map<graph_loc_id_t, graph_cp_location> const &locs, eqspace::consts_struct_t const &cs, string prefix) const;
   bool equals(sprel_map_t const &other) const;
-  void sprel_map_union(sprel_map_t const &other);
+  //void sprel_map_union(sprel_map_t const &other);
   string to_string() const;
   string to_string_for_eq() const;
 };

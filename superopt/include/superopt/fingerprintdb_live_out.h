@@ -1,8 +1,9 @@
 #ifndef FINGERPRINTDB_LIVE_OUT_H
 #define FINGERPRINTDB_LIVE_OUT_H
 #include "support/minmax.h"
-#include "codegen/etfg_regs.h"
+#include "etfg/etfg_regs.h"
 #include "i386/regs.h"
+#include "x64/regs.h"
 #include "support/src-defs.h"
 #include "support/consts.h"
 #include "support/types.h"

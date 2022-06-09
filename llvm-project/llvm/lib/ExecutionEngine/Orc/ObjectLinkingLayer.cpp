@@ -36,7 +36,7 @@ public:
       Layer.ReturnObjectBuffer(std::move(ObjBuffer));
   }
 
-  JITLinkMemoryManager &getMemoryManager() override { return *Layer.MemMgr; }
+  JITLinkMemoryManager &getMemoryManager() override { return Layer.MemMgr; }
 
   MemoryBufferRef getObjectBuffer() const override {
     return ObjBuffer->getMemBufferRef();
@@ -50,9 +50,9 @@ public:
   void lookup(const LookupMap &Symbols,
               std::unique_ptr<JITLinkAsyncLookupContinuation> LC) override {
 
-    JITDylibSearchOrder SearchOrder;
-    MR.getTargetJITDylib().withSearchOrderDo(
-        [&](const JITDylibSearchOrder &O) { SearchOrder = O; });
+    JITDylibSearchOrder LinkOrder;
+    MR.getTargetJITDylib().withLinkOrderDo(
+        [&](const JITDylibSearchOrder &LO) { LinkOrder = LO; });
 
     auto &ES = Layer.getExecutionSession();
 
@@ -90,14 +90,14 @@ public:
       MR.addDependencies(KV.first, InternalDeps);
     }
 
-    ES.lookup(LookupKind::Static, SearchOrder, std::move(LookupSet),
+    ES.lookup(LookupKind::Static, LinkOrder, std::move(LookupSet),
               SymbolState::Resolved, std::move(OnResolve),
               [this](const SymbolDependenceMap &Deps) {
                 registerDependencies(Deps);
               });
   }
 
-  void notifyResolved(LinkGraph &G) override {
+  Error notifyResolved(LinkGraph &G) override {
     auto &ES = Layer.getExecutionSession();
 
     SymbolFlagsMap ExtraSymbolsToClaim;
@@ -143,7 +143,7 @@ public:
 
     if (!ExtraSymbolsToClaim.empty())
       if (auto Err = MR.defineMaterializing(ExtraSymbolsToClaim))
-        return notifyFailed(std::move(Err));
+        return Err;
 
     {
 
@@ -169,12 +169,9 @@ public:
       }
 
       // If there were missing symbols then report the error.
-      if (!MissingSymbols.empty()) {
-        ES.reportError(make_error<MissingSymbolDefinitions>(
-            G.getName(), std::move(MissingSymbols)));
-        MR.failMaterialization();
-        return;
-      }
+      if (!MissingSymbols.empty())
+        return make_error<MissingSymbolDefinitions>(G.getName(),
+                                                    std::move(MissingSymbols));
 
       // If there are more definitions than expected, add them to the
       // ExtraSymbols vector.
@@ -186,20 +183,16 @@ public:
       }
 
       // If there were extra definitions then report the error.
-      if (!ExtraSymbols.empty()) {
-        ES.reportError(make_error<UnexpectedSymbolDefinitions>(
-            G.getName(), std::move(ExtraSymbols)));
-        MR.failMaterialization();
-        return;
-      }
+      if (!ExtraSymbols.empty())
+        return make_error<UnexpectedSymbolDefinitions>(G.getName(),
+                                                       std::move(ExtraSymbols));
     }
 
-    if (auto Err = MR.notifyResolved(InternedResult)) {
-      Layer.getExecutionSession().reportError(std::move(Err));
-      MR.failMaterialization();
-      return;
-    }
+    if (auto Err = MR.notifyResolved(InternedResult))
+      return Err;
+
     Layer.notifyLoaded(MR);
+    return Error::success();
   }
 
   void notifyFinalized(
@@ -447,9 +440,13 @@ private:
 
 ObjectLinkingLayer::Plugin::~Plugin() {}
 
+ObjectLinkingLayer::ObjectLinkingLayer(ExecutionSession &ES,
+                                       JITLinkMemoryManager &MemMgr)
+    : ObjectLayer(ES), MemMgr(MemMgr) {}
+
 ObjectLinkingLayer::ObjectLinkingLayer(
     ExecutionSession &ES, std::unique_ptr<JITLinkMemoryManager> MemMgr)
-    : ObjectLayer(ES), MemMgr(std::move(MemMgr)) {}
+    : ObjectLayer(ES), MemMgr(*MemMgr), MemMgrOwnership(std::move(MemMgr)) {}
 
 ObjectLinkingLayer::~ObjectLinkingLayer() {
   if (auto Err = removeAllModules())

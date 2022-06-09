@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -fsyntax-only -verify %s -Wimplicit-int-conversion
+// RUN: %clang_cc1 -fsyntax-only -verify %s -Wimplicit-int-conversion -triple x86_64-gnu-linux
 
 template<int Bounds>
 struct HasExtInt {
@@ -276,3 +276,11 @@ void ImplicitCasts(_ExtInt(31) s31, _ExtInt(33) s33, int i) {
   i = s33;
 }
 
+void Ternary(_ExtInt(30) s30, _ExtInt(31) s31a, _ExtInt(31) s31b,
+             _ExtInt(32) s32, bool b) {
+  b ? s30 : s31a; // expected-error{{incompatible operand types}}
+  b ? s31a : s30; // expected-error{{incompatible operand types}}
+  b ? s32 : (int)0; // expected-error{{incompatible operand types}}
+  (void)(b ? s31a : s31b);
+  (void)(s30 ? s31a : s31b);
+}

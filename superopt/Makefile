@@ -1,9 +1,23 @@
-all: cur #etfg i386
-#all: eq
-#i386
+SHELL := /bin/bash
 
-cur::
+T := codegen src_iseq_get_usedef push_dbs pull_dbs binutils_target solvers tfg2dot qcc-codegen expr_parse etfg_split_memory_and_propagate_sprels pred_canonicalizer prove_queries_diff eqgen z3_parse z3_neo_parse boolector_parse yices_parse cvc4_parse parse_edge_composition decide_hoare_triple simplify prove_query_split eq smt_helper_process qd_helper_process check_wfconds_on_edge update_invariant_state_over_edge prove ce_eval_prove update_dst_edge_for_local_alloc_and_dealloc debug_soundness range_tester is_expr_equal_using_lhs_set expr_is_provable infer_invariants_xfer_over_path mybitset_tester graph_propagate_CEs_across_new_edge tfg_ssa_construct_from_non_ssa_tfg
+T32 := $(addsuffix 32,$(T))
+T64 := $(addsuffix 64,$(T))
+
+.PHONY: $(T) $(T32) $(T64)
+
+grandparent::
 	make -C ../..
+
+all: eqcheck32
+
+$(T): %: %32 %64
+
+$(T32): %32:
+	[[ -d "build/etfg_i386" ]] && ninja -C build/etfg_i386 -j0 -l`nproc` $* || true
+
+$(T64): %64:
+	[[ -d "build/etfg_x64" ]] && ninja -C build/etfg_x64 -j0 -l`nproc` $* || true
 
 tags::
 	ctags -R include/ lib/ tools/
@@ -12,32 +26,26 @@ tags::
 	find include/ lib/ tools/ -name "*.cpp" >> cscope.files
 	GTAGSFORCECPP=1 gtags -f cscope.files
 
-.PHONY: codegen src_iseq_get_usedef push_dbs pull_dbs binutils_target solvers tfg2dot etfg2dot qcc-codegen expr_parse etfg_split_memory_and_propagate_sprels pred_canonicalizer prove_queries_diff eqgen z3_parse boolector_parse yices_parse cvc4_parse parse_edge_composition decide_hoare_triple
-codegen src_iseq_get_usedef binutils_target tfg2dot etfg2dot qcc-codegen expr_parse etfg_split_memory_and_propagate_sprels pred_canonicalizer prove_queries_diff eqgen z3_parse boolector_parse yices_parse cvc4_parse push_dbs pull_dbs solvers parse_edge_composition decide_hoare_triple:
-	cmake --build build/etfg_i386 --target $@
+.PHONY: eqcheck32 eqcheck64 etfg parsers
 
-.PHONY: etfg
-etfg:
-	#if [ -d "build/etfg_i386" ]; then make -j 8 -C build/etfg_i386 codegen && make -j8 -C build/etfg_i386 enumerate_for_src_iseq_using_itable src_iseq_compute_fingerprint enum_candidate_make_itables src_iseq_compute_typestate src_iseq_gen_rand_states peeptab_verify typecheck codegen gen_enum_candidates_from_harvest_out db_create_schema dbclear db_pick_itable_for_enum_candidate db_populate_enum_candidates db_populate_itables_for_enum_candidate db_pick_enum_candidate db_update_itable_enum_state_for_enum_candidate db_add_peep_entry db_download_peeptab; fi
-	#if [ -d "build/etfg_i386" ]; then make -j 8 -C build/etfg_i386 codegen && make -j 8 -C build/etfg_i386 codegen eqgen eq smt_helper_process peep_enumerate_transmaps prove_using_local_sprel_expr_guesses prove simplify ; fi
-	if [ -d "build/etfg_i386" ]; then cmake --build build/etfg_i386 --target codegen && cmake --build build/etfg_i386 --target eqgen && cmake --build build/etfg_i386 --target eq ; fi
+eqcheck32 eqcheck64: eqcheck%: eq% eqgen% smt_helper_process% prove% decide_hoare_triple% update_invariant_state_over_edge% qd_helper_process%
+etfg: codegen32 eqgen32 eq32
+parsers: z3_parse z3_neo_parse boolector_parse yices_parse cvc4_parse
 
 .PHONY: i386 
 i386:
-	if [ -d "build/i386_i386" ]; then cmake --build build/i386_i386 --target rewrite && cmake --build build/i386_i386 --target harvest; fi
-
-.PHONY: eq
-eq:
-	if [ -d "build/etfg_i386" ]; then cmake --build build/etfg_i386 --target eq; fi
-	if [ -d "build/etfg_i386" ]; then cmake --build build/etfg_i386 --target smt_helper_process; fi
-	if [ -d "build/etfg_i386" ]; then cmake --build build/etfg_i386 --target prove_using_local_sprel_expr_guesses; fi
-	if [ -d "build/etfg_i386" ]; then cmake --build build/etfg_i386 --target prove; fi
-	if [ -d "build/etfg_i386" ]; then cmake --build build/etfg_i386 --target update_invariant_state_over_edge; fi
+	if [ -d "build/i386_i386" ]; then ninja -C build/i386_i386 -j0 -l`nproc` rewrite && ninja -C build/i386_i386 -j0 -l`nproc` harvest; fi
 
 .PHONY: debug
 debug:
-	if [ -d "build/etfg_i386" ]; then ninja -C build/etfg_i386 -j `nproc`; fi
-	if [ -d "build/i386_i386" ]; then ninja -C build/i386_i386 -j `nproc`; fi
+	if [ -d "build/etfg_i386" ]; then ninja -C build/etfg_i386 -j0 -l`nproc`; fi
+	if [ -d "build/i386_i386" ]; then ninja -C build/i386_i386 -j0 -l`nproc`; fi
+	if [ -d "build/etfg_x64" ];  then ninja -C build/etfg_x64  -j0 -l`nproc`; fi
+	if [ -d "build/x64_x64" ];   then ninja -C build/x64_x64   -j0 -l`nproc`; fi
+
+.PHONY: debug
+libs:
+	if [ -d "build/etfg_x64" ];  then ninja -C build/etfg_x64  -j0 -l`nproc` identify_durables; fi
 
 .PHONY: clean
 clean:
@@ -59,10 +67,6 @@ test-failing:
 test-passing:
 	python utils/eq_test.py passing
 
-.PHONY: parsers
-parsers: z3_parse boolector_parse yices_parse cvc4_parse
-
 .PHONY: tidy
 tidy:
-	run-clang-tidy-9 -p build/etfg_i386 -checks='-*,clang-analyzer-core*,clang-analyzer-cplusplus*,cppcoreguidelines*,modernize-*'; fi
-
+	run-clang-tidy-9 -p build/etfg_i386 -checks='-*,clang-analyzer-core*,clang-analyzer-cplusplus*,cppcoreguidelines*,modernize-*'

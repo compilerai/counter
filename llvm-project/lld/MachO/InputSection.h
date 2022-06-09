@@ -19,28 +19,50 @@ namespace macho {
 
 class InputFile;
 class InputSection;
+class OutputSection;
 class Symbol;
 
 struct Reloc {
   uint8_t type;
-  uint32_t addend;
+  bool pcrel;
+  uint8_t length;
+  // The offset from the start of the subsection that this relocation belongs
+  // to.
   uint32_t offset;
+  // Adding this offset to the address of the target symbol or subsection gives
+  // the destination that this relocation refers to.
+  uint64_t addend;
   llvm::PointerUnion<Symbol *, InputSection *> target;
 };
 
+inline bool isZeroFill(uint8_t flags) {
+  return (flags & llvm::MachO::SECTION_TYPE) == llvm::MachO::S_ZEROFILL;
+}
+
 class InputSection {
 public:
-  void writeTo(uint8_t *buf);
+  virtual ~InputSection() = default;
+  virtual uint64_t getSize() const { return data.size(); }
+  virtual uint64_t getFileSize() const {
+    return isZeroFill(flags) ? 0 : getSize();
+  }
+  uint64_t getFileOffset() const;
+  uint64_t getVA() const;
+
+  virtual void writeTo(uint8_t *buf);
 
   InputFile *file = nullptr;
   StringRef name;
   StringRef segname;
 
-  ArrayRef<uint8_t> data;
-  uint64_t addr = 0;
+  OutputSection *parent = nullptr;
+  uint64_t outSecOff = 0;
+  uint64_t outSecFileOff = 0;
+
   uint32_t align = 1;
   uint32_t flags = 0;
 
+  ArrayRef<uint8_t> data;
   std::vector<Reloc> relocs;
 };
 

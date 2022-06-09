@@ -1,15 +1,5 @@
 #pragma once
 
-#include "gsupport/pc.h"
-#include "graph/graph.h"
-#include "support/utils.h"
-#include "support/log.h"
-#include "expr/context.h"
-#include "expr/expr_utils.h"
-#include "graph/binary_search_on_preds.h"
-#include "support/timers.h"
-#include "expr/state.h"
-
 #include <map>
 #include <list>
 #include <assert.h>
@@ -18,21 +8,31 @@
 #include <stack>
 #include <memory>
 
+#include "support/utils.h"
+#include "support/log.h"
+#include "support/timers.h"
+
+#include "expr/context.h"
+#include "expr/expr_utils.h"
+#include "expr/state.h"
+#include "expr/pc.h"
+
+#include "gsupport/edge_id.h"
+#include "gsupport/edge_with_assumes.h"
+
 namespace eqspace {
 
 using namespace std;
 
 template <typename T_PC>
-class edge_with_cond : public edge<T_PC>
+class edge_with_cond : public edge_with_assumes<T_PC>
 {
 public:
-  edge_with_cond(const T_PC& pc_from, const T_PC& pc_to, expr_ref const &condition, state const &to_state, unordered_set<expr_ref> const& assumes) : edge<T_PC>(pc_from, pc_to), m_pred(condition), m_to_state(to_state), m_assumes(assumes)
-  {
-  }
-  edge_with_cond(const T_PC& pc_from, const T_PC& pc_to, expr_ref const &condition, state const &to_state, state const &start_state, unordered_set<expr_ref> const& assumes)
-    : edge_with_cond<T_PC>(pc_from, pc_to, condition, to_state.state_minus(start_state), assumes)
-  {
-  }
+  edge_with_cond(const T_PC& pc_from, const T_PC& pc_to, expr_ref const &condition, state const &to_state, unordered_set<expr_ref> const& assumes) : edge_with_assumes<T_PC>(pc_from, pc_to, assumes), m_pred(condition), m_to_state(to_state)
+  { }
+  //edge_with_cond(const T_PC& pc_from, const T_PC& pc_to, expr_ref const &condition, state const &to_state, state const &start_state, unordered_set<expr_ref> const& assumes)
+  //  : edge_with_cond<T_PC>(pc_from, pc_to, condition, to_state.state_minus(start_state), assumes)
+  //{ }
 
   virtual void visit_exprs_const(std::function<void (string const&, expr_ref)> f) const
   {
@@ -48,34 +48,51 @@ public:
   }
 
   state const& get_to_state() const { return m_to_state; }
-  state const& get_simplified_to_state() const { return m_simplified_to_state; }
+  //state const& get_simplified_to_state() const { return m_simplified_to_state; }
 
 
   expr_ref const& get_cond() const { return m_pred; }
-  expr_ref const& get_simplified_cond() const { return m_simplified_pred; }
+  //expr_ref const& get_simplified_cond() const { return m_simplified_pred; }
 
-  unordered_set<expr_ref> const& get_assumes() const { return m_assumes; }
-  unordered_set<expr_ref> const& get_simplified_assumes() const { return m_simplified_assumes; }
+  //unordered_set<expr_ref> const& get_assumes() const { return m_assumes; }
+  //unordered_set<expr_ref> const& get_simplified_assumes() const { return m_simplified_assumes; }
 
-  void set_simplified_to_state(state const &s) const { m_simplified_to_state = s; }
-  void set_simplified_cond(expr_ref const& pred) const { m_simplified_pred = pred; }
-  void set_simplified_assumes(unordered_set<expr_ref> const& assumes) const { m_simplified_assumes = assumes; }
+  //void set_simplified_to_state(state const &s) const { m_simplified_to_state = s; }
+  //void set_simplified_cond(expr_ref const& pred) const { m_simplified_pred = pred; }
+  //void set_simplified_assumes(unordered_set<expr_ref> const& assumes) const { m_simplified_assumes = assumes; }
 
   bool contains_function_call(void) const
   {
-    context *ctx = m_pred->get_context();
+    //context *ctx = m_pred->get_context();
     //bool cond_contains = ctx->expr_contains_function_call(get_cond()); // not required as fcalls have their dedicated edges
     bool state_contains = get_to_state().contains_function_call();
     return /*cond_contains || */state_contains;
   }
+
+  bool is_fcall_edge_including_indir_fcall() const
+  {
+    return this->get_to_state().state_contains_fcall_including_indir_fcall();
+  }
+
 
   bool is_fcall_edge(nextpc_id_t &nextpc_num) const
   {
     return this->get_to_state().is_fcall_edge(nextpc_num);
   }
 
+  bool is_local_alloc_edge(memlabel_t &local_alloc_ml) const
+  {
+    return this->get_to_state().is_local_alloc_edge(local_alloc_ml);
+  }
+
+  bool is_heapalloc_edge(memlabel_t &heapalloc_ml) const
+  {
+    return this->get_to_state().is_heapalloc_edge(heapalloc_ml);
+  }
+
+
   using edge<T_PC>::to_string; // let the compiler know that we are overloading the virtual function to_string
-  virtual string to_string(/*state const *start_state*/) const;
+  string to_string(/*state const *start_state*/) const override;
   string to_string_for_eq(string const& prefix) const;
 
   bool contains_exit_fcall(map<int, string> const &nextpc_map, int *nextpc_num) const
@@ -111,7 +128,7 @@ public:
   {
     for (const std::pair<string_ref, expr_ref>& val : this->get_to_state().get_value_expr_map_ref()) {
       context* ctx = val.second->get_context();
-      if (   val.first->get_str().find(g_hidden_reg_name) != string::npos
+      if (   val.first->get_str().find(G_HIDDEN_REG_NAME) != string::npos
           || ctx->get_input_expr_for_key(val.first, val.second->get_sort()) != val.second) {
         return false;
       }
@@ -183,38 +200,43 @@ public:
 
   bool edge_is_indirect_branch() const
   {
-    return this->get_to_state().has_expr_substr(LLVM_STATE_INDIR_TARGET_KEY_ID) != "";
+    return this->get_to_state().has_expr_suffix(LLVM_STATE_INDIR_TARGET_KEY_ID) != "";
   }
 
   expr_ref edge_get_indir_target() const
   {
     string k;
-    if ((k = this->get_to_state().has_expr_substr(LLVM_STATE_INDIR_TARGET_KEY_ID)) != "") {
+    if ((k = this->get_to_state().has_expr_suffix(LLVM_STATE_INDIR_TARGET_KEY_ID)) != "") {
       return this->get_to_state().get_expr(k/*, this->get_to_state()*/);
     } else NOT_REACHED();
   }
   bool operator==(edge_with_cond const& other) const
   {
-    return    this->edge<T_PC>::operator==(other)
+    return    this->edge_with_assumes<T_PC>::operator==(other)
            && this->m_pred == other.m_pred
            && state::states_equal(this->m_to_state, other.m_to_state)
-           && this->m_assumes == other.m_assumes;
     ;
   }
 
   static string read_edge_with_cond_using_start_state(istream &in, string const& first_line, string const &prefix/*, state const &start_state*/, context* ctx, T_PC& p1, T_PC& p2, expr_ref& cond, state& state_to, unordered_set<expr_ref>& assumes);
 
-private:
   static unordered_set<expr_ref> read_assumes_from_stream(istream& in, string const& prefix, context* ctx);
+  static void write_assumes_to_stream(ostream& os, unordered_set<expr_ref> const& assumes, string const& prefix);
+  bool contains_phi_tmpvar_or_ghostvar_assignment() const
+  {
+    if(get_to_state().has_expr_with_substring(PHI_NODE_TMPVAR_SUFFIX) || get_to_state().has_expr_with_substring(GHOST_VAR_KEYWORD))
+      return true;
+    return false;
+  }
+
 
 private:
   expr_ref const m_pred;
   state const m_to_state;
-  unordered_set<expr_ref> const m_assumes;
 
-  mutable expr_ref m_simplified_pred;
-  mutable state m_simplified_to_state;
-  mutable unordered_set<expr_ref> m_simplified_assumes;
+  //mutable expr_ref m_simplified_pred;
+  //mutable state m_simplified_to_state;
+  //mutable unordered_set<expr_ref> m_simplified_assumes;
 };
 
 }
@@ -228,11 +250,10 @@ struct hash<edge_with_cond<T_PC>>
   std::size_t operator()(edge_with_cond<T_PC> const& te) const
   {
     size_t seed = 0;
-    myhash_combine<size_t>(seed, hash<edge<pc>>()(te));
+    myhash_combine<size_t>(seed, hash<edge_with_assumes<T_PC>>()(te));
     if (te.get_cond()) {
       myhash_combine<size_t>(seed, hash<expr_ref>()(te.get_cond()));
     }
-    myhash_combine<size_t>(seed, te.get_assumes().size());
     return seed;
   }
 };

@@ -465,7 +465,7 @@ static void PrintLLVMName(raw_ostream &OS, const Value *V) {
 
 static void PrintShuffleMask(raw_ostream &Out, Type *Ty, ArrayRef<int> Mask) {
   Out << ", <";
-  if (cast<VectorType>(Ty)->isScalable())
+  if (isa<ScalableVectorType>(Ty))
     Out << "vscale x ";
   Out << Mask.size() << " x i32> ";
   bool FirstElt = true;
@@ -589,6 +589,7 @@ void TypePrinting::print(Type *Ty, raw_ostream &OS) {
   switch (Ty->getTypeID()) {
   case Type::VoidTyID:      OS << "void"; return;
   case Type::HalfTyID:      OS << "half"; return;
+  case Type::BFloatTyID:    OS << "bfloat"; return;
   case Type::FloatTyID:     OS << "float"; return;
   case Type::DoubleTyID:    OS << "double"; return;
   case Type::X86_FP80TyID:  OS << "x86_fp80"; return;
@@ -651,12 +652,14 @@ void TypePrinting::print(Type *Ty, raw_ostream &OS) {
     OS << ']';
     return;
   }
-  case Type::VectorTyID: {
+  case Type::FixedVectorTyID:
+  case Type::ScalableVectorTyID: {
     VectorType *PTy = cast<VectorType>(Ty);
+    ElementCount EC = PTy->getElementCount();
     OS << "<";
-    if (PTy->isScalable())
+    if (EC.Scalable)
       OS << "vscale x ";
-    OS << PTy->getNumElements() << " x ";
+    OS << EC.Min << " x ";
     print(PTy->getElementType(), OS);
     OS << '>';
     return;
@@ -1378,7 +1381,7 @@ static void WriteConstantInternal(raw_ostream &Out, const Constant *CV,
       return;
     }
 
-    // Either half, or some form of long double.
+    // Either half, bfloat or some form of long double.
     // These appear as a magic letter identifying the type, then a
     // fixed number of hex digits.
     Out << "0x";
@@ -1404,6 +1407,10 @@ static void WriteConstantInternal(raw_ostream &Out, const Constant *CV,
                                   /*Upper=*/true);
     } else if (&APF.getSemantics() == &APFloat::IEEEhalf()) {
       Out << 'H';
+      Out << format_hex_no_prefix(API.getZExtValue(), 4,
+                                  /*Upper=*/true);
+    } else if (&APF.getSemantics() == &APFloat::BFloat()) {
+      Out << 'R';
       Out << format_hex_no_prefix(API.getZExtValue(), 4,
                                   /*Upper=*/true);
     } else
@@ -1648,7 +1655,7 @@ struct MDFieldPrinter {
                      bool ShouldSkipNull = true);
   template <class IntTy>
   void printInt(StringRef Name, IntTy Int, bool ShouldSkipZero = true);
-  void printAPInt(StringRef Name, APInt Int, bool IsUnsigned,
+  void printAPInt(StringRef Name, const APInt &Int, bool IsUnsigned,
                   bool ShouldSkipZero);
   void printBool(StringRef Name, bool Value, Optional<bool> Default = None);
   void printDIFlags(StringRef Name, DINode::DIFlags Flags);
@@ -1725,8 +1732,8 @@ void MDFieldPrinter::printInt(StringRef Name, IntTy Int, bool ShouldSkipZero) {
   Out << FS << Name << ": " << Int;
 }
 
-void MDFieldPrinter::printAPInt(StringRef Name, APInt Int, bool IsUnsigned,
-                                bool ShouldSkipZero) {
+void MDFieldPrinter::printAPInt(StringRef Name, const APInt &Int,
+                                bool IsUnsigned, bool ShouldSkipZero) {
   if (ShouldSkipZero && Int.isNullValue())
     return;
 
@@ -1852,9 +1859,34 @@ static void writeDISubrange(raw_ostream &Out, const DISubrange *N,
   if (auto *CE = N->getCount().dyn_cast<ConstantInt*>())
     Printer.printInt("count", CE->getSExtValue(), /* ShouldSkipZero */ false);
   else
-    Printer.printMetadata("count", N->getCount().dyn_cast<DIVariable*>(),
-                          /*ShouldSkipNull */ false);
-  Printer.printInt("lowerBound", N->getLowerBound());
+    Printer.printMetadata("count", N->getCount().dyn_cast<DIVariable *>(),
+                          /*ShouldSkipNull */ true);
+
+  // A lowerBound of constant 0 should not be skipped, since it is different
+  // from an unspecified lower bound (= nullptr).
+  auto *LBound = N->getRawLowerBound();
+  if (auto *LE = dyn_cast_or_null<ConstantAsMetadata>(LBound)) {
+    auto *LV = cast<ConstantInt>(LE->getValue());
+    Printer.printInt("lowerBound", LV->getSExtValue(),
+                     /* ShouldSkipZero */ false);
+  } else
+    Printer.printMetadata("lowerBound", LBound, /*ShouldSkipNull */ true);
+
+  auto *UBound = N->getRawUpperBound();
+  if (auto *UE = dyn_cast_or_null<ConstantAsMetadata>(UBound)) {
+    auto *UV = cast<ConstantInt>(UE->getValue());
+    Printer.printInt("upperBound", UV->getSExtValue(),
+                     /* ShouldSkipZero */ false);
+  } else
+    Printer.printMetadata("upperBound", UBound, /*ShouldSkipNull */ true);
+
+  auto *Stride = N->getRawStride();
+  if (auto *SE = dyn_cast_or_null<ConstantAsMetadata>(Stride)) {
+    auto *SV = cast<ConstantInt>(SE->getValue());
+    Printer.printInt("stride", SV->getSExtValue(), /* ShouldSkipZero */ false);
+  } else
+    Printer.printMetadata("stride", Stride, /*ShouldSkipNull */ true);
+
   Out << ")";
 }
 
@@ -1930,6 +1962,9 @@ static void writeDICompositeType(raw_ostream &Out, const DICompositeType *N,
   Printer.printMetadata("templateParams", N->getRawTemplateParams());
   Printer.printString("identifier", N->getIdentifier());
   Printer.printMetadata("discriminator", N->getRawDiscriminator());
+  Printer.printMetadata("dataLocation", N->getRawDataLocation());
+  Printer.printMetadata("associated", N->getRawAssociated());
+  Printer.printMetadata("allocated", N->getRawAllocated());
   Out << ")";
 }
 
@@ -2102,6 +2137,8 @@ static void writeDIModule(raw_ostream &Out, const DIModule *N,
   Printer.printString("configMacros", N->getConfigurationMacros());
   Printer.printString("includePath", N->getIncludePath());
   Printer.printString("apinotes", N->getAPINotesFile());
+  Printer.printMetadata("file", N->getRawFile());
+  Printer.printInt("line", N->getLineNo());
   Out << ")";
 }
 
@@ -2476,10 +2513,10 @@ public:
   void printTypeIdInfo(const FunctionSummary::TypeIdInfo &TIDInfo);
   void printVFuncId(const FunctionSummary::VFuncId VFId);
   void
-  printNonConstVCalls(const std::vector<FunctionSummary::VFuncId> VCallList,
+  printNonConstVCalls(const std::vector<FunctionSummary::VFuncId> &VCallList,
                       const char *Tag);
   void
-  printConstVCalls(const std::vector<FunctionSummary::ConstVCall> VCallList,
+  printConstVCalls(const std::vector<FunctionSummary::ConstVCall> &VCallList,
                    const char *Tag);
 
 private:
@@ -2788,8 +2825,13 @@ void AssemblyWriter::printModuleSummaryIndex() {
   }
 
   // Don't emit flags when it's not really needed (value is zero by default).
-  if (TheIndex->getFlags())
+  if (TheIndex->getFlags()) {
     Out << "^" << NumSlots << " = flags: " << TheIndex->getFlags() << "\n";
+    ++NumSlots;
+  }
+
+  Out << "^" << NumSlots << " = blockcount: " << TheIndex->getBlockCount()
+      << "\n";
 }
 
 static const char *
@@ -2822,6 +2864,8 @@ static const char *getWholeProgDevirtResByArgKindName(
 
 static const char *getTTResKindName(TypeTestResolution::Kind K) {
   switch (K) {
+  case TypeTestResolution::Unknown:
+    return "unknown";
   case TypeTestResolution::Unsat:
     return "unsat";
   case TypeTestResolution::ByteArray:
@@ -3044,6 +3088,36 @@ void AssemblyWriter::printFunctionSummary(const FunctionSummary *FS) {
 
   if (const auto *TIdInfo = FS->getTypeIdInfo())
     printTypeIdInfo(*TIdInfo);
+
+  auto PrintRange = [&](const ConstantRange &Range) {
+    Out << "[" << Range.getLower() << ", " << Range.getSignedMax() << "]";
+  };
+
+  if (!FS->paramAccesses().empty()) {
+    Out << ", params: (";
+    FieldSeparator IFS;
+    for (auto &PS : FS->paramAccesses()) {
+      Out << IFS;
+      Out << "(param: " << PS.ParamNo;
+      Out << ", offset: ";
+      PrintRange(PS.Use);
+      if (!PS.Calls.empty()) {
+        Out << ", calls: (";
+        FieldSeparator IFS;
+        for (auto &Call : PS.Calls) {
+          Out << IFS;
+          Out << "(callee: ^" << Machine.getGUIDSlot(Call.Callee);
+          Out << ", param: " << Call.ParamNo;
+          Out << ", offset: ";
+          PrintRange(Call.Offsets);
+          Out << ")";
+        }
+        Out << ")";
+      }
+      Out << ")";
+    }
+    Out << ")";
+  }
 }
 
 void AssemblyWriter::printTypeIdInfo(
@@ -3115,7 +3189,7 @@ void AssemblyWriter::printVFuncId(const FunctionSummary::VFuncId VFId) {
 }
 
 void AssemblyWriter::printNonConstVCalls(
-    const std::vector<FunctionSummary::VFuncId> VCallList, const char *Tag) {
+    const std::vector<FunctionSummary::VFuncId> &VCallList, const char *Tag) {
   Out << Tag << ": (";
   FieldSeparator FS;
   for (auto &VFuncId : VCallList) {
@@ -3126,7 +3200,8 @@ void AssemblyWriter::printNonConstVCalls(
 }
 
 void AssemblyWriter::printConstVCalls(
-    const std::vector<FunctionSummary::ConstVCall> VCallList, const char *Tag) {
+    const std::vector<FunctionSummary::ConstVCall> &VCallList,
+    const char *Tag) {
   Out << Tag << ": (";
   FieldSeparator FS;
   for (auto &ConstVCall : VCallList) {
@@ -3904,7 +3979,7 @@ void AssemblyWriter::printInstruction(const Instruction &I) {
       PrintCallingConv(CI->getCallingConv(), Out);
     }
 
-    Operand = CI->getCalledValue();
+    Operand = CI->getCalledOperand();
     FunctionType *FTy = CI->getFunctionType();
     Type *RetTy = FTy->getReturnType();
     const AttributeList &PAL = CI->getAttributes();
@@ -3943,7 +4018,7 @@ void AssemblyWriter::printInstruction(const Instruction &I) {
 
     writeOperandBundles(CI);
   } else if (const InvokeInst *II = dyn_cast<InvokeInst>(&I)) {
-    Operand = II->getCalledValue();
+    Operand = II->getCalledOperand();
     FunctionType *FTy = II->getFunctionType();
     Type *RetTy = FTy->getReturnType();
     const AttributeList &PAL = II->getAttributes();
@@ -3986,7 +4061,7 @@ void AssemblyWriter::printInstruction(const Instruction &I) {
     Out << " unwind ";
     writeOperand(II->getUnwindDest(), true);
   } else if (const CallBrInst *CBI = dyn_cast<CallBrInst>(&I)) {
-    Operand = CBI->getCalledValue();
+    Operand = CBI->getCalledOperand();
     FunctionType *FTy = CBI->getFunctionType();
     Type *RetTy = FTy->getReturnType();
     const AttributeList &PAL = CBI->getAttributes();
@@ -4196,9 +4271,19 @@ void AssemblyWriter::writeAttribute(const Attribute &Attr, bool InAttrGroup) {
     return;
   }
 
-  assert(Attr.hasAttribute(Attribute::ByVal) && "unexpected type attr");
+  assert((Attr.hasAttribute(Attribute::ByVal) ||
+          Attr.hasAttribute(Attribute::ByRef) ||
+          Attr.hasAttribute(Attribute::Preallocated)) &&
+         "unexpected type attr");
 
-  Out << "byval";
+  if (Attr.hasAttribute(Attribute::ByVal)) {
+    Out << "byval";
+  } else if (Attr.hasAttribute(Attribute::ByRef)) {
+    Out << "byref";
+  } else {
+    Out << "preallocated";
+  }
+
   if (Type *Ty = Attr.getValueAsType()) {
     Out << '(';
     TypePrinter.print(Ty, Out);
@@ -4282,6 +4367,17 @@ void Function::print(raw_ostream &ROS, AssemblyAnnotationWriter *AAW,
                    IsForDebug,
                    ShouldPreserveUseListOrder);
   W.printFunction(this);
+}
+
+void BasicBlock::print(raw_ostream &ROS, AssemblyAnnotationWriter *AAW,
+                     bool ShouldPreserveUseListOrder,
+                     bool IsForDebug) const {
+  SlotTracker SlotTable(this->getModule());
+  formatted_raw_ostream OS(ROS);
+  AssemblyWriter W(OS, SlotTable, this->getModule(), AAW,
+                   IsForDebug,
+                   ShouldPreserveUseListOrder);
+  W.printBasicBlock(this);
 }
 
 void Module::print(raw_ostream &ROS, AssemblyAnnotationWriter *AAW,

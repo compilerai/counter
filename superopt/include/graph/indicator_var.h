@@ -1,12 +1,18 @@
 #pragma once
+
 #include <vector>
 #include <list>
-#include "expr/expr.h"
+
 #include "support/consts.h"
 #include "support/types.h"
 #include "support/debug.h"
 #include "support/utils.h"
+
 #include "expr/consts_struct.h"
+#include "expr/context.h"
+#include "expr/expr.h"
+#include "expr/counter_example.h"
+#include "expr/relevant_memlabels.h"
 
 namespace eqspace {
 
@@ -101,7 +107,7 @@ public:
   {
     context *ctx = m_var->get_context();
     expr_ref e = this->indicator_var_get_expr(ctx);
-    counter_example_t rand_vals(ctx);
+    counter_example_t rand_vals(ctx, ctx->get_next_ce_name(RAND_VALS_CE_NAME_PREFIX));
     expr_ref ret_expr;
     bool ret = counter_example.evaluate_expr_assigning_random_consts_as_needed(e, ret_expr, rand_vals, relevant_memlabels);
     if (!ret) {

@@ -12,7 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "PassDetail.h"
-#include "mlir/Analysis/Dominance.h"
+#include "mlir/IR/Dominance.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/Passes.h"
 #include "mlir/Transforms/Utils.h"
@@ -26,18 +26,9 @@
 using namespace mlir;
 
 namespace {
-// TODO(riverriddle) Handle commutative operations.
 struct SimpleOperationInfo : public llvm::DenseMapInfo<Operation *> {
   static unsigned getHashValue(const Operation *opC) {
-    auto *op = const_cast<Operation *>(opC);
-    // Hash the operations based upon their:
-    //   - Operation Name
-    //   - Attributes
-    //   - Result Types
-    //   - Operands
-    return llvm::hash_combine(
-        op->getName(), op->getAttrList().getDictionary(), op->getResultTypes(),
-        llvm::hash_combine_range(op->operand_begin(), op->operand_end()));
+    return OperationEquivalence::computeHash(const_cast<Operation *>(opC));
   }
   static bool isEqual(const Operation *lhsC, const Operation *rhsC) {
     auto *lhs = const_cast<Operation *>(lhsC);
@@ -47,24 +38,8 @@ struct SimpleOperationInfo : public llvm::DenseMapInfo<Operation *> {
     if (lhs == getTombstoneKey() || lhs == getEmptyKey() ||
         rhs == getTombstoneKey() || rhs == getEmptyKey())
       return false;
-
-    // Compare the operation name.
-    if (lhs->getName() != rhs->getName())
-      return false;
-    // Check operand and result type counts.
-    if (lhs->getNumOperands() != rhs->getNumOperands() ||
-        lhs->getNumResults() != rhs->getNumResults())
-      return false;
-    // Compare attributes.
-    if (lhs->getAttrList() != rhs->getAttrList())
-      return false;
-    // Compare operands.
-    if (!std::equal(lhs->operand_begin(), lhs->operand_end(),
-                    rhs->operand_begin()))
-      return false;
-    // Compare result types.
-    return std::equal(lhs->result_type_begin(), lhs->result_type_end(),
-                      rhs->result_type_begin());
+    return OperationEquivalence::isEquivalentTo(const_cast<Operation *>(lhsC),
+                                                const_cast<Operation *>(rhsC));
   }
 };
 } // end anonymous namespace
@@ -89,7 +64,7 @@ struct CSE : public CSEBase<CSE> {
     ScopedMapTy::ScopeTy scope;
 
     DominanceInfoNode *node;
-    DominanceInfoNode::iterator childIterator;
+    DominanceInfoNode::const_iterator childIterator;
 
     /// If this node has been fully processed yet or not.
     bool processed;
@@ -131,7 +106,7 @@ LogicalResult CSE::simplifyOperation(ScopedMapTy &knownValues, Operation *op) {
   if (op->getNumRegions() != 0)
     return failure();
 
-  // TODO(riverriddle) We currently only eliminate non side-effecting
+  // TODO: We currently only eliminate non side-effecting
   // operations.
   if (!MemoryEffectOpInterface::hasNoEffect(op))
     return failure();
@@ -195,6 +170,12 @@ void CSE::simplifyRegion(ScopedMapTy &knownValues, DominanceInfo &domInfo,
     simplifyBlock(knownValues, domInfo, &region.front());
     return;
   }
+
+  // If the region does not have dominanceInfo, then skip it.
+  // TODO: Regions without SSA dominance should define a different
+  // traversal order which is appropriate and can be used here.
+  if (!domInfo.hasDominanceInfo(&region))
+    return;
 
   // Note, deque is being used here because there was significant performance
   // gains over vector when the container becomes very large due to the

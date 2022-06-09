@@ -15,6 +15,7 @@
 
 #include "AMDGPU.h"
 #include "llvm/IR/InstVisitor.h"
+#include "llvm/Pass.h"
 #include "llvm/Transforms/Utils/CallPromotionUtils.h"
 
 using namespace llvm;
@@ -34,7 +35,8 @@ public:
   void visitCallBase(CallBase &CB) {
     if (CB.getCalledFunction())
       return;
-    auto *Callee = dyn_cast<Function>(CB.getCalledValue()->stripPointerCasts());
+    auto *Callee =
+        dyn_cast<Function>(CB.getCalledOperand()->stripPointerCasts());
     if (Callee && isLegalToPromote(CB, Callee)) {
       promoteCall(CB, Callee);
       Modified = true;

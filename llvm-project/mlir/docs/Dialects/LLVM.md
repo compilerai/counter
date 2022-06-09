@@ -32,7 +32,7 @@ llvm-canonical-type ::= <canonical textual representation defined by LLVM>
 
 For example, one can use primitive types `!llvm.i32`, pointer types
 `!llvm<"i8*">`, vector types `!llvm<"<4 x float>">` or structure types
-`!llvm<"{i32, float}">`. The parsing and printing of the canonical form is
+`!llvm<"{i32, float}">`. The parsing and printing of the canonical form are
 delegated to the LLVM assembly parser and printer.
 
 LLVM IR dialect types contain an `llvm::Type*` object that can be obtained by
@@ -313,10 +313,28 @@ Bitwise reinterpretation: `bitcast <value>`.
 
 Selection: `select <condition>, <lhs>, <rhs>`.
 
-### Auxiliary MLIR operations
+### Auxiliary MLIR Operations for Constants and Globals
 
-These operations do not have LLVM IR counterparts but are necessary to map LLVM
-IR into MLIR. They should be prefixed with `llvm.mlir`.
+LLVM IR has broad support for first-class constants, which is not the case for
+MLIR. Instead, constants are defined in MLIR as regular SSA values produced by
+operations with specific traits. The LLVM dialect provides a set of operations
+that model LLVM IR constants. These operations do not correspond to LLVM IR
+instructions and are therefore prefixed with `llvm.mlir`.
+
+Inline constants can be created by `llvm.mlir.constant`, which currently
+supports integer, float, string or elements attributes (constant structs are not
+currently supported). LLVM IR constant expressions are expected to be
+constructed as sequences of regular operations on SSA values produced by
+`llvm.mlir.constant`. Additionally, MLIR provides semantically-charged
+operations `llvm.mlir.undef` and `llvm.mlir.null` for the corresponding
+constants.
+
+LLVM IR globals can be defined using `llvm.mlir.global` at the module level,
+except for functions that are defined with `llvm.func`. Globals, both variables
+and functions, can be accessed by taking their address with the
+`llvm.mlir.addressof` operation, which produces a pointer to the named global,
+unlike the `llvm.mlir.constant` that produces the value of the same type as the
+constant.
 
 #### `llvm.mlir.addressof`
 
@@ -328,11 +346,17 @@ Examples:
 
 ```mlir
 func @foo() {
-  // Get the address of a global.
+  // Get the address of a global variable.
   %0 = llvm.mlir.addressof @const : !llvm<"i32*">
 
   // Use it as a regular pointer.
   %1 = llvm.load %0 : !llvm<"i32*">
+
+  // Get the address of a function.
+  %2 = llvm.mlir.addressof @foo : !llvm<"void ()*">
+
+  // The function address can be used for indirect calls.
+  llvm.call %2() : () -> ()
 }
 
 // Define the global.
@@ -346,7 +370,7 @@ constants must be created as SSA values before being used in other operations.
 `llvm.mlir.constant` creates such values for scalars and vectors. It has a
 mandatory `value` attribute, which may be an integer, floating point attribute;
 dense or sparse attribute containing integers or floats. The type of the
-attribute is one the corresponding MLIR standard types. It may be omitted for
+attribute is one of the corresponding MLIR standard types. It may be omitted for
 `i64` and `f64` types that are implied. The operation produces a new SSA value
 of the specified LLVM IR dialect type. The type of that value _must_ correspond
 to the attribute type converted to LLVM IR.

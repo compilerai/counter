@@ -1,4 +1,4 @@
-# CounterTV -- Counterexample-Guided Correlation Algorithm for Translation Validation
+# StaticPersist -- Compiler Support for PMEM Programming
 
 # Table of contents
 1. [Getting started](#getting-started) 

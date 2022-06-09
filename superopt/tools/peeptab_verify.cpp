@@ -1,7 +1,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "expr/memlabel.h"
 #include "expr/z3_solver.h"
@@ -13,10 +13,11 @@
 #include "rewrite/translation_instance.h"
 #include "eq/corr_graph.h"
 #include "support/globals_cpp.h"
-#include "codegen/etfg_insn.h"
+#include "etfg/etfg_insn.h"
 #include "i386/insn.h"
-#include "rewrite/src-insn.h"
-#include "rewrite/dst-insn.h"
+#include "x64/insn.h"
+#include "insn/src-insn.h"
+#include "insn/dst-insn.h"
 #include "rewrite/peep_entry_list.h"
 
 #include "support/timers.h"
@@ -178,7 +179,7 @@ main(int argc, char **argv)
   }
   CPP_DBG_EXEC(STATS,
     cout << __func__ << " " << __LINE__ << ":\n" << stats::get();
-    cout << ctx->stat() << endl;
+    cout << ctx->stats() << endl;
   );
 
   solver_kill();

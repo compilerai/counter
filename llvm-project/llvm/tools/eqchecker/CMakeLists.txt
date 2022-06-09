@@ -12,7 +12,7 @@ set(LLVM_LINK_COMPONENTS
   CodeGen
   )
 
-find_package(Boost REQUIRED iostreams serialization)
+#find_package(Boost REQUIRED iostreams serialization)
 
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 #set(SUPEROPT_DIR get_filename_component(ABSOLUTE, "${LLVM_BINARY_DIR}/../../superopt"))
@@ -66,6 +66,10 @@ add_llvm_tool(llvm2tfg
   #state_llvm.cpp
   )
 
-target_link_libraries(llvm2tfg PRIVATE ${SUPEROPT_LIBS})
+
+add_superopt_libs(slibs)
+message(STATUS "slibs=${slibs}")
+
+target_link_libraries(llvm2tfg PRIVATE ${slibs})
 #TARGET_LINK_LIBRARIES(llvm2tfg z3)
 #TARGET_LINK_LIBRARIES(llvm2tfg ${Boost_LIBRARIES})

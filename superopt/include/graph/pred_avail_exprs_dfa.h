@@ -2,12 +2,15 @@
 #include <map>
 #include <string>
 
-#include "expr/expr.h"
 #include "support/types.h"
-#include "gsupport/pc.h"
+
+#include "expr/expr.h"
+#include "expr/pc.h"
+
 #include "gsupport/tfg_edge.h"
+
 #include "graph/dfa.h"
-#include "tfg/avail_exprs.h"
+#include "graph/avail_exprs.h"
 
 using namespace std;
 
@@ -37,7 +40,7 @@ public:
 
   template<typename T_PC, typename T_N, typename T_E, typename T_PRED>
   static std::function<pred_avail_exprs_val_t (pc const &)>
-  get_boundary_value(graph<T_PC, T_N, T_E> const *g, map<pc, tfg_suffixpath_t> const &suffixpaths, avail_exprs_t &all_uninit);
+  get_boundary_value(dshared_ptr<graph<T_PC, T_N, T_E> const> g, map<pc, tfg_suffixpath_t> const &suffixpaths, avail_exprs_t &all_uninit);
 };
 
 class pred_avail_exprs_analysis : public data_flow_analysis<pc, tfg_node, tfg_edge, pred_avail_exprs_val_t, dfa_dir_t::forward>
@@ -49,7 +52,7 @@ public:
   //pred_avail_exprs_t meet(pred_avail_exprs_t const& a, pred_avail_exprs_t const& b) override;
   //pred_avail_exprs_t xfer(shared_ptr<tfg_edge> e, pred_avail_exprs_t const& in) override;
 
-  virtual bool xfer_and_meet(shared_ptr<tfg_edge const> const &e, pred_avail_exprs_val_t const& in, pred_avail_exprs_val_t &out) override;
+  virtual dfa_xfer_retval_t xfer_and_meet(shared_ptr<tfg_edge const> const &e, pred_avail_exprs_val_t const& in, pred_avail_exprs_val_t &out) override;
 
   //static pred_avail_exprs_t copy_live_locs_from_in(pred_avail_exprs_t const &in, tfg const *t, pc const &p);
   //pred_avail_exprs_t get_boundary_value(pc const& p) override;

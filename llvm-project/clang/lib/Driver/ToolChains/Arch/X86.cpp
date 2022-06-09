@@ -94,6 +94,7 @@ const char *x86::getX86TargetCPU(const ArgList &Args,
 
   switch (Triple.getOS()) {
   case llvm::Triple::FreeBSD:
+    return "i686";
   case llvm::Triple::NetBSD:
   case llvm::Triple::OpenBSD:
     return "i486";
@@ -173,9 +174,33 @@ void x86::getX86TargetFeatures(const Driver &D, const llvm::Triple &Triple,
   }
 
   auto LVIOpt = clang::driver::options::ID::OPT_INVALID;
-  if (Args.hasFlag(options::OPT_mlvi_cfi, options::OPT_mno_lvi_cfi, false)) {
+  if (Args.hasFlag(options::OPT_mlvi_hardening, options::OPT_mno_lvi_hardening,
+                   false)) {
+    Features.push_back("+lvi-load-hardening");
+    Features.push_back("+lvi-cfi"); // load hardening implies CFI protection
+    LVIOpt = options::OPT_mlvi_hardening;
+  } else if (Args.hasFlag(options::OPT_mlvi_cfi, options::OPT_mno_lvi_cfi,
+                          false)) {
     Features.push_back("+lvi-cfi");
     LVIOpt = options::OPT_mlvi_cfi;
+  }
+
+  if (Args.hasFlag(options::OPT_m_seses, options::OPT_mno_seses, false)) {
+    if (LVIOpt == options::OPT_mlvi_hardening)
+      D.Diag(diag::err_drv_argument_not_allowed_with)
+          << D.getOpts().getOptionName(options::OPT_mlvi_hardening)
+          << D.getOpts().getOptionName(options::OPT_m_seses);
+
+    if (SpectreOpt != clang::driver::options::ID::OPT_INVALID)
+      D.Diag(diag::err_drv_argument_not_allowed_with)
+          << D.getOpts().getOptionName(SpectreOpt)
+          << D.getOpts().getOptionName(options::OPT_m_seses);
+
+    Features.push_back("+seses");
+    if (!Args.hasArg(options::OPT_mno_lvi_cfi)) {
+      Features.push_back("+lvi-cfi");
+      LVIOpt = options::OPT_mlvi_cfi;
+    }
   }
 
   if (SpectreOpt != clang::driver::options::ID::OPT_INVALID &&

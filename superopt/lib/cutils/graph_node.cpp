@@ -1,9 +1,9 @@
-#include "graph_node.h"
 #include <support/debug.h>
 #include "stdint.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "support/c_utils.h"
+#include "cutils/graph_node.h"
 
 bool
 graph_node_add_outgoing_edge(struct graph_node *node, struct graph_node *dst)

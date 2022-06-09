@@ -1,5 +1,5 @@
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -8,9 +8,10 @@
 #include "expr/expr.h"
 #include "support/src-defs.h"
 #include "i386/insn.h"
+#include "x64/insn.h"
 #include "ppc/insn.h"
-#include "codegen/etfg_insn.h"
-#include "rewrite/src-insn.h"
+#include "etfg/etfg_insn.h"
+#include "insn/src-insn.h"
 #include "expr/z3_solver.h"
 #include <fstream>
 
@@ -30,6 +31,8 @@ int main(int argc, char **argv)
   cl::arg<string> src_iseq_file(cl::implicit_prefix, "", "path to .src_iseq file");
   cl::cl cmd("src_iseq_get_usedef");
   cmd.add_arg(&src_iseq_file);
+  cl::arg<string> debug(cl::explicit_prefix, "dyn-debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --debug=correlate=2,smt_query=1,dumptfg,decide_hoare_triple,update_invariant_state_over_edge");
+  cmd.add_arg(&debug);
   cmd.parse(argc, argv);
 
   init_timers();
@@ -43,7 +46,8 @@ int main(int argc, char **argv)
 
   usedef_init();
 
-  DBG_SET(INSN_MATCH, 2);
+  //DBG_SET(INSN_MATCH, 2);
+  DYN_DBG_SET(insn_match, 2);
   ifstream in(src_iseq_file.get_value());
   if(!in.is_open()) {
     cout << __func__ << " " << __LINE__ << ": could not open " << src_iseq_file.get_value() << "." << endl;
@@ -66,7 +70,7 @@ int main(int argc, char **argv)
   CPP_DBG_EXEC(STATS,
     print_all_timers();
     cout << __func__ << " " << __LINE__ << ":\n" << stats::get();
-    cout << g_ctx->stat() << endl;
+    cout << g_ctx->stats() << endl;
   );
   solver_kill();
   call_on_exit_function();

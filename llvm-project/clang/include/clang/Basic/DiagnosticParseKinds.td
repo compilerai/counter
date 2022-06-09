@@ -105,6 +105,25 @@ def ext_clang_c_enum_fixed_underlying_type : Extension<
 def warn_cxx98_compat_enum_fixed_underlying_type : Warning<
   "enumeration types with a fixed underlying type are incompatible with C++98">,
   InGroup<CXX98Compat>, DefaultIgnore;
+def ext_enum_base_in_type_specifier : ExtWarn<
+  "non-defining declaration of enumeration with a fixed underlying type is "
+  "only permitted as a standalone declaration"
+  "%select{|; missing list of enumerators?}0">,
+  InGroup<DiagGroup<"elaborated-enum-base">>, DefaultError;
+def ext_elaborated_enum_class : ExtWarn<
+  "reference to enumeration must use 'enum' not 'enum %select{struct|class}0'">,
+  InGroup<DiagGroup<"elaborated-enum-class">>, DefaultError;
+def err_scoped_enum_missing_identifier : Error<
+  "scoped enumeration requires a name">;
+def ext_scoped_enum : ExtWarn<
+  "scoped enumerations are a C++11 extension">, InGroup<CXX11>;
+def warn_cxx98_compat_scoped_enum : Warning<
+  "scoped enumerations are incompatible with C++98">,
+  InGroup<CXX98Compat>, DefaultIgnore;
+def err_anonymous_enum_bitfield : Error<
+  "ISO C++ only allows ':' in member enumeration declaration to introduce "
+  "a fixed underlying type, not an anonymous bit-field">;
+
 def warn_cxx98_compat_alignof : Warning<
   "alignof expressions are incompatible with C++98">,
   InGroup<CXX98Compat>, DefaultIgnore;
@@ -175,6 +194,8 @@ def err_function_declared_typedef : Error<
 def err_at_defs_cxx : Error<"@defs is not supported in Objective-C++">;
 def err_at_in_class : Error<"unexpected '@' in member specification">;
 def err_unexpected_semi : Error<"unexpected ';' before %0">;
+def err_postfix_after_unary_requires_parens : Error<
+  "expression cannot be followed by a postfix %0 operator; add parentheses">;
 def err_unparenthesized_non_primary_expr_in_requires_clause : Error<
   "parentheses are required around this expression in a requires clause">;
 def note_unparenthesized_non_primary_expr_in_requires_clause : Note<
@@ -676,7 +697,7 @@ def err_ms_property_expected_comma_or_rparen : Error<
 def err_ms_property_initializer : Error<
   "property declaration cannot have an in-class initializer">;
 
-def warn_cxx2a_compat_explicit_bool : Warning<
+def warn_cxx20_compat_explicit_bool : Warning<
   "this expression will be parsed as explicit(bool) in C++20">,
   InGroup<CXX20Compat>, DefaultIgnore;
 def warn_cxx17_compat_explicit_bool : Warning<
@@ -814,7 +835,7 @@ def err_friend_decl_defines_type : Error<
   "cannot define a type in a friend declaration">;
 def err_missing_whitespace_digraph : Error<
   "found '<::' after a "
-  "%select{template name|const_cast|dynamic_cast|reinterpret_cast|static_cast}0"
+  "%select{template name|addrspace_cast|const_cast|dynamic_cast|reinterpret_cast|static_cast}0"
   " which forms the digraph '<:' (aka '[') and a ':', did you mean '< ::'?">;
 
 def ext_defaulted_deleted_function : ExtWarn<
@@ -885,14 +906,6 @@ def err_access_specifier_interface : Error<
 def err_duplicate_virt_specifier : Error<
   "class member already marked '%0'">;
 
-def err_scoped_enum_missing_identifier : Error<
-  "scoped enumeration requires a name">;
-def ext_scoped_enum : ExtWarn<
-  "scoped enumerations are a C++11 extension">, InGroup<CXX11>;
-def warn_cxx98_compat_scoped_enum : Warning<
-  "scoped enumerations are incompatible with C++98">,
-  InGroup<CXX98Compat>, DefaultIgnore;
-
 def err_expected_parameter_pack : Error<
   "expected the name of a parameter pack">;
 def err_paren_sizeof_parameter_pack : Error<
@@ -921,6 +934,8 @@ def err_lambda_capture_misplaced_ellipsis : Error<
   "the name of the capture">;
 def err_lambda_capture_multiple_ellipses : Error<
   "multiple ellipses in pack capture">;
+def err_capture_default_first : Error<
+  "capture default must be first">;
 // C++17 lambda expressions
 def err_expected_star_this_capture : Error<
   "expected 'this' following '*' in lambda capture list">;
@@ -1097,9 +1112,9 @@ def warn_pragma_init_seg_unsupported_target : Warning<
   "'#pragma init_seg' is only supported when targeting a "
   "Microsoft environment">,
   InGroup<IgnoredPragmas>;
-// - #pragma fp_contract
-def err_pragma_fp_contract_scope : Error<
-  "'#pragma fp_contract' can only appear at file scope or at the start of a "
+// - #pragma restricted to file scope or start of compound statement
+def err_pragma_file_or_compound_scope : Error<
+  "'#pragma %0' can only appear at file scope or at the start of a "
   "compound statement">;
 // - #pragma stdc unknown
 def ext_stdc_pragma_ignored : ExtWarn<"unknown pragma in STDC namespace">,
@@ -1118,6 +1133,10 @@ def warn_pragma_comment_ignored : Warning<"'#pragma comment %0' ignored">,
 def err_pragma_detect_mismatch_malformed : Error<
   "pragma detect_mismatch is malformed; it requires two comma-separated "
   "string literals">;
+// - #pragma float_control
+def err_pragma_float_control_malformed : Error<
+  "pragma float_control is malformed; use 'float_control({push|pop})' or "
+  "'float_control({precise|except}, {on|off} [,push])'">;
 // - #pragma pointers_to_members
 def err_pragma_pointers_to_members_unknown_kind : Error<
   "unexpected %0, expected to see one of %select{|'best_case', 'full_generality', }1"
@@ -1231,7 +1250,8 @@ def err_omp_decl_in_declare_simd_variant : Error<
 def err_omp_unknown_map_type : Error<
   "incorrect map type, expected one of 'to', 'from', 'tofrom', 'alloc', 'release', or 'delete'">;
 def err_omp_unknown_map_type_modifier : Error<
-  "incorrect map type modifier, expected 'always', 'close', or 'mapper'">;
+  "incorrect map type modifier, expected 'always', 'close', "
+  "%select{or 'mapper'|'mapper', or 'present'}0">;
 def err_omp_map_type_missing : Error<
   "missing map type">;
 def err_omp_map_type_modifier_missing : Error<
@@ -1258,6 +1278,11 @@ def warn_omp_declare_variant_string_literal_or_identifier
               "%select{set|selector|property}0; "
               "%select{set|selector|property}0 skipped">,
       InGroup<OpenMPClauses>;
+def warn_unknown_begin_declare_variant_isa_trait
+    : Warning<"isa trait '%0' is not known to the current target; verify the "
+              "spelling or consider restricting the context selector with the "
+              "'arch' selector further">,
+      InGroup<SourceUsesOpenMP>;
 def note_omp_declare_variant_ctx_options
     : Note<"context %select{set|selector|property}0 options are: %1">;
 def warn_omp_declare_variant_expected
@@ -1317,6 +1342,8 @@ def warn_omp_more_one_device_type_clause
       InGroup<OpenMPClauses>;
 def err_omp_variant_ctx_second_match_extension : Error<
   "only a single match extension allowed per OpenMP context selector">;
+def err_omp_invalid_dsa: Error<
+  "data-sharing attribute '%0' in '%1' clause requires OpenMP version %2 or above">;
 
 // Pragma loop support.
 def err_pragma_loop_missing_argument : Error<
@@ -1328,13 +1355,12 @@ def err_pragma_loop_invalid_option : Error<
   "pipeline, pipeline_initiation_interval, vectorize_predicate, or distribute">;
 
 def err_pragma_fp_invalid_option : Error<
-  "%select{invalid|missing}0 option%select{ %1|}0; expected contract">;
+  "%select{invalid|missing}0 option%select{ %1|}0; expected 'contract' or 'reassociate'">;
 def err_pragma_fp_invalid_argument : Error<
   "unexpected argument '%0' to '#pragma clang fp %1'; "
-  "expected 'on', 'fast' or 'off'">;
-def err_pragma_fp_scope : Error<
-  "'#pragma clang fp' can only appear at file scope or at the start of a "
-  "compound statement">;
+  "%select{"
+  "expected 'fast' or 'on' or 'off'|"
+  "expected 'on' or 'off'}2">;
 
 def err_pragma_invalid_keyword : Error<
   "invalid argument; expected 'enable'%select{|, 'full'}0%select{|, 'assume_safety'}1 or 'disable'">;
@@ -1414,11 +1440,11 @@ def err_placeholder_expected_auto_or_decltype_auto : Error<
 
 def warn_max_tokens : Warning<
   "the number of preprocessor source tokens (%0) exceeds this token limit (%1)">,
-  InGroup<MaxTokens>;
+  InGroup<MaxTokens>, DefaultIgnore;
 
 def warn_max_tokens_total : Warning<
   "the total number of preprocessor source tokens (%0) exceeds the token limit (%1)">,
-  InGroup<MaxTokens>;
+  InGroup<MaxTokens>, DefaultIgnore;
 
 def note_max_tokens_total_override : Note<"total token limit set here">;
 

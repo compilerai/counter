@@ -5,11 +5,15 @@ add_public_tablegen_target(MachOOptionsTableGen)
 add_lld_library(lldMachO2
   Arch/X86_64.cpp
   Driver.cpp
+  ExportTrie.cpp
   InputFiles.cpp
   InputSection.cpp
+  MergedOutputSection.cpp
+  OutputSection.cpp
   OutputSegment.cpp
   SymbolTable.cpp
   Symbols.cpp
+  SyntheticSections.cpp
   Target.cpp
   Writer.cpp
 
@@ -20,6 +24,7 @@ add_lld_library(lldMachO2
   Object
   Option
   Support
+  TextAPI
 
   LINK_LIBS
   lldCommon

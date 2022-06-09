@@ -1,5 +1,5 @@
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -8,12 +8,14 @@
 #include "expr/expr.h"
 #include "support/src-defs.h"
 #include "i386/insn.h"
+#include "x64/insn.h"
 #include "ppc/insn.h"
-#include "codegen/etfg_insn.h"
-#include "rewrite/src-insn.h"
+#include "etfg/etfg_insn.h"
+#include "insn/src-insn.h"
 #include "sym_exec/sym_exec.h"
 #include "graph/prove.h"
 #include "tfg/tfg_asm.h"
+#include "ptfg/ftmap.h"
 
 #include <fstream>
 
@@ -26,19 +28,6 @@
 
 using namespace std;
 static char as1[40960];
-
-static void
-skip_till_next_function(ifstream &in)
-{
-  string line;
-  do {
-    if (!getline(in, line)) {
-      cout << __func__ << " " << __LINE__ << ": reached end of file\n";
-      return;
-    }
-  } while (!string_has_prefix(line, FUNCTION_FINISH_IDENTIFIER));
-  return;
-}
 
 
 int main(int argc, char **argv)
@@ -102,14 +91,16 @@ int main(int argc, char **argv)
 
   end = !getline(in_dst, line);
   ASSERT(!end);
-  shared_ptr<tfg> tfg_dst = make_shared<tfg_asm_t>(in_dst, "dst", &ctx);
+  // XXX read tfg_ssa!
+  dshared_ptr<tfg> tfg_dst = tfg_asm_t::tfg_asm_from_stream(in_dst, "dst", &ctx);
 
   DBG_SET(SPLIT_MEM, 2);
-  DBG_SET(TFG_LOCS, 2);
+  DYN_DBG_SET(tfg_locs, 2);
   DYN_DBG_SET(linear_relations, 2);
   DBG_SET(ALIAS_ANALYSIS, 2);
-  tfg_dst->collapse_tfg(true);
-  tfg_dst->split_memory_in_graph_and_propagate_sprels_until_fixpoint(false);
+  tfg_dst->collapse_tfg();
+  NOT_IMPLEMENTED();
+  //ftmap_t::tfg_run_pointsto_analysis(tfg_dst/*, callee_rw_memlabels_t::callee_rw_memlabels_nop()*/, false, dshared_ptr<tfg_llvm_t const>::dshared_nullptr());
   cout << "t =\n" << tfg_dst->graph_to_string() << endl;
   return 0;
 }

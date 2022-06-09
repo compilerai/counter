@@ -1,0 +1,16 @@
+--- llvm/lib/Analysis/Superopt/sym_exec_llvm.h
++++ llvm/lib/Analysis/Superopt/sym_exec_llvm.h
+@@ -204,10 +207,13 @@ private:
+ 
+   static map<nextpc_id_t, callee_summary_t> get_callee_summaries_for_tfg(map<nextpc_id_t, string> const &nextpc_map, map<string, callee_summary_t> const &callee_summaries);
+ 
++  expr_ref get_orig_assume_expr(const llvm::Instruction& I/*, string Iname*/, const vector<expr_ref>& args, state const &state_in, unordered_set<expr_ref> const& state_assumes, dshared_ptr<tfg_node> &from_node/*, pc const &pc_to, llvm::BasicBlock const &B, llvm::Function const &F*/, tfg &t, unsigned& poison_count);
++
+   //const std::unique_ptr<llvm::Module>& m_module;
+   llvm::Module const *m_module;
+   llvm::Function &m_function;
+   map<string, llvm::BasicBlock const *> m_pc2bb_cache;
++  set<string> m_poison_set;
+ };
+ 
+ #endif

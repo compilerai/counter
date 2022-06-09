@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "TransformerClangTidyCheck.h"
+#include "clang/Lex/Preprocessor.h"
 #include "llvm/ADT/STLExtras.h"
 
 namespace clang {
@@ -30,7 +31,9 @@ TransformerClangTidyCheck::TransformerClangTidyCheck(
                                         const OptionsView &)>
         MakeRule,
     StringRef Name, ClangTidyContext *Context)
-    : ClangTidyCheck(Name, Context), Rule(MakeRule(getLangOpts(), Options)) {
+    : ClangTidyCheck(Name, Context), Rule(MakeRule(getLangOpts(), Options)),
+      Inserter(
+          Options.getLocalOrGlobal("IncludeStyle", IncludeSorter::IS_LLVM)) {
   if (Rule)
     assert(llvm::all_of(Rule->Cases, hasExplanation) &&
            "clang-tidy checks must have an explanation by default;"
@@ -40,7 +43,9 @@ TransformerClangTidyCheck::TransformerClangTidyCheck(
 TransformerClangTidyCheck::TransformerClangTidyCheck(RewriteRule R,
                                                      StringRef Name,
                                                      ClangTidyContext *Context)
-    : ClangTidyCheck(Name, Context), Rule(std::move(R)) {
+    : ClangTidyCheck(Name, Context), Rule(std::move(R)),
+      Inserter(
+          Options.getLocalOrGlobal("IncludeStyle", IncludeSorter::IS_LLVM)) {
   assert(llvm::all_of(Rule->Cases, hasExplanation) &&
          "clang-tidy checks must have an explanation by default;"
          " explicitly provide an empty explanation if none is desired");
@@ -48,15 +53,12 @@ TransformerClangTidyCheck::TransformerClangTidyCheck(RewriteRule R,
 
 void TransformerClangTidyCheck::registerPPCallbacks(
     const SourceManager &SM, Preprocessor *PP, Preprocessor *ModuleExpanderPP) {
-  // Only allocate and register the IncludeInsert when some `Case` will add
+  // Only register the IncludeInsert when some `Case` will add
   // includes.
   if (Rule && llvm::any_of(Rule->Cases, [](const RewriteRule::Case &C) {
         return !C.AddedIncludes.empty();
-      })) {
-    Inserter = std::make_unique<IncludeInserter>(
-        SM, getLangOpts(), utils::IncludeSorter::IS_LLVM);
-    PP->addPPCallbacks(Inserter->CreatePPCallbacks());
-  }
+      }))
+    Inserter.registerPreprocessor(PP);
 }
 
 void TransformerClangTidyCheck::registerMatchers(
@@ -97,13 +99,15 @@ void TransformerClangTidyCheck::check(
     Diag << FixItHint::CreateReplacement(T.Range, T.Replacement);
 
   for (const auto &I : Case.AddedIncludes) {
-    auto &Header = I.first;
-    if (Optional<FixItHint> Fix = Inserter->CreateIncludeInsertion(
-            Result.SourceManager->getMainFileID(), Header,
-            /*IsAngled=*/I.second == transformer::IncludeFormat::Angled)) {
-      Diag << *Fix;
-    }
+    Diag << Inserter.createMainFileIncludeInsertion(
+        I.first,
+        /*IsAngled=*/I.second == transformer::IncludeFormat::Angled);
   }
+}
+
+void TransformerClangTidyCheck::storeOptions(
+    ClangTidyOptions::OptionMap &Opts) {
+  Options.store(Opts, "IncludeStyle", Inserter.getStyle());
 }
 
 } // namespace utils

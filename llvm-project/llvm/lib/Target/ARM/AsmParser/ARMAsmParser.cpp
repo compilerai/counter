@@ -6465,7 +6465,9 @@ void ARMAsmParser::getMnemonicAcceptInfo(StringRef Mnemonic,
       Mnemonic == "vfmat" || Mnemonic == "vfmab" ||
       Mnemonic == "vdot"  || Mnemonic == "vmmla" ||
       Mnemonic == "sb"    || Mnemonic == "ssbb"  ||
-      Mnemonic == "pssbb" ||
+      Mnemonic == "pssbb" || Mnemonic == "vsmmla" ||
+      Mnemonic == "vummla" || Mnemonic == "vusmmla" ||
+      Mnemonic == "vusdot" || Mnemonic == "vsudot" ||
       Mnemonic == "bfcsel" || Mnemonic == "wls" ||
       Mnemonic == "dls" || Mnemonic == "le" || Mnemonic == "csel" ||
       Mnemonic == "csinc" || Mnemonic == "csinv" || Mnemonic == "csneg" ||
@@ -10595,6 +10597,12 @@ unsigned ARMAsmParser::checkTargetMatchPredicate(MCInst &Inst) {
     if (Inst.getOperand(0).isReg() && Inst.getOperand(0).getReg() == ARM::SP &&
         (isThumb() && !hasV8Ops()))
       return Match_InvalidOperand;
+    break;
+  case ARM::t2TBB:
+  case ARM::t2TBH:
+    // Rn = sp is only allowed with ARMv8-A
+    if (!hasV8Ops() && (Inst.getOperand(0).getReg() == ARM::SP))
+      return Match_RequiresV8;
     break;
   default:
     break;

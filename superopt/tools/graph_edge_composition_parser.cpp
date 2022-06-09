@@ -2,11 +2,13 @@
 #include <iostream>
 #include <string>
 
-#include "gsupport/pc.h"
-#include "graph/edge_id.h"
+#include "support/cl.h"
+
+#include "expr/pc.h"
+
+#include "gsupport/edge_id_with_unroll.h"
 #include "gsupport/graph_ec.h"
 #include "gsupport/parse_edge_composition.h"
-#include "support/cl.h"
 
 using namespace std;
 
@@ -31,7 +33,7 @@ int main(int argc, char **argv)
   string line;
   bool end = !getline(*in, line);
   ASSERT(!end);
-  graph_edge_composition_ref<pc,edge_id_t<pc>> g = parse_edge_composition<pc,edge_id_t<pc>>(line.c_str());
+  graph_edge_composition_ref<pc,edge_id_with_unroll_t<pc>> g = parse_edge_composition<pc,edge_id_with_unroll_t<pc>>(line.c_str());
   ASSERT(g);
 
   cout << g->graph_edge_composition_to_string() << endl;

@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/InitializePasses.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Bitcode/BitcodeReader.h"
 #include "llvm/IR/AssemblyAnnotationWriter.h"
@@ -35,16 +36,21 @@ using namespace llvm;
 
 #include <iostream>
 #include <fstream>
-#include "sym_exec_llvm.h"
-#include "expr/consts_struct.h"
-#include "expr/expr.h"
-#include "eq/eqcheck.h"
-#include "tfg/tfg_llvm.h"
-#include "ptfg/llptfg.h"
-#include "ptfg/function_signature.h"
 
 #include "support/timers.h"
 #include "support/dyn_debug.h"
+#include "support/globals.h"
+
+#include "expr/consts_struct.h"
+#include "expr/expr.h"
+
+#include "tfg/tfg_llvm.h"
+
+#include "eq/eqcheck.h"
+#include "ptfg/llptfg.h"
+#include "ptfg/function_signature.h"
+
+#include "sym_exec_llvm.h"
 
 using namespace eqspace;
 
@@ -61,6 +67,12 @@ FunNames("f", cl::desc("<funname>"), cl::init(""));
 static cl::opt<std::string>
 OutputFilename("o", cl::desc("<output>"), cl::init("out.etfg"));
 
+static cl::opt<std::string>
+src_etfg_filename("src-etfg", cl::desc("source ETFG filename (so that the symbol ids and local ids can be consistent between the generated ETFG and the src-etfg"), cl::init(""));
+
+static cl::opt<std::string>
+xml_output_file("xml-output", cl::desc("<xml output>"), cl::init(""));
+
 static cl::opt<bool>
 DisableModelingOfUninitVarUB("u", cl::desc("<disable-modeling-of-uninit-var-ub>"), cl::init(false));
 
@@ -68,7 +80,25 @@ static cl::opt<bool>
 DryRun("dry-run", cl::desc("<dry-run. only print the function names and their sizes>"), cl::init(false));
 
 static cl::opt<std::string>
-DynDebug("dyn_debug", cl::desc("<debug.  enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. -debug=compute_liveness,sprels,alias_analysis=2"), cl::init(""));
+DynDebug("dyn-debug", cl::desc("<dyn_debug.  enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. -dyn_debug=compute_liveness,sprels,alias_analysis=2"), cl::init(""));
+
+static cl::opt<bool>
+llvmSemantics("llvm-semantics", cl::desc("<llvm-semantics.  Model poison and undef values (LLVM semantics) instead of just plain UB."), cl::init(false));
+
+static cl::opt<int>
+call_context_depth("call-context-depth", cl::desc("<call-context-depth.  The call context depth to use for pointsto-analysis."), cl::init(0));
+
+static cl::opt<std::string>
+XmlOutputFormat("xml-output-format", cl::desc("<xml-output-format.  Format to use during xml printing.  [html|text-color|text-nocolor]"), cl::init("text-color"));
+
+static cl::opt<bool>
+NoGenScev("no-gen-scev", cl::desc("<no-gen-scev. don't generate potential scev relationships to be used for invariant inferences>"), cl::init(false));
+
+static cl::opt<bool>
+Progress("progress", cl::desc("<progress. keep printing progress involving time/mem stats>"), cl::init(false));
+
+//static cl::opt<bool>
+//NoCollapse("no-collapse", cl::desc("<no-collapse. Do not collapse basic blocks into single edges>"), cl::init(false));
 
 //static void diagnosticHandler(const DiagnosticInfo &DI, void *Context) {
 //  assert(DI.getSeverity() == DS_Error && "Only expecting errors");
@@ -119,10 +149,10 @@ extern int g_helper_pid;
 int
 main(int argc, char **argv)
 {
+  autostop_timer func_timer(string(__func__));
   // Print a stack trace if we signal out.
   sys::PrintStackTraceOnErrorSignal(argv[0]);
   PrettyStackTraceProgram X(argc, argv);
-  g_ctx_init();
 
   //LLVMContext &Context = getGlobalContext();
   LLVMContext Context;
@@ -132,10 +162,27 @@ main(int argc, char **argv)
 
   cl::ParseCommandLineOptions(argc, argv, "llvm2tfg: file1.bc -> out.etfg\n");
 
-  eqspace::init_dyn_debug_from_string(DynDebug);
+  init_dyn_debug_from_string(DynDebug);
+  CPP_DBG_EXEC(DYN_DEBUG, print_debug_class_levels());
 
-  CPP_DBG_EXEC(LLVM2TFG, errs() << "doing functions:" << FunNames << "\n");
-  CPP_DBG_EXEC(LLVM2TFG, errs() << "output filename:" << OutputFilename << "\n");
+  context::xml_output_format_t xml_output_format = context::xml_output_format_from_string(XmlOutputFormat);
+
+  DYN_DEBUG(llvm2tfg, errs() << "doing functions:" << FunNames << "\n");
+  DYN_DEBUG(llvm2tfg, errs() << "output filename:" << OutputFilename << "\n");
+
+  if (xml_output_file != "") {
+    g_xml_output_stream.open(xml_output_file, ios_base::app | ios_base::ate);
+    ASSERT(g_xml_output_stream.is_open());
+  }
+
+  PassRegistry &Registry = *PassRegistry::getPassRegistry();
+  initializeCore(Registry);
+  //initializeCoroutines(Registry);
+  //initializeScalarOpts(Registry);
+  //initializeObjCARCOpts(Registry);
+  //initializeVectorization(Registry);
+  //initializeIPO(Registry);
+  initializeAnalysis(Registry);
 
   set<string> FunNamesVec;
   size_t curpos = 0, nextpos;
@@ -148,7 +195,7 @@ main(int argc, char **argv)
   if (f.length() > 0 && f != "ALL") {
     FunNamesVec.insert(f);
   }
-  CPP_DBG_EXEC(LLVM2TFG,
+  DYN_DEBUG(llvm2tfg,
     errs() << "printing FunNamesVec:\n";
     for (auto ff : FunNamesVec) {
       errs() << ff << "\n";
@@ -162,7 +209,7 @@ main(int argc, char **argv)
   }
 
   assert(M1 /*&& M2*/);
-  CPP_DBG_EXEC(LLVM2TFG, errs() << InputFilename1 << "\n");
+  DYN_DEBUG(llvm2tfg, errs() << "InputFilename = " << InputFilename1 << "\n");
   //errs() << InputFilename2 << "\n";
 
   /*for(const pair<string, unsigned>& fun_name : fun_names)
@@ -171,47 +218,51 @@ main(int argc, char **argv)
   }*/
 
   //context *ctx = new context(context::config(600, 600/*, true, true, true*/));
+  g_ctx_init(false);
   context *ctx = g_ctx;
-  ctx->parse_consts_db(CONSTS_DB_FILENAME);
-  consts_struct_t &cs = ctx->get_consts_struct();
+  DataLayout const& dl = M1->getDataLayout();
+  unsigned pointer_size = dl.getPointerSize();
+  //cout << __func__ << " " << __LINE__ << ": pointer_size = " << pointer_size << endl;
+  if (pointer_size == QWORD_LEN/BYTE_LEN) {
+    ctx->parse_consts_db(SUPEROPTDBS_DIR "/../etfg_x64/consts_db");
+  } else if (pointer_size == DWORD_LEN/BYTE_LEN) {
+    ctx->parse_consts_db(SUPEROPTDBS_DIR "/../etfg_i386/consts_db");
+  } else {
+    NOT_REACHED();
+  }
 
   ofstream outputStream;
   outputStream.open(OutputFilename, ios_base::out | ios_base::trunc);
 
-  map<string, pair<callee_summary_t, unique_ptr<tfg_llvm_t>>> function_tfg_map;
-  for (const Function& f : *M1) {
-    if (   FunNamesVec.size() != 0
-        //&& (FunNamesVec.size() != 1 || *FunNamesVec.begin() != "ALL")
-        && !set_belongs(FunNamesVec, string(f.getName().data()))) {
-      continue;
-    }
-    if (sym_exec_common::get_num_insn(f) == 0) {
-      continue;
-    }
-
-    string fname = f.getName().str();
-    autostop_timer total_timer(string(__func__));
-    autostop_timer func_timer(string(__func__) + "." + fname);
-
-    if (DryRun) {
+  if (DryRun) {
+    for (const Function& f : *M1) {
+      if (sym_exec_common::get_num_insn(f) == 0) {
+        continue;
+      }
+      string fname = f.getName().str();
       outputStream << fname << " : " << sym_exec_common::get_num_insn(f) << "\n";
-      continue;
     }
-    if (function_tfg_map.count(fname)) {
-      continue;
-    }
-    //errs() << "Doing: " << fname << "\n";
-    //errs().flush();
-
-    bool gen_callee_summary = (FunNamesVec.size() == 0);
-    set<string> function_call_chain;
-
-    cout << __func__ << " " << __LINE__ << ": Doing " << fname << endl;
-    unique_ptr<tfg_llvm_t> t_src = sym_exec_llvm::get_preprocessed_tfg(f, M1.get(), fname, ctx, function_tfg_map, function_call_chain, gen_callee_summary, DisableModelingOfUninitVarUB ? true : false);
-
-    callee_summary_t csum = t_src->get_summary_for_calling_functions();
-    function_tfg_map.insert(make_pair(fname, make_pair(csum, std::move(t_src))));
+    return 0;
   }
+
+  shared_ptr<llptfg_t const> src_llptfg;
+  if (src_etfg_filename != "") {
+    ifstream in_src(src_etfg_filename);
+    if (!in_src.is_open()) {
+      cout << __func__ << " " << __LINE__ << ": parsing failed" << endl;
+      NOT_REACHED();
+    }
+    src_llptfg = make_shared<llptfg_t const>(in_src, ctx);
+  }
+
+  if (Progress) {
+    progress_flag = 1;
+  }
+
+  dshared_ptr<ftmap_t> function_tfg_map = sym_exec_llvm::get_function_tfg_map(M1.get(), FunNamesVec, ctx, src_llptfg, !NoGenScev, llvmSemantics, nullptr, xml_output_format);
+  function_tfg_map->ftmap_run_pointsto_analysis(false, dshared_ptr<tfg_llvm_t const>::dshared_nullptr(), {}, call_context_depth, true, xml_output_format);
+  //t->tfg_populate_relevant_memlabels(src_llvm_tfg);
+  function_tfg_map->ftmap_add_start_pc_preconditions_for_each_tfg(/*se.m_srcdst_keyword*/);
 
   string llvm_header = M1->get_llvm_header_as_string();
   list<string> type_decls = M1->get_type_declarations_as_string();
@@ -226,7 +277,7 @@ main(int argc, char **argv)
   list<string> llvm_metadata = M1->get_metadata_as_string();
 
   autostop_timer func2_timer(string(__func__) + ".2");
-  llptfg_t llptfg(llvm_header, type_decls, globals_with_initializers, function_decls, function_tfg_map, fname_signature_map, fname_attributes_map.first, fname_linker_status_map, fname_attributes_map.second, llvm_metadata);
+  llptfg_t llptfg(llvm_header, type_decls, globals_with_initializers, function_decls, *function_tfg_map, fname_signature_map, fname_attributes_map.first, fname_linker_status_map, fname_attributes_map.second, llvm_metadata);
   llptfg.print(outputStream);
   //for (auto ft : function_tfg_map) {
   //  string const &fname = ft.first;
@@ -239,11 +290,11 @@ main(int argc, char **argv)
   outputStream.close();
   outputStream.flush();
 
-  ofstream llcopy;
-  llcopy.open(OutputFilename + ".ll", ios_base::out | ios_base::trunc);
-  llptfg.output_llvm_code(llcopy);
-  llcopy.close();
-  llcopy.flush();
+  //ofstream llcopy;
+  //llcopy.open(OutputFilename + ".ll", ios_base::out | ios_base::trunc);
+  //llptfg.output_llvm_code(llcopy);
+  //llcopy.close();
+  //llcopy.flush();
 
   CPP_DBG_EXEC2(STATS,
     print_all_timers();

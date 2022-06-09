@@ -2,6 +2,7 @@
 #define HARVEST_H
 #include "support/src-defs.h"
 #include "support/types.h"
+#include "x64/insntypes.h"
 #include <stdbool.h>
 #include <string>
 #include <vector>

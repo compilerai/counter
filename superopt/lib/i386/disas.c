@@ -32,23 +32,25 @@
    and the small letter tells about the operand size.  Refer to
    the Intel manual for details.  */
 //taken from binutils-2.25
-#include "i386/disas.h"
 //#include "sysdep.h"
 //#include "dis-asm.h"
 //#include "opintl.h"
-#include "i386/disas-opcode.h" //was "opcode/i386.h"
 //#include "libiberty.h"
 //#include <setjmp.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
 #include "support/debug.h"
+#include "support/dyn_debug.h"
 #include "support/c_utils.h"
+
 #include "i386/cpu_consts.h"
 #include "i386/insntypes.h"
 #include "i386/opctable.h"
-//#include "rewrite/translation_instance.h"
+#include "i386/disas.h"
+#include "i386/disas-opcode.h" //was "opcode/i386.h"
 
 #define MAX_NUM_OPERANDS 3
 #define _(x) x
@@ -66,6 +68,9 @@
 	}																																						\
 	ret;																																				\
 })
+
+#define MAX_OPCODE_STRLEN 512
+static char cur_opcode[MAX_OPCODE_STRLEN];
 
 //static int print_insn (bfd_vma, disassemble_info *);
 static void dofloat (int);
@@ -255,6 +260,8 @@ enum address_mode
 };
 
 enum address_mode address_mode;
+
+bool isM = false; //sorav
 
 /* Flags for the prefixes for the current instruction.  See below.  */
 static int prefixes;
@@ -12491,24 +12498,24 @@ get_valid_dis386 (const struct dis386 *dp/*, disassemble_info *info*/)
   if (dp->name != NULL)
     return dp;
 
-  DBG2(I386_DISAS, "dp = %p, dp->op[0].bytemode = %d, dp->op[1].bytemode = %d\n", dp,
+  DYN_DBG2(i386_disas, "dp = %p, dp->op[0].bytemode = %d, dp->op[1].bytemode = %d\n", dp,
       dp->op[0].bytemode, dp->op[1].bytemode);
   switch (dp->op[0].bytemode)
     {
     case USE_REG_TABLE:
       dp = &reg_table[dp->op[1].bytemode][modrm.reg];
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case USE_MOD_TABLE:
       vindex = modrm.mod == 0x3 ? 1 : 0;
       dp = &mod_table[dp->op[1].bytemode][vindex];
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case USE_RM_TABLE:
       dp = &rm_table[dp->op[1].bytemode][modrm.rm];
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case USE_PREFIX_TABLE:
@@ -12580,13 +12587,13 @@ get_valid_dis386 (const struct dis386 *dp/*, disassemble_info *info*/)
 	    }
 	}
       dp = &prefix_table[dp->op[1].bytemode][vindex];
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case USE_X86_64_TABLE:
       vindex = address_mode == mode_64bit ? 1 : 0;
       dp = &x86_64_table[dp->op[1].bytemode][vindex];
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case USE_3BYTE_TABLE:
@@ -12597,7 +12604,7 @@ get_valid_dis386 (const struct dis386 *dp/*, disassemble_info *info*/)
       modrm.mod = (dis_ldub(codep) >> 6) & 3;
       modrm.reg = (dis_ldub(codep) >> 3) & 7;
       modrm.rm = dis_ldub(codep) & 7;
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case USE_VEX_LEN_TABLE:
@@ -12617,7 +12624,7 @@ get_valid_dis386 (const struct dis386 *dp/*, disassemble_info *info*/)
 	  break;
 	}
 
-      DBG2(I386_DISAS, "dp = %p, dp->op[1].bytemode = %d, vindex=%d.\n", dp, dp->op[1].bytemode, vindex);
+      DYN_DBG2(i386_disas, "dp = %p, dp->op[1].bytemode = %d, vindex=%d.\n", dp, dp->op[1].bytemode, vindex);
       dp = &vex_len_table[dp->op[1].bytemode][vindex];
       break;
 
@@ -12683,7 +12690,7 @@ get_valid_dis386 (const struct dis386 *dp/*, disassemble_info *info*/)
       modrm.mod = (dis_ldub(codep) >> 6) & 3;
       modrm.reg = (dis_ldub(codep) >> 3) & 7;
       modrm.rm = dis_ldub(codep) & 7;
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case USE_VEX_C4_TABLE:
@@ -12750,7 +12757,7 @@ get_valid_dis386 (const struct dis386 *dp/*, disassemble_info *info*/)
 	  modrm.reg = (dis_ldub(codep) >> 3) & 7;
 	  modrm.rm = dis_ldub(codep) & 7;
 	}
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case USE_VEX_C5_TABLE:
@@ -12800,7 +12807,7 @@ get_valid_dis386 (const struct dis386 *dp/*, disassemble_info *info*/)
 	  modrm.reg = (dis_ldub(codep) >> 3) & 7;
 	  modrm.rm = dis_ldub(codep) & 7;
 	}
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case USE_VEX_W_TABLE:
@@ -12808,7 +12815,7 @@ get_valid_dis386 (const struct dis386 *dp/*, disassemble_info *info*/)
 	abort ();
 
       dp = &vex_w_table[dp->op[1].bytemode][vex.w ? 1 : 0];
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case USE_EVEX_TABLE:
@@ -12914,7 +12921,7 @@ get_valid_dis386 (const struct dis386 *dp/*, disassemble_info *info*/)
 	      return &bad_opcode;
 	    }
 	}
-      DBG2(I386_DISAS, "dp = %p.\n", dp);
+      DYN_DBG2(i386_disas, "dp = %p.\n", dp);
       break;
 
     case 0:
@@ -12973,11 +12980,12 @@ disas_insn_i386 (unsigned char const *code, unsigned long pc, i386_insn_t *insn,
     address_mode = mode_64bit;*/
   if (mode == I386_AS_MODE_32) {
     address_mode = mode_32bit;
+    i386_insn_init(insn, DWORD_LEN);
   } else if (mode >= I386_AS_MODE_64) {
     address_mode = mode_64bit;
+    i386_insn_init(insn, QWORD_LEN);
   } else NOT_REACHED();
 
-  i386_insn_init(insn);
 
   priv.max_fetched = priv.the_buffer;
   priv.insn_start = pc;
@@ -12999,7 +13007,8 @@ disas_insn_i386 (unsigned char const *code, unsigned long pc, i386_insn_t *insn,
 
   if (!ckprefix () || rex_used)
     {
-      NOT_IMPLEMENTED();/*
+      //NOT_IMPLEMENTED();
+      /*
       // Too many prefixes or unused REX prefixes.
       for (i = 0;
 	   i < (int) ARRAY_SIZE (all_prefixes) && all_prefixes[i];
@@ -13049,13 +13058,13 @@ disas_insn_i386 (unsigned char const *code, unsigned long pc, i386_insn_t *insn,
       dp = &dis386_twobyte[threebyte];
       need_modrm = twobyte_has_modrm[dis_ldub(codep)];
       mandatory_prefix = twobyte_has_mandatory_prefix[dis_ldub(codep)];
-      DBG2(I386_DISAS, "dis386_twobyte dp = %p\n", dp);
+      DYN_DBG2(i386_disas, "dis386_twobyte dp = %p\n", dp);
       codep++;
     }
   else
     {
       dp = &dis386[dis_ldub(codep)];
-      DBG2(I386_DISAS, "dis386 dp = %p\n", dp);
+      DYN_DBG2(i386_disas, "dis386 dp = %p\n", dp);
       need_modrm = onebyte_has_modrm[dis_ldub(codep)];
       mandatory_prefix = 0;
       codep++;
@@ -13084,9 +13093,10 @@ disas_insn_i386 (unsigned char const *code, unsigned long pc, i386_insn_t *insn,
   vex_w_done = 0;
   vex.evex = 0;
 
+  cur_opcode[0] = '\0';
   if (dp->name == NULL && dp->op[0].bytemode == FLOATCODE)
     {
-      DBG2(I386_DISAS, "%s", "float opcode.\n");
+      DYN_DBG2(i386_disas, "%s", "float opcode.\n");
       get_sib (/*info, */sizeflag);
       disas_dofloat (insn, mode, sizeflag);
       return codep - code;
@@ -13096,11 +13106,12 @@ disas_insn_i386 (unsigned char const *code, unsigned long pc, i386_insn_t *insn,
       dp = get_valid_dis386 (dp/*, info*/);
       insn->opc = opctable_find(dp->dpnum, mode, rex & 0xf, sizeflag);
       if (insn->opc == -1) {
-        DBG2(I386_DISAS, "Returning 0 because opc is -1. dp=%p, dp->dpnum=%d\n", dp,
+        DYN_DBG2(i386_disas, "Returning 0 because opc is -1. dp=%p, dp->dpnum=%d\n", dp,
             (int)dp->dpnum);
         return 0;
       }
-      DBG2(I386_DISAS, "dpnum = %d, mode = %d, sizeflag = %d, opc = %s.\n", (int)dp->dpnum, (int)mode, (int)sizeflag, opctable_name(insn->opc));
+      strncpy(cur_opcode, opctable_name(insn->opc), sizeof cur_opcode);
+      DYN_DBG2(i386_disas, "dpnum = %d, mode = %d, sizeflag = %d, opc = %s.\n", (int)dp->dpnum, (int)mode, (int)sizeflag, opctable_name(insn->opc));
       rename_opcode = NULL;
       if (dp != NULL/* && putop (dp->name, sizeflag) == 0*/)
 	{
@@ -13133,18 +13144,18 @@ disas_insn_i386 (unsigned char const *code, unsigned long pc, i386_insn_t *insn,
 	    }
             if (rename_opcode) {
               if (!strcmp(rename_opcode, "(bad)")) {
-                DBG2(I386_DISAS, "%s", "Returning 0\n");
+                DYN_DBG2(i386_disas, "%s", "Returning 0\n");
                 return 0;
               }
               insn->opc = opc_nametable_find(rename_opcode);
             }
             ASSERT(insn->opc >= 0);
-            DBG2(I386_DISAS, "Returning %ld.\n", codep - code);
+            DYN_DBG2(i386_disas, "Returning %ld.\n", codep - code);
             return codep - code;
 	}
     }
 
-  DBG2(I386_DISAS, "%s", "Returning 0\n");
+  DYN_DBG2(i386_disas, "%s", "Returning 0\n");
   return 0;
 #if 0
   /* Check if the REX prefix is used.  */
@@ -14060,22 +14071,23 @@ disas_dofloat (i386_insn_t *insn, i386_as_mode_t mode, int sizeflag)
 
       insn->opc = opctable_find(float_mem_dpnum[fp_indx], mode, rex & 0xf, sizeflag);
       if (insn->opc == -1) {
-        DBG2(I386_DISAS, "%s", "Returning because insn->opc is -1\n");
+        DYN_DBG2(i386_disas, "%s", "Returning because insn->opc is -1\n");
         return;
       }
       //putop (float_mem[fp_indx], sizeflag);
       insn->opc = opctable_find(float_mem_dpnum[fp_indx], mode, rex & 0xf, sizeflag);
       if (insn->opc == -1) {
-        DBG2(I386_DISAS, "%s", "Returning because insn->opc is -1\n");
+        DYN_DBG2(i386_disas, "%s", "Returning because insn->opc is -1\n");
         return;
       }
+      strncpy(cur_opcode, opctable_name(insn->opc), sizeof cur_opcode);
       obufp = op_out[0];
       op_ad = 2;
       DIS_E (&insn->op[0], float_mem_mode[fp_indx], sizeflag);
       for (i = 1; i < MAX_NUM_OPERANDS; i++) {
         insn->op[i].type = invalid;
       }
-      DBG2(I386_DISAS, "Returning insn->opc: %s, op[0].type=%d\n",
+      DYN_DBG2(i386_disas, "Returning insn->opc: %s, op[0].type=%d\n",
           opctable_name(insn->opc), insn->op[0].type);
       return;
     }
@@ -14090,7 +14102,7 @@ disas_dofloat (i386_insn_t *insn, i386_as_mode_t mode, int sizeflag)
       //putop (fgrps[dp->op[0].bytemode][modrm.rm], sizeflag);
       insn->opc = opctable_find(fgrps_dpnum[dp->op[0].bytemode][modrm.rm], mode, rex & 0xf, sizeflag);
       if (insn->opc == -1) {
-        DBG2(I386_DISAS, "%s", "Returning because insn->opc is -1\n");
+        DYN_DBG2(i386_disas, "%s", "Returning because insn->opc is -1\n");
         return;
       }
       for (i = 0; i < MAX_NUM_OPERANDS; i++) {
@@ -14112,18 +14124,18 @@ disas_dofloat (i386_insn_t *insn, i386_as_mode_t mode, int sizeflag)
       int i;
       insn->opc = opctable_find(dp->dpnum, mode, rex & 0xf, sizeflag);
       if (insn->opc == -1) {
-        DBG2(I386_DISAS, "%s", "Returning because insn->opc is -1\n");
+        DYN_DBG2(i386_disas, "%s", "Returning because insn->opc is -1\n");
         return;
       }
       //putop (dp->name, sizeflag);
-      DBG2(I386_DISAS, "insn->opc = %s, dp->op[0].disas_rtn=%p.\n", opctable_name(insn->opc),
+      DYN_DBG2(i386_disas, "insn->opc = %s, dp->op[0].disas_rtn=%p.\n", opctable_name(insn->opc),
           dp->op[0].disas_rtn);
 
       obufp = op_out[0];
       op_ad = 2;
       if (dp->op[0].disas_rtn) {
 	(*dp->op[0].disas_rtn) (&insn->op[0], dp->op[0].bytemode, sizeflag);
-        DBG2(I386_DISAS, "insn->op[0].type=%d.\n", insn->op[0].type);
+        DYN_DBG2(i386_disas, "insn->op[0].type=%d.\n", insn->op[0].type);
       } else {
         insn->op[0].type = invalid;
       }
@@ -14738,7 +14750,7 @@ disas_putop (const char *in_template, i386_as_mode_t mode, int sizeflag)
   int cond = 1;
   unsigned int l = 0, len = 1;
   char last[4];
-  DBG2(I386_DISAS, "in_template = %s.\n", in_template);
+  DYN_DBG2(i386_disas, "in_template = %s.\n", in_template);
 #define SAVE_LAST(c)			\
   if (l < len && l < sizeof (last))	\
     last[l++] = c;			\
@@ -15036,13 +15048,13 @@ case_P:
 	  if (l == 0 && len == 1)
 	    {
 case_Q:
-              DBG2(I386_DISAS, "%s\n", "I am here");
+              DYN_DBG2(i386_disas, "%s\n", "I am here");
 	      if (intel_syntax && !alt)
 		break;
 	      USED_REX (REX_W);
 	      if (modrm.mod != 3 || (sizeflag & SUFFIX_ALWAYS))
 		{
-                  DBG2(I386_DISAS, "%s\n", "I am here");
+                  DYN_DBG2(i386_disas, "%s\n", "I am here");
 		  if (rex & REX_W)
 		    *obufp++ = 'q';
 		  else
@@ -15057,26 +15069,26 @@ case_Q:
 	    }
 	  else
 	    {
-              DBG2(I386_DISAS, "%s\n", "I am here");
+              DYN_DBG2(i386_disas, "%s\n", "I am here");
 	      if (l != 1 || len != 2 || last[0] != 'L')
 		{
-                  DBG2(I386_DISAS, "%s\n", "I am here");
+                  DYN_DBG2(i386_disas, "%s\n", "I am here");
 		  SAVE_LAST (*p);
 		  break;
 		}
 	      if (intel_syntax
 		  || (modrm.mod == 3 && !(sizeflag & SUFFIX_ALWAYS))) {
-                DBG2(I386_DISAS, "%s\n", "I am here");
+                DYN_DBG2(i386_disas, "%s\n", "I am here");
 		break;
               }
 	      if ((rex & REX_W))
 		{
-                  DBG2(I386_DISAS, "%s\n", "I am here");
+                  DYN_DBG2(i386_disas, "%s\n", "I am here");
 		  USED_REX (REX_W);
 		  *obufp++ = 'q';
 		}
 	      else {
-                DBG2(I386_DISAS, "%s\n", "I am here");
+                DYN_DBG2(i386_disas, "%s\n", "I am here");
 		*obufp++ = 'l';
               }
 	    }
@@ -18937,12 +18949,17 @@ DIS_E_register (operand_t *op, int bytemode, int sizeflag)
     case b_mode:
     case b_swap_mode:
       USED_REX (0);
-      ASSERT(op->valtag.reg.val >= 0 && op->valtag.reg.val < 8);
-      if (op->valtag.reg.val >= 4) {
-        op->valtag.reg.mod.reg.mask = 0xff00;
-        op->valtag.reg.val -= 4;
-      } else {
+      if (rex) {
+        ASSERT(op->valtag.reg.val >= 0 && op->valtag.reg.val < X64_NUM_GPRS);
         op->valtag.reg.mod.reg.mask = 0xff;
+      } else {
+        ASSERT(op->valtag.reg.val >= 0 && op->valtag.reg.val < I386_NUM_GPRS);
+        if (op->valtag.reg.val >= 4) {
+          op->valtag.reg.mod.reg.mask = 0xff00;
+          op->valtag.reg.val -= 4;
+        } else {
+          op->valtag.reg.mod.reg.mask = 0xff;
+        }
       }
       op->size = 1;
 //      if (rex)
@@ -19052,6 +19069,8 @@ DIS_E_memory (operand_t *op, int bytemode, int sizeflag)
   //op->valtag.mem.seg.sel.mod.reg.mask = 0xffff;
   op->valtag.mem.base.val = -1;
   op->valtag.mem.index.val = -1;
+  op->valtag.mem.riprel.val = -1;
+  op->valtag.mem.riprel.tag = tag_invalid;
 
   if (vex.evex)
     {
@@ -19167,7 +19186,7 @@ DIS_E_memory (operand_t *op, int bytemode, int sizeflag)
     intel_operand_size (bytemode, sizeflag);
   append_seg ();*/
 
-  DBG2(I386_DISAS, "sizeflag = %d\n", sizeflag);
+  DYN_DBG2(i386_disas, "sizeflag = %d\n", sizeflag);
   if ((sizeflag & AFLAG) || address_mode == mode_64bit)
     {
       /* 32/64 bit address mode */
@@ -19295,7 +19314,19 @@ DIS_E_memory (operand_t *op, int bytemode, int sizeflag)
 	      {
 		/*set_op (disp, 1);
 		oappend (sizeflag & AFLAG ? "(%rip)" : "(%eip)");*/
-                NOT_IMPLEMENTED();
+                if (address_mode == mode_64bit) { //we only support 64-bit addressing in 64-bit mode
+                  if (sizeflag & AFLAG) {
+                    op->valtag.mem.riprel.val = 0;
+                    op->valtag.mem.riprel.tag = tag_const;
+                    op->valtag.mem.riprel.mod.reg.mask = 0xffffffffffffffffULL;
+                  } else {
+                    op->valtag.mem.riprel.val = 0;
+                    op->valtag.mem.riprel.tag = tag_const;
+                    op->valtag.mem.riprel.mod.reg.mask = 0xffffffff;
+                  }
+                } else {
+                  NOT_IMPLEMENTED();
+                }
 	      }
 	  }
 
@@ -19304,12 +19335,20 @@ DIS_E_memory (operand_t *op, int bytemode, int sizeflag)
 	  && (bytemode != bnd_mode))
 	used_prefixes |= PREFIX_ADDR;
 
-      if  (address_mode == mode_64bit && (sizeflag & AFLAG)) {
+      if  (address_mode == mode_64bit) {
         //op->size = 8;
-        op->valtag.mem.addrsize = 8;
+        if (addr32flag) {
+          if (isM) {
+            op->valtag.mem.addrsize = DWORD_LEN/BYTE_LEN;
+          } else {
+            op->valtag.mem.addrsize = QWORD_LEN/BYTE_LEN; //for actual (non-isM) memory references, we only allow 64-bit addresses in 64-bit mode (for now).
+          }
+        } else {
+           op->valtag.mem.addrsize = QWORD_LEN/BYTE_LEN;
+        }
       } else {
         //op->size = 4;
-        op->valtag.mem.addrsize = 4;
+        op->valtag.mem.addrsize = DWORD_LEN/BYTE_LEN;
       }
 
       switch (bytemode) {
@@ -19676,8 +19715,8 @@ DIS_E_memory (operand_t *op, int bytemode, int sizeflag)
 	  if (havebase) {
             op->valtag.mem.base.val = base;
             op->valtag.mem.base.tag = tag_const;
-            op->valtag.mem.base.mod.reg.mask = 0xffffffff;
-            ASSERT(op->valtag.mem.base.val >= 0 && op->valtag.mem.base.val < I386_NUM_GPRS);
+            op->valtag.mem.base.mod.reg.mask = MAKE_MASK(op->valtag.mem.addrsize * BYTE_LEN)/*0xffffffff*/;
+            ASSERT(op->valtag.mem.base.val >= 0 && op->valtag.mem.base.val < X64_NUM_GPRS);
 	//    oappend (address_mode == mode_64bit && !addr32flag
 	//	     ? names64[rbase] : names32[rbase]);
           }
@@ -19697,7 +19736,8 @@ DIS_E_memory (operand_t *op, int bytemode, int sizeflag)
                   {
                     op->valtag.mem.index.val = vindex;
                     op->valtag.mem.index.tag = tag_const;
-                    op->valtag.mem.index.mod.reg.mask = 0xffffffff;
+                    //op->valtag.mem.index.mod.reg.mask = 0xffffffff;
+                    op->valtag.mem.index.mod.reg.mask = MAKE_MASK(op->valtag.mem.addrsize * BYTE_LEN);
                   }
 		  /*if (!intel_syntax || havebase)
 		    {
@@ -19743,7 +19783,7 @@ DIS_E_memory (operand_t *op, int bytemode, int sizeflag)
 	  *obufp++ = close_char;
 	  *obufp = '\0';*/
 	}
-        DBG2(I386_DISAS, "op->valtag.mem.seg.sel.val = %d, base.val=%d\n",
+        DYN_DBG2(i386_disas, "op->valtag.mem.seg.sel.val = %d, base.val=%d\n",
             (int)op->valtag.mem.seg.sel.val, (int)op->valtag.mem.base.val);
         if (op->valtag.mem.seg.sel.val == -1) {
           op->valtag.mem.seg.sel.val = default_seg(op->valtag.mem.base.val);
@@ -19804,7 +19844,7 @@ DIS_E_memory (operand_t *op, int bytemode, int sizeflag)
 	    //oappend (scratchbuf);
 	  }
 
-      DBG2(I386_DISAS, "modrm.mod = %d, rm=%d\n", modrm.mod, modrm.rm);
+      DYN_DBG2(i386_disas, "modrm.mod = %d, rm=%d\n", modrm.mod, modrm.rm);
       if (modrm.mod != 0 || modrm.rm != 6)
 	{
           if (modrm.rm < 2) {
@@ -19952,7 +19992,7 @@ DIS_E_memory (operand_t *op, int bytemode, int sizeflag)
 static void
 DIS_E (operand_t *op, int bytemode, int sizeflag)
 {
-  DBG2(I386_DISAS, "bytemode = %d, sizeflag = %d\n", bytemode, sizeflag);
+  DYN_DBG2(i386_disas, "bytemode = %d, sizeflag = %d\n", bytemode, sizeflag);
   /* Skip mod/rm byte.  */
   MODRM_CHECK;
   codep++;
@@ -19982,19 +20022,21 @@ DIS_G (operand_t *op, int bytemode, int sizeflag)
   {
     case b_mode:
       USED_REX (0);
-      ASSERT(op->valtag.reg.val >= 0 && op->valtag.reg.val < 8);
-      if (op->valtag.reg.val >= 4) {
-        op->valtag.reg.mod.reg.mask = 0xff00;
-        op->valtag.reg.val -= 4;
-      } else {
-        op->valtag.reg.mod.reg.mask = 0xff;
-      }
-      op->size = 1;
       if (rex) {
         //oappend (names8rex[modrm.reg + add]);
+        ASSERT(op->valtag.reg.val >= 0 && op->valtag.reg.val < X64_NUM_GPRS);
+        op->valtag.reg.mod.reg.mask = 0xff;
       } else {
         //oappend (names8[modrm.reg + add]);
+        ASSERT(op->valtag.reg.val >= 0 && op->valtag.reg.val < I386_NUM_GPRS);
+        if (op->valtag.reg.val >= 4) {
+          op->valtag.reg.mod.reg.mask = 0xff00;
+          op->valtag.reg.val -= 4;
+        } else {
+          op->valtag.reg.mod.reg.mask = 0xff;
+        }
       }
+      op->size = 1;
       break;
     case w_mode:
       op->valtag.reg.mod.reg.mask = 0xffff;
@@ -20542,7 +20584,10 @@ DIS_DIR (operand_t *op, int dummy ATTRIBUTE_UNUSED, int sizeflag)
   //ADD_MEM_SEGDESC(op->val, seg);
   op->valtag.mem.disp.val = offset;
   op->valtag.mem.disp.tag = tag_const;
-  op->size = 4;     /* use a default size (similar to DIS_M). */
+  op->valtag.mem.riprel.val = -1;
+  op->valtag.mem.riprel.tag = tag_invalid;
+  //op->size = 4;     /* use a default size (similar to DIS_M). */
+  op->size = (address_mode == mode_32bit) ? DWORD_LEN/BYTE_LEN : (address_mode == mode_64bit) ? QWORD_LEN/BYTE_LEN : ({NOT_REACHED(); -1;});     /* use a default size (similar to DIS_M). */
 }
 
 static void
@@ -20575,6 +20620,8 @@ DIS_OFF (operand_t *op, int bytemode, int sizeflag)
   if (op->valtag.mem.seg.sel.val == -1) {
     op->valtag.mem.seg.sel.val = R_DS;
   }
+  op->valtag.mem.riprel.val = -1;
+  op->valtag.mem.riprel.tag = tag_invalid;
   op->size = get_operand_size(bytemode, sizeflag);
 }
 
@@ -20638,11 +20685,24 @@ DIS_ESreg (operand_t *op, int code, int sizeflag)
   //INIT_MEM_VAL(op->val);
   op->valtag.mem.base.val = code - eAX_reg;
   op->valtag.mem.base.tag = tag_const;
-  op->valtag.mem.base.mod.reg.mask = 0xffffffff;
   op->valtag.mem.seg.sel.val = es_reg - es_reg;
   op->valtag.mem.seg.sel.tag = tag_const;
   op->valtag.mem.segtype = segtype_sel;
+  op->valtag.mem.riprel.val = -1;
+  op->valtag.mem.riprel.tag = tag_invalid;
   //op->valtag.mem.seg.sel.mod.reg.mask = 0xffff;
+  if (address_mode == mode_64bit) {
+    if (!(sizeflag & AFLAG)) {
+      op->valtag.mem.addrsize = 4;
+    } else {
+      op->valtag.mem.addrsize = 8;
+    }
+  } else if (sizeflag & AFLAG) {
+    op->valtag.mem.addrsize = 4;
+  } else {
+    op->valtag.mem.addrsize = 2;
+  }
+  op->valtag.mem.base.mod.reg.mask = MAKE_MASK(op->valtag.mem.addrsize*BYTE_LEN);
 
   ASSERT(op->valtag.mem.base.val >= 0 && op->valtag.mem.base.val < I386_NUM_GPRS);
   /*
@@ -20685,10 +20745,11 @@ DIS_DSreg (operand_t *op, int code, int sizeflag)
   op->valtag.mem.index.val = -1;
   op->valtag.mem.index.tag = tag_invalid;
   op->valtag.mem.scale = 0;
-  op->valtag.mem.base.mod.reg.mask = 0xffffffff;
   op->valtag.mem.seg.sel.val = get_seg();
   op->valtag.mem.seg.sel.tag = tag_const;
   op->valtag.mem.segtype = segtype_sel;
+  op->valtag.mem.riprel.val = -1;
+  op->valtag.mem.riprel.tag = tag_invalid;
   //op->valtag.mem.seg.sel.mod.reg.mask = 0xffff;
   if (address_mode == mode_64bit) {
     if (!(sizeflag & AFLAG)) {
@@ -20701,6 +20762,7 @@ DIS_DSreg (operand_t *op, int code, int sizeflag)
   } else {
     op->valtag.mem.addrsize = 2;
   }
+  op->valtag.mem.base.mod.reg.mask = MAKE_MASK(op->valtag.mem.addrsize*BYTE_LEN);
 
   ASSERT(op->valtag.mem.base.val >= 0 && op->valtag.mem.base.val < I386_NUM_GPRS);
   //append_seg ();
@@ -20790,7 +20852,7 @@ static void
 DIS_XMM (operand_t *op, int bytemode ATTRIBUTE_UNUSED,
          int sizeflag ATTRIBUTE_UNUSED)
 {
-  DBG2(I386_DISAS, "sizeflag = %d\n", sizeflag);
+  DYN_DBG2(i386_disas, "sizeflag = %d\n", sizeflag);
   /*int add = 0;
   USED_REX (REX_R);
   if (rex & REX_R) {
@@ -20881,14 +20943,14 @@ DIS_XMM (operand_t *op, int bytemode ATTRIBUTE_UNUSED,
   } else {
     NOT_IMPLEMENTED();
   }
-  DBG2(I386_DISAS, "op->size = %d\n", op->size);
+  DYN_DBG2(i386_disas, "op->size = %d\n", op->size);
   //oappend (names[reg]);
 }
 
 static void
 DIS_EM (operand_t *op, int bytemode, int sizeflag)
 {
-  DBG2(I386_DISAS, "sizeflag = %d\n", sizeflag);
+  DYN_DBG2(i386_disas, "sizeflag = %d\n", sizeflag);
   if (modrm.mod != 3)
   {
     if (bytemode == v_mode)
@@ -20935,7 +20997,7 @@ DIS_EM (operand_t *op, int bytemode, int sizeflag)
 static void
 DIS_EMC (operand_t *op, int bytemode, int sizeflag)
 {
-  DBG2(I386_DISAS, "sizeflag = %d\n", sizeflag);
+  DYN_DBG2(i386_disas, "sizeflag = %d\n", sizeflag);
   if (modrm.mod != 3)
   {
     if (bytemode == v_mode)
@@ -20962,7 +21024,7 @@ static void
 DIS_MXC (operand_t *op, int bytemode ATTRIBUTE_UNUSED,
          int sizeflag ATTRIBUTE_UNUSED)
 {
-  DBG2(I386_DISAS, "sizeflag = %d\n", sizeflag);
+  DYN_DBG2(i386_disas, "sizeflag = %d\n", sizeflag);
   used_prefixes |= (prefixes & PREFIX_DATA);
   op->type = op_mmx;
   op->size = 8;
@@ -20974,7 +21036,7 @@ DIS_MXC (operand_t *op, int bytemode ATTRIBUTE_UNUSED,
 static void
 DIS_EX (operand_t *op, int bytemode, int sizeflag)
 {
-  DBG2(I386_DISAS, "sizeflag = %d\n", sizeflag);
+  DYN_DBG2(i386_disas, "sizeflag = %d\n", sizeflag);
 /*
   int add = 0;
   if (modrm.mod != 3)
@@ -21005,7 +21067,7 @@ DIS_EX (operand_t *op, int bytemode, int sizeflag)
   if (modrm.mod != 3)
     {
       DIS_E_memory (op, bytemode, sizeflag);
-      DBG2(I386_DISAS, "op->size = %d\n", op->size);
+      DYN_DBG2(i386_disas, "op->size = %d\n", op->size);
       return;
     }
 
@@ -21109,7 +21171,7 @@ DIS_EX (operand_t *op, int bytemode, int sizeflag)
 static void
 DIS_MS (operand_t *op, int bytemode, int sizeflag)
 {
-  DBG2(I386_DISAS, "sizeflag = %d\n", sizeflag);
+  DYN_DBG2(i386_disas, "sizeflag = %d\n", sizeflag);
   if (modrm.mod == 3) {
     DIS_EM (op, bytemode, sizeflag);
   } else {
@@ -21120,7 +21182,7 @@ DIS_MS (operand_t *op, int bytemode, int sizeflag)
 static void
 DIS_XS (operand_t *op, int bytemode, int sizeflag)
 {
-  DBG2(I386_DISAS, "sizeflag = %d\n", sizeflag);
+  DYN_DBG2(i386_disas, "sizeflag = %d\n", sizeflag);
   if (modrm.mod == 3) {
     DIS_EX (op, bytemode, sizeflag);
   } else {
@@ -21135,11 +21197,18 @@ DIS_M (operand_t *op, int bytemode, int sizeflag)
     /* bad bound,lea,lds,les,lfs,lgs,lss,cmpxchg8b,vmptrst modrm */
     DIS_BadOp (op);
   } else {
+    //if opcode_contains("ldmxcsr", "stmxcsr", "prefetchnt", "prefetcht", "movntps", "movntpd", "movntdq", "movbe", "fxrstor") don't treat this as isM
+    //printf("%s() %d: cur_opcode = %s\n", __func__, __LINE__, cur_opcode);
+    if (!strcmp(cur_opcode, "leal")) {
+      isM = true;
+    }
     DIS_E (op, bytemode, sizeflag);
+    isM = false;
     if (op->type == invalid) {
       DIS_BadOp(op);
     }
-    op->size = 4;     /* Use a default size. */
+    //op->size = 4;     /* Use a default size. */
+    op->size = (address_mode == mode_32bit) ? DWORD_LEN/BYTE_LEN : (address_mode == mode_64bit) ? QWORD_LEN/BYTE_LEN : ({NOT_REACHED(); -1;});     /* Use a default size. */
   }
 }
 
@@ -21851,7 +21920,7 @@ DIS_BND_Fixup (operand_t *op, int bytemode, int sizeflag)
 static void
 DIS_HLE_Fixup1 (operand_t *op, int bytemode, int sizeflag)
 {
-  DBG2(I386_DISAS, "%s\n", "entry");
+  DYN_DBG2(i386_disas, "%s\n", "entry");
   if (modrm.mod != 3
       && (prefixes & PREFIX_LOCK) != 0)
     {
@@ -21935,7 +22004,7 @@ opctable_dp(struct dis386 const *dpc)
         for (i = 0; i < num_sizeflags; i++) {
           int sizeflag = sizeflags[i] | SUFFIX_ALWAYS;
           obufp = buf;
-          DBG2(I386_DISAS, "calling disas_putop(%s) for mode %d, rex %x, sizeflag %d\n", dp->name,
+          DYN_DBG2(i386_disas, "calling disas_putop(%s) for mode %d, rex %x, sizeflag %d\n", dp->name,
               modes[m], rex, sizeflag);
           disas_putop(dp->name, modes[m], sizeflag);
 
@@ -21946,7 +22015,13 @@ opctable_dp(struct dis386 const *dpc)
               strncpy(buf, "vzeroall", sizeof buf);
             }
           }
-          DBG2(I386_DISAS, "disas_putop(%s) for dpnum %d, mode %d, rex %x, sizeflag %d returned %s.\n", dp->name, (int)dpnum,
+          char const* remaining;
+          if (strstart(buf, "movabs", &remaining)) {
+            DYN_DBG2(i386_disas, "converting %s to a version without 'abs'\n", buf);
+            memmove(buf + 3, remaining, strlen(remaining) + 1);
+            DYN_DBG2(i386_disas, "after conversion, buf = %s\n", buf);
+          }
+          DYN_DBG2(i386_disas, "disas_putop(%s) for dpnum %d, mode %d, rex %x, sizeflag %d returned %s.\n", dp->name, (int)dpnum,
               modes[m], rex, sizeflag, buf);
           opctable_insert(buf, dp->dpnum, modes[m], rex, sizeflag);
         }

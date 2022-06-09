@@ -4,7 +4,8 @@
 #include <vector>
 #include "support/src-defs.h"
 #include "i386/insn.h"
-#include "codegen/etfg_insn.h"
+#include "x64/insn.h"
+#include "etfg/etfg_insn.h"
 #include "ppc/insn.h"
 #include "typestate.h"
 #include "support/debug.h"

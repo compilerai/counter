@@ -1,15 +1,6 @@
 #pragma once
 
 #include <stdlib.h>
-//#include "eqcheck/common.h"
-//#include "expr/comment.h"
-#include "expr/langtype.h"
-#include "expr/memaccess_size.h"
-//#include "support/ref.h"
-#include "support/types.h"
-#include "support/utils.h"
-#include "support/mybitset.h"
-#include "support/manager.h"
 #include <vector>
 #include <list>
 #include <stack>
@@ -18,16 +9,22 @@
 #include <set>
 #include <functional>
 #include <unordered_set>
-//#include "expr/counter_example.h"
-//#include "expr/counter_example_set.h"
+
+#include "support/types.h"
+#include "support/utils.h"
+#include "support/mybitset.h"
+#include "support/manager.h"
+#include "support/mytimer.h"
+
+#include "expr/langtype.h"
+#include "expr/memaccess_size.h"
 #include "expr/memlabel.h"
-//#include "memlabel_map.h"
 #include "support/mybitset.h"
 #include "expr/constant_value.h"
-//#include "expr/graph_arg_regs.h"
-//#include "tfg/graph_symbol.h"
+//#include "expr/container_type.h"
+#include "expr/expr_sort.h"
+#include "expr/axpred_desc.h"
 
-#include "support/mytimer.h"
 namespace eqspace {
 
 class graph_symbol_map_t;
@@ -87,10 +84,6 @@ expr_ref expr_get_minus(expr_ref e);
 string sort_to_string(expr_ref e);
 
 //bool is_expr_equal(expr_ref e1, expr_ref e2, const query_comment& qc, bool timeout_res, counter_example_t &counter_example, consts_struct_t const &cs);
-bool is_expr_equal_syntactic(expr_ref const &e1, expr_ref const &e2);
-bool is_expr_not_equal_syntactic(expr_ref const &e1, expr_ref const &e2);
-bool is_expr_bv_greatereq_syntactic(expr_ref const &e1, expr_ref const &e2);
-bool is_expr_bv_lesseq_syntactic(expr_ref const &e1, expr_ref const &e2);
 //bool is_expr_equal_syntactic_mod_memlabels(expr_ref e1, expr_ref e2);
 bool is_sort_equal(expr_ref const &e1, expr_ref const &e2);
 //bool is_expr_numeral(expr_ref const &e);
@@ -123,71 +116,253 @@ bool expr_constants_agree(expr_ref a, expr_ref b);
 //  unsigned m_ref_count;
 //};
 
-class expr_sort// : public ref_object
-{
-public:
-  enum kind
-  {
-    BV_SORT,
-    BOOL_SORT,
-    ARRAY_SORT,
-    //IO_SORT,
-    FUNCTION_SORT,
-    INT_SORT,
-    MEMLABEL_SORT,
-    COMMENT_SORT,
-    MEMACCESS_LANGTYPE_SORT,
-    MEMACCESS_SIZE_SORT,
-    MEMACCESS_TYPE_SORT,
-    REGID_SORT,
-    UNDEFINED_SORT,
-  };
-  expr_sort(kind, context*);
-  expr_sort(kind, unsigned, context*);
-  expr_sort(kind, vector<sort_ref> domain, sort_ref range, context*);
-  ~expr_sort();
-
-  sort_ref dup_sort(context* nctx) const;
-
-  bool operator==(expr_sort const &) const;
-  string to_string() const;
-  unsigned get_size() const;
-  bool is_undefined_kind() const;
-  bool is_bool_kind() const;
-  bool is_bv_kind() const;
-  bool is_int_kind() const;
-  bool is_array_kind() const;
-  //bool is_io_kind() const;
-  bool is_function_kind() const;
-  bool is_memlabel_kind() const;
-  //bool is_comment_kind() const;
-  bool is_langtype_kind() const;
-  bool is_memaccess_size_kind() const;
-  bool is_memaccess_type_kind() const;
-  bool is_regid_kind() const;
-  vector<sort_ref> get_domain_sort() const;
-  sort_ref get_range_sort() const;
-  void dec_ref_count();
-  unsigned get_id() const;
-  kind get_kind() const;
-  size_t get_mybitset_size() const;
-  //void clear_id_to_zero() { m_id = 0; }
-  void set_id_to_free_id(expr_id_t suggested_id);
-  bool id_is_zero() const { return m_id == 0; }
-  context *get_context() const { return m_context; }
-
-  context* get_context() { return m_context; }
-
-private:
-  kind m_kind;
-  unsigned m_size;
-  vector<sort_ref> m_domain;
-  sort_ref m_range;
-  unsigned m_id;
-  context* m_context;  // reference to parent
+enum {
+  OP_FUNCTION_CALL_ARGNUM_FUNC = 0,
+  OP_FUNCTION_CALL_ARGNUM_MEMLABEL_CALLEE_READABLE,
+  OP_FUNCTION_CALL_ARGNUM_MEMLABEL_CALLEE_WRITEABLE,
+  OP_FUNCTION_CALL_ARGNUM_MEM,
+  OP_FUNCTION_CALL_ARGNUM_MEM_ALLOC,
+  OP_FUNCTION_CALL_ARGNUM_NEXTPC_CONST,
+  OP_FUNCTION_CALL_ARGNUM_REGNUM,
+  OP_FUNCTION_CALL_ARGNUM_FARG0
+};
+enum {
+  FUNCTION_CALL_MEMLABEL_CALLEE_READABLE_ARG_INDEX = OP_FUNCTION_CALL_ARGNUM_MEMLABEL_CALLEE_READABLE-1,
+  FUNCTION_CALL_MEMLABEL_CALLEE_WRITEABLE_ARG_INDEX,
+  FUNCTION_CALL_MEM_ARG_INDEX,
+  FUNCTION_CALL_MEM_ALLOC_ARG_INDEX,
+  FUNCTION_CALL_NEXTPC_CONST_ARG_INDEX,
+  FUNCTION_CALL_REGNUM_ARG_INDEX,
+  FUNCTION_CALL_FARG0_ARG_INDEX
 };
 
-class expr// : public ref_object
+enum {
+  OP_SELECT_ARGNUM_MEM = 0,
+  OP_SELECT_ARGNUM_MEM_ALLOC,
+  OP_SELECT_ARGNUM_MEMLABEL,
+  OP_SELECT_ARGNUM_ADDR,
+  OP_SELECT_ARGNUM_COUNT,
+  OP_SELECT_ARGNUM_ENDIANNESS,
+  OP_SELECT_ARGS
+};
+enum {
+  OP_STORE_ARGNUM_MEM = 0,
+  OP_STORE_ARGNUM_MEM_ALLOC,
+  OP_STORE_ARGNUM_MEMLABEL,
+  OP_STORE_ARGNUM_ADDR,
+  OP_STORE_ARGNUM_DATA,
+  OP_STORE_ARGNUM_COUNT,
+  OP_STORE_ARGNUM_ENDIANNESS,
+  OP_STORE_ARGS
+};
+enum {
+  OP_STORE_UNINIT_ARGNUM_MEM = 0,
+  OP_STORE_UNINIT_ARGNUM_MEM_ALLOC,
+  OP_STORE_UNINIT_ARGNUM_MEMLABEL,
+  OP_STORE_UNINIT_ARGNUM_ADDR,
+  OP_STORE_UNINIT_ARGNUM_COUNT,
+  OP_STORE_UNINIT_ARGNUM_LOCAL_ALLOC_COUNT,
+  OP_STORE_UNINIT_ARGS
+};
+
+enum {
+  OP_FPEXT_ARGNUM_FLOAT = 0,
+  OP_FPEXT_ARGNUM_EBITS,
+  OP_FPEXT_ARGNUM_SBITS,
+  OP_FPEXT_ARGS
+};
+
+enum {
+  OP_FPTRUNC_ARGNUM_ROUNDING_MODE = 0,
+  OP_FPTRUNC_ARGNUM_FLOAT,
+  OP_FPTRUNC_ARGNUM_EBITS,
+  OP_FPTRUNC_ARGNUM_SBITS,
+  OP_FPTRUNC_ARGS
+};
+
+enum {
+  OP_FP_TO_BV_ARGNUM_ROUNDING_MODE = 0,
+  OP_FP_TO_BV_ARGNUM_FLOAT,
+  OP_FP_TO_BV_ARGNUM_BVSIZE,
+  OP_FP_TO_BV_ARGS
+};
+
+enum {
+  OP_BV_TO_FP_ARGNUM_ROUNDING_MODE = 0,
+  OP_BV_TO_FP_ARGNUM_BV,
+  OP_BV_TO_FP_ARGNUM_FPSIZE,
+  OP_BV_TO_FP_ARGS
+};
+
+// we assume the following at many places in the codebase
+static_assert(OP_SELECT_ARGNUM_MEM       == OP_STORE_ARGNUM_MEM, "assumption");
+static_assert(OP_SELECT_ARGNUM_MEM_ALLOC == OP_STORE_ARGNUM_MEM_ALLOC, "assumption");
+static_assert(OP_SELECT_ARGNUM_MEMLABEL  == OP_STORE_ARGNUM_MEMLABEL, "assumption");
+static_assert(OP_SELECT_ARGNUM_ADDR      == OP_STORE_ARGNUM_ADDR, "assumption");
+
+static_assert(OP_STORE_ARGNUM_MEM       == OP_STORE_UNINIT_ARGNUM_MEM, "assumption");
+static_assert(OP_STORE_ARGNUM_MEM_ALLOC == OP_STORE_UNINIT_ARGNUM_MEM_ALLOC, "assumption");
+static_assert(OP_STORE_ARGNUM_MEMLABEL  == OP_STORE_UNINIT_ARGNUM_MEMLABEL, "assumption");
+static_assert(OP_STORE_ARGNUM_ADDR      == OP_STORE_UNINIT_ARGNUM_ADDR, "assumption");
+
+enum {
+  OP_MEMMASK_ARGNUM_MEM = 0,
+  OP_MEMMASK_ARGNUM_MEM_ALLOC,
+  OP_MEMMASK_ARGNUM_MEMLABEL,
+  OP_MEMMASK_ARGS
+};
+enum {
+  OP_MEMMASKS_ARE_EQUAL_ARGNUM_MEM1 = 0,
+  OP_MEMMASKS_ARE_EQUAL_ARGNUM_MEM_ALLOC1,
+  OP_MEMMASKS_ARE_EQUAL_ARGNUM_MEM2,
+  OP_MEMMASKS_ARE_EQUAL_ARGNUM_MEM_ALLOC2,
+  OP_MEMMASKS_ARE_EQUAL_ARGNUM_MEMLABEL,
+  OP_MEMMASKS_ARE_EQUAL_ARGS
+};
+enum {
+  OP_MEMMASKS_ARE_EQUAL_ELSE_ARGNUM_MEM1 = 0,
+  OP_MEMMASKS_ARE_EQUAL_ELSE_ARGNUM_MEM_ALLOC1,
+  OP_MEMMASKS_ARE_EQUAL_ELSE_ARGNUM_MEM2,
+  OP_MEMMASKS_ARE_EQUAL_ELSE_ARGNUM_MEM_ALLOC2,
+  OP_MEMMASKS_ARE_EQUAL_ELSE_ARGNUM_MEMLABEL,
+  OP_MEMMASKS_ARE_EQUAL_ELSE_ARGNUM_DEFVAL,
+  OP_MEMMASKS_ARE_EQUAL_ELSE_ARGS
+};
+
+enum {
+  ALLOCA_PTR_FN_ARGNUM_LOCAL_ALLOC_COUNT = 0,
+  ALLOCA_PTR_FN_ARGNUM_MEM_ALLOC,
+  ALLOCA_PTR_FN_ARGNUM_MEMLABEL,
+  ALLOCA_PTR_FN_ARGNUM_SIZE,
+  ALLOCA_PTR_FN_ARGS
+};
+enum {
+  ALLOCA_SIZE_FN_ARGNUM_LOCAL_ALLOC_COUNT = 0,
+  ALLOCA_SIZE_FN_ARGNUM_MEM_ALLOC,
+  ALLOCA_SIZE_FN_ARGNUM_MEMLABEL,
+  ALLOCA_SIZE_FN_ARGS
+};
+enum {
+  OP_ALLOCA_ARGNUM_MEM_ALLOC,
+  OP_ALLOCA_ARGNUM_MEMLABEL,
+  OP_ALLOCA_ARGNUM_ADDR,
+  OP_ALLOCA_ARGNUM_SIZE,
+  OP_ALLOCA_ARGS
+};
+enum {
+  OP_DEALLOC_ARGNUM_MEM_ALLOC,
+  OP_DEALLOC_ARGNUM_MEMLABEL,
+  OP_DEALLOC_ARGNUM_ADDR,
+  OP_DEALLOC_ARGNUM_SIZE,
+  OP_DEALLOC_ARGS
+};
+enum {
+  OP_SELECT_SHADOW_BOOL_ARGNUM_MEM,
+  OP_SELECT_SHADOW_BOOL_ARGNUM_ADDR,
+  OP_SELECT_SHADOW_BOOL_ARGNUM_COUNT,
+  OP_SELECT_SHADOW_BOOL_ARGS
+};
+enum {
+  OP_STORE_SHADOW_BOOL_ARGNUM_MEM,
+  OP_STORE_SHADOW_BOOL_ARGNUM_ADDR,
+  OP_STORE_SHADOW_BOOL_ARGNUM_DATA,
+  OP_STORE_SHADOW_BOOL_ARGNUM_COUNT,
+  OP_STORE_SHADOW_BOOL_ARGS
+};
+
+enum {
+  OP_HEAP_ALLOC_ARGNUM_MEM_ALLOC,
+  OP_HEAP_ALLOC_ARGNUM_MEMLABEL,
+  OP_HEAP_ALLOC_ARGNUM_ADDR,
+  OP_HEAP_ALLOC_ARGNUM_SIZE,
+  OP_HEAP_ALLOC_ARGS
+};
+enum {
+  OP_HEAP_DEALLOC_ARGNUM_MEM_ALLOC,
+  OP_HEAP_DEALLOC_ARGNUM_MEMLABEL,
+  OP_HEAP_DEALLOC_ARGNUM_ADDR,
+  OP_HEAP_DEALLOC_ARGNUM_SIZE,
+  OP_HEAP_DEALLOC_ARGS
+};
+enum {
+  OP_HEAP_ALLOC_PTR_ARGNUM_PTR,
+  OP_HEAP_ALLOC_PTR_ARGNUM_MEMLABEL,
+  OP_HEAP_ALLOC_PTR_ARGS
+};
+
+//enum {
+//  OP_ISMEMLABEL_ARGNUM_MEM_ALLOC = 0,
+//  OP_ISMEMLABEL_ARGNUM_ADDR,
+//  OP_ISMEMLABEL_ARGNUM_COUNT,
+//  OP_ISMEMLABEL_ARGNUM_MEMLABEL,
+//  OP_ISMEMLABEL_ARGS
+//};
+
+enum {
+  OP_BELONGS_TO_SAME_REGION_ARGNUM_MEM_ALLOC = 0,
+  OP_BELONGS_TO_SAME_REGION_ARGNUM_ADDR,
+  OP_BELONGS_TO_SAME_REGION_ARGNUM_COUNT,
+  OP_BELONGS_TO_SAME_REGION_ARGS
+};
+
+enum {
+  OP_REGION_AGREES_WITH_MEMLABEL_ARGNUM_MEM_ALLOC = 0,
+  OP_REGION_AGREES_WITH_MEMLABEL_ARGNUM_ADDR,
+  OP_REGION_AGREES_WITH_MEMLABEL_ARGNUM_COUNT,
+  OP_REGION_AGREES_WITH_MEMLABEL_ARGNUM_MEMLABEL,
+  OP_REGION_AGREES_WITH_MEMLABEL_ARGS
+};
+
+enum {
+  OP_ISCONTIGUOUS_MEMLABEL_ARGNUM_MEM_ALLOC = 0,
+  OP_ISCONTIGUOUS_MEMLABEL_ARGNUM_LB,
+  OP_ISCONTIGUOUS_MEMLABEL_ARGNUM_UB,
+  OP_ISCONTIGUOUS_MEMLABEL_ARGNUM_MEMLABEL,
+  OP_ISCONTIGUOUS_MEMLABEL_ARGS
+};
+
+enum {
+  OP_ISPROBABLY_CONTIGUOUS_MEMLABEL_ARGNUM_MEM_ALLOC = 0,
+  OP_ISPROBABLY_CONTIGUOUS_MEMLABEL_ARGNUM_LB,
+  OP_ISPROBABLY_CONTIGUOUS_MEMLABEL_ARGNUM_UB,
+  OP_ISPROBABLY_CONTIGUOUS_MEMLABEL_ARGNUM_MEMLABEL,
+  OP_ISPROBABLY_CONTIGUOUS_MEMLABEL_ARGS
+};
+
+enum {
+  OP_ISSUBSUMING_MEMLABEL_FOR_ARGNUM_MEM_ALLOC = 0,
+  OP_ISSUBSUMING_MEMLABEL_FOR_ARGNUM_SUBSUMING_LB,
+  OP_ISSUBSUMING_MEMLABEL_FOR_ARGNUM_SUBSUMING_UB,
+  OP_ISSUBSUMING_MEMLABEL_FOR_ARGNUM_SUBSUMING_MEMLABEL,
+  OP_ISSUBSUMING_MEMLABEL_FOR_ARGNUM_SUBSUMED_MEMLABELS,
+  OP_ISSUBSUMING_MEMLABEL_FOR_ARGS
+};
+
+enum {
+  OP_ISLAST_IN_CONTAINER_ARGNUM_MEM = 0,
+  OP_ISLAST_IN_CONTAINER_ARGNUM_MEM_ALLOC,
+  OP_ISLAST_IN_CONTAINER_ARGNUM_MEMLABEL,
+  OP_ISLAST_IN_CONTAINER_ARGNUM_CONTAINER_TYPE,
+  OP_ISLAST_IN_CONTAINER_ARGNUM_ITER,
+  OP_ISLAST_IN_CONTAINER_ARGNUM_BEGIN_ITER,
+  OP_ISLAST_IN_CONTAINER_ARGNUM_END_ITER,
+  OP_ISLAST_IN_CONTAINER_ARGNUM_ITER_OFFSET,
+  OP_ISLAST_IN_CONTAINER_ARGNUM_ITER_SENTINEL_VAL,
+  OP_ISLAST_IN_CONTAINER_ARGNUM_BIGENDIAN,
+  OP_ISLAST_IN_CONTAINER_ARGNUM_COND,
+  OP_ISLAST_IN_CONTAINER_ARGS
+};
+
+enum {
+  OP_APPLY_ARGNUM_FUNC = 0,
+  OP_APPLY_ARGNUM_ARGS,
+};
+
+enum {
+  OP_LAMBDA_ARGNUM_FORMAL_ARGS = 0,
+};
+
+class expr : public enable_shared_from_this<expr>
 {
 public:
   enum operation_kind
@@ -223,6 +398,7 @@ public:
     OP_BVEXTRACT,
     OP_SELECT,
     OP_STORE,
+    OP_STORE_UNINIT,
     OP_BVSIGN_EXT,
     OP_BVZERO_EXT,
     OP_BVEXSHL,
@@ -249,19 +425,78 @@ public:
     //OP_RETURN_VALUE_PTR,
     OP_MEMMASK,
     OP_ALLOCA,
+    OP_DEALLOC,
+
+    OP_SELECT_SHADOW_BOOL,
+    OP_STORE_SHADOW_BOOL,
+
+    OP_HEAP_ALLOC,
+    OP_HEAP_DEALLOC,
+    OP_HEAP_ALLOC_PTR,
+
     OP_IS_MEMACCESS_LANGTYPE,
     OP_ISLANGALIGNED,
     OP_ISSHIFTCOUNT,
     OP_ISGEPOFFSET,
     OP_ISINDEXFORSIZE,
-    OP_ISMEMLABEL,
+    //OP_ISMEMLABEL,
+    OP_BELONGS_TO_SAME_REGION,
+    OP_REGION_AGREES_WITH_MEMLABEL, // memlabels can mix-n-match across the addr range
+    OP_ISCONTIGUOUS_MEMLABEL,
+    OP_ISPROBABLY_CONTIGUOUS_MEMLABEL,
+    OP_ISSUBSUMING_MEMLABEL_FOR,
+    OP_MEMLABEL_IS_ABSENT,
     OP_BOOL_TO_BV,
-    //OP_MEMSPLICE,
+    OP_FPEXT,
+    OP_FPTRUNC,
+    OP_FCMP_FALSE,
+    OP_FCMP_OEQ,
+    OP_FCMP_OGT,
+    OP_FCMP_OGE,
+    OP_FCMP_OLT,
+    OP_FCMP_OLE,
+    OP_FCMP_ONE,
+    OP_FCMP_ORD,
+    OP_FCMP_UNO,
+    OP_FCMP_UEQ,
+    OP_FCMP_UGT,
+    OP_FCMP_UGE,
+    OP_FCMP_ULT,
+    OP_FCMP_ULE,
+    OP_FCMP_UNE,
+    OP_FCMP_TRUE,
+    OP_FLOAT_IS_NAN,
+    OP_FLOAT_TO_FLOATX,
+    OP_FLOATX_TO_FLOAT,
+    OP_FP_TO_UBV,
+    OP_FP_TO_SBV,
+    OP_UBV_TO_FP,
+    OP_SBV_TO_FP,
+    OP_FDIV,
+    OP_FMUL,
+    OP_FADD,
+    OP_FSUB,
+    OP_FREM,
+    OP_FNEG,
+
+    OP_FLOAT_TO_IEEE_BV,
+    OP_IEEE_BV_TO_FLOAT,
+    OP_FLOATX_TO_IEEE_BV,
+    OP_IEEE_BV_TO_FLOATX,
+
     OP_UNDEFINED,
-    //OP_MEMJOIN,
-    //OP_MEMSPLICE_ARG,
-    //OP_SWITCHMEMLABEL,
-    OP_MEMMASKS_ARE_EQUAL
+    OP_APPLY,
+    OP_MEMMASKS_ARE_EQUAL,
+    OP_MEMMASKS_ARE_EQUAL_ELSE,
+
+    OP_LAMBDA,
+
+    OP_AXPRED,
+
+    OP_MKSTRUCT,
+    OP_GETFIELD,
+
+    OP_INCREMENT_COUNT,
   };
 
   expr(operation_kind kind, const vector<expr_ref>& args, sort_ref const &s, context* ctx);
@@ -269,15 +504,17 @@ public:
   expr(operation_kind kind, int val, sort_ref const &s, context* ctx);
   expr(operation_kind kind, uint64_t val, sort_ref const &s, context* ctx);
   expr(operation_kind kind, int64_t val, sort_ref const &s, context* ctx);
+  expr(operation_kind kind, float_max_t val, sort_ref const &s, context* ctx);
   expr(operation_kind kind, mybitset const &val, sort_ref const &s, context* ctx);
   expr(operation_kind kind, sort_ref const &s, context* ctx, string_ref const &val);
   expr(operation_kind kind, sort_ref const &s, context* ctx);
   expr(operation_kind kind, array_constant_ref const &a, sort_ref const &s, context* ctx);
   expr(operation_kind kind, memlabel_t const &ml, sort_ref const &s, context* ctx);
+  expr(operation_kind kind, rounding_mode_t rounding_mode, sort_ref const &s, context* ctx);
+  expr(istream& is, string const& name, context* ctx);
   expr(context* ctx);
   //expr(expr const &other);
   ~expr();
-  expr_ref dup_expr(context* nctx) const;
 
   operation_kind get_operation_kind() const;
   static bool expr_op_is_donotsimplify_using_solver(operation_kind op);
@@ -286,46 +523,65 @@ public:
   const vector<expr_ref>& get_args() const;
   unsigned get_id() const;
   bool operator==(expr const &) const;
-  string_ref const &get_name() const;
+  string_ref get_name() const;
   //void set_name(string const &);
   sort_ref get_sort() const;
   //expr_ref update_sp_memlabels_using_lhs_set(set<pair<expr_ref, pair<expr_ref, expr_ref>>> const &lhs_set, map<symbol_id_t, pair<string, size_t>> const &symbol_map, graph_locals_map_t const &locals_map, set<cs_addr_ref_id_t> const &relevant_addr_refs, consts_struct_t const &cs);
   //expr_ref simplify_for_solver(consts_struct_t const *cs);
   bool is_undefined_sort() const;
+  bool is_unresolved_sort() const;
   bool is_bool_sort() const;
   bool is_bv_sort() const;
+  bool is_float_sort() const;
+  bool is_floatx_sort() const;
   bool is_array_sort() const;
   //bool is_io_sort() const;
   bool is_int_sort() const;
   bool is_function_sort() const;
+  bool is_language_level_function_sort() const;
   bool is_memlabel_sort() const;
-  //bool is_comment_sort() const;
+  bool is_rounding_mode_sort() const;
+  bool is_axpred_desc_sort() const;
+  bool is_comment_sort() const;
   bool is_langtype_sort() const;
   bool is_memaccess_size_sort() const;
   bool is_memaccess_type_sort() const;
+  bool is_count_sort() const;
   bool is_regid_sort() const;
+
+  bool is_memalloc_sort() const;
+
   bool is_const() const;
+  bool is_axpred() const;
+  bool represents_negative_constant() const;
   bool is_const_bool_true() const;
   bool is_const_bool_false() const;
   bool is_highorder_mask_const() const;
   bool is_loworder_mask_const() const;
   bool is_var() const;
+  bool is_lambda() const;
+  bool is_apply() const;
   bool is_undefined() const;
   bool is_uninit() const;
   bool is_local_var();
   bool is_common_mem() const;
   memlabel_t get_memlabel_value() const;
-  //comment_t get_comment_value() const;
+  rounding_mode_t get_rounding_mode_value() const;
+  comment_t get_comment_value() const;
+  axpred_desc_ref get_axpred_desc_value() const;
   langtype_ref get_langtype_value() const;
   int get_regid_value() const;
   int get_int_value() const;
+  int get_count_value() const;
   int64_t get_int64_value() const;
   uint64_t get_uint64_value() const;
   array_constant_ref const &get_array_constant() const;
   mybitset const &get_mybitset_value() const;
+  float_max_t get_float_value() const;
   //mybitset get_unsigned_mybitset_value() const;
   //mybitset get_signed_mybitset_value() const;
   string get_str_value() const;
+  string get_const_absolute_value_str() const;
   bool get_bool_value() const;
   void dec_ref_count();
   bool is_input_mem(void) const;
@@ -333,6 +589,10 @@ public:
   //expr_ref substitute_locals_with_input_stack_pointer_const(consts_struct_t const &cs);
   context* get_context() const;
   //void get_mem_slots(list<tuple<expr_ref, memlabel_t, expr_ref, unsigned, bool>>& addrs);
+  expr_ref get_lambda_body() const;
+  vector<expr_ref> get_lambda_formal_args() const;
+  expr_ref get_apply_func() const;
+  vector<expr_ref> get_apply_args() const;
 
   bool is_nextpc_const() const;
   nextpc_id_t get_nextpc_num() const;
@@ -349,6 +609,9 @@ public:
   bool id_is_zero() const { return m_id == 0; }
   static bool operation_is_commutative_and_associative(operation_kind op);
   constant_value const *get_const_value_ptr() const { return m_const_value2.get(); }
+  bool expr_represents_alignment_mask_on_expr(expr_ref const& e) const;
+  bool expr_represents_alloca_ptr_construction() const;
+
 private:
   string get_formatted_constant() const;
 
@@ -423,12 +686,6 @@ static bool num_seconds_comparer(pair<unsigned, double> const &a, pair<unsigned,
   return a.second > b.second;
 }
 
-expr_ref expr_convert_constant_function_to_array_sort(expr_ref const &e, sort_ref const &s);
-//expr_ref expr_convert_constant_bv_to_io_sort(expr_ref e);
-//expr_ref expr_convert_function_to_apply_on_io_and_memlabel_sorts(expr_ref e, sort_ref s);
-expr_ref expr_convert_function_to_apply_on_memlabel_sort(expr_ref const &e, sort_ref const &s);
-//expr_ref expr_erase_unnecessary_elements(expr_ref const &e);
-
 bool expr_get_size_for_regname(expr_ref const &e, string const &regname, size_t &sz);
 }
 
@@ -446,27 +703,6 @@ template <> struct equal_to<expr>
 namespace std
 {
 using namespace eqspace;
-template<>
-struct hash<expr_sort>
-{
-  std::size_t operator()(expr_sort const &s) const
-  {
-    std::size_t seed = 0;
-    myhash_combine<size_t>(seed, (size_t)s.get_kind());
-    if (s.is_bv_kind()) {
-      myhash_combine(seed, s.get_size());
-    }
-    if (s.is_array_kind() || s.is_function_kind()) {
-      vector<sort_ref> dom = s.get_domain_sort();
-      for (unsigned i = 0; i < dom.size(); ++i) {
-        myhash_combine(seed, dom[i]->get_id());
-      }
-      myhash_combine(seed, s.get_range_sort()->get_id());
-    }
-    //cout << "hash<expr_sort>::" << __func__ << " " << __LINE__ << ": returning " << seed << " for " << s.to_string() << endl;
-    return seed;
-  }
-};
 
 template<>
 struct hash<expr>
@@ -521,35 +757,33 @@ struct hash<array_constant>
   std::size_t operator()(array_constant const &c) const
   {
     std::size_t seed = 0;
-    myhash_combine(seed, c.get_default_value());
-    for (auto const& mp : c.get_mapping()) {
-      for (auto const& mpe : mp.first) {
-        myhash_combine(seed, mpe);
+    myhash_combine(seed, c.is_domain_comparable());
+    if(c.is_domain_comparable()) {
+      for (auto const& mp : c.get_addr_data_mappings_for_hash()) {
+        myhash_combine(seed, mp.first);
+        myhash_combine(seed, mp.second);
       }
-      myhash_combine(seed, mp.second);
-    }
-    for (auto const& mp : c.get_range_mapping()) {
-      myhash_combine(seed, mp.first.first);
-      myhash_combine(seed, mp.first.second);
-      myhash_combine(seed, mp.second);
+    } else {
+      myhash_combine(seed, c.get_default_value());
+      for (auto const& mp : c.get_mapping()) {
+        for (auto const& mpe : mp.first) {
+          myhash_combine(seed, mpe);
+        }
+        myhash_combine(seed, mp.second);
+      }
     }
     return seed;
   }
 };
 
 template<>
-struct hash<array_constant_default_value_t>
+struct hash<random_ac_default_value_t>
 {
-  std::size_t operator()(array_constant_default_value_t const &c) const
+  std::size_t operator()(random_ac_default_value_t const &c) const
   {
     std::size_t seed = 0;
-    myhash_combine(seed, c.is_RAC());
-    if(c.is_RAC()) {
-      myhash_combine(seed, c.get_adder_value());
-      myhash_combine(seed, c.get_multiplier_value());
-    }
-    else
-      myhash_combine(seed, c.get_default_value());
+    myhash_combine(seed, c.get_adder_value());
+    myhash_combine(seed, c.get_multiplier_value());
     return seed;
   }
 };
@@ -634,20 +868,6 @@ private:
   map<unsigned, expr_ref> m_visited;
 };
 */
-
-class free_id_list
-{
-public:
-  free_id_list() { m_free_ids.insert(make_pair(1, UINT_MAX)); }
-  expr_id_t get_free_id(expr_id_t suggested_id = 0);
-  void add_free_id(expr_id_t id);
-
-private:
-  set<pair<expr_id_t, expr_id_t>> m_free_ids; //set of id ranges
-  //set<expr_id_t> m_used_ids;
-  //set<expr_id_t> m_free_ids;
-  //expr_id_t m_max_limit_used;
-};
 
 class expr_map_cache
 {
@@ -769,13 +989,15 @@ extern expr_ref g_probe[MAX_G_PROBES];
 //extern expr_map_cache g_theo_substitute_cache;
 //extern map<unsigned, expr_ref> g_theo_submap;
 
-vector<expr_ref> make_args(expr_ref const &a);
-vector<expr_ref> make_args(expr_ref const &a, expr_ref const &b);
-vector<expr_ref> make_args(expr_ref const &a, expr_ref const &b, expr_ref const &c);
-vector<expr_ref> make_args(expr_ref const &a, expr_ref const &b, expr_ref const &c, expr_ref const &d);
-vector<expr_ref> make_args(expr_ref const &a, expr_ref const &b, expr_ref const &c, expr_ref const &d, expr_ref const &e);
-vector<expr_ref> make_args(expr_ref const &a, expr_ref const &b, expr_ref const &c, expr_ref const &d, expr_ref const &e, expr_ref const &f);
-vector<expr_ref> make_args(expr_ref const &a, expr_ref const &b, expr_ref const &c, expr_ref const &d, expr_ref const &e, expr_ref const &f, expr_ref const &g);
+template<class... Args>
+auto make_args(Args&&... args)
+{
+  vector<expr_ref> ret = { args... };
+  for (auto const& a : ret)
+    assert(a);
+  return ret;
+}
+
 //void expr_pair_vector_get_second(expr_vector &out, vector<pair<expr_ref, expr_ref> > const &in);
 //void expr_pair_vector_get_first(expr_vector &out, vector<pair<expr_ref, expr_ref> > const &in);
 
@@ -819,27 +1041,25 @@ struct memsplice_args_sort_less_than_t {
 bool expr_set_contains(set<expr_ref, expr_compare> const &haystack, set<expr_ref, expr_compare> const &needle);
 //expr_ref expr_simplify_solver(expr_ref e, consts_struct_t const &cs);
 //void get_atomic_memlabels(memlabel_t const &in, vector<memlabel_t> &out);
-bool expr_is_esp_version(expr_ref const& e);
 //void expr_vector_pair_remove_duplicates(vector<pair<expr_ref, expr_ref>> &fromto);
-bool mem_accesses_cmp(pair<string, pair<expr_ref, pair<unsigned, bool>>> const &a,
-                      pair<string, pair<expr_ref, pair<unsigned, bool>>> const &b);
-bool mem_accesses_eq(pair<string, pair<expr_ref, pair<unsigned, bool>>> const &a,
-                     pair<string, pair<expr_ref, pair<unsigned, bool>>> const &b);
+bool mem_accesses_cmp(tuple<expr_ref, expr_ref, pair<expr_ref, pair<unsigned, bool>>> const &a,
+                      tuple<expr_ref, expr_ref, pair<expr_ref, pair<unsigned, bool>>> const &b);
+bool mem_accesses_eq(tuple<expr_ref, expr_ref, pair<expr_ref, pair<unsigned, bool>>> const &a,
+                     tuple<expr_ref, expr_ref, pair<expr_ref, pair<unsigned, bool>>> const &b);
 expr_list expr_compute_implicit_exprs(expr_ref const &e, set<memlabel_t> const &relevant_memlabels, consts_struct_t const &cs);
 //pair<expr_ref, set<graph_loc_id_t>> expr_find_dependencies(expr_ref e, map<expr_id_t, graph_loc_id_t> const &locid2expr_map);
 bool expr_contains_array_constant(expr_ref e);
-bool expr_contains_only_symbols_args(expr_ref e);
+//bool expr_contains_only_symbols_args(expr_ref e);
 //bool expr_contains_empty_memlabel_in_select_or_store_op(expr_ref e);
 
 //pair<bool,expr_ref> expr_try_evaluate_on_counter_example(expr_ref e, counter_example_t &counter_example, bool check_out_of_bounds = false);
 //expr_ref expr_evaluate_on_counter_example(expr_ref e, counter_example_t &counter_example);
-map<expr_id_t, expr_ref> evaluate_counter_example_on_expr_map(map<expr_id_t, expr_ref> const &expr_map, set<memlabel_ref> const& relevant_memlabels, counter_example_t const& counter_example);
+map<expr_id_t, expr_ref> evaluate_counter_example_on_expr_map(map<expr_id_t, expr_ref> const &expr_map, set<memlabel_ref> const& relevant_memlabels, counter_example_t& counter_example);
 
 //extern bool SIMPLIFY_DISABLE_CACHES;
 
-void expr_identify_local_variables(expr_ref e, set<local_id_t> &locals, consts_struct_t const &cs);
-void expr_identify_address_taken_local_variables(expr_ref e, set<local_id_t> &locals, consts_struct_t const &cs);
-void expr_identify_stack_pointer_relative_expressions(expr_ref e, set<expr_ref> &exprs, consts_struct_t const &cs);
+void expr_identify_local_variables(expr_ref e, set<allocsite_t> &locals, consts_struct_t const &cs);
+void expr_identify_address_taken_local_variables(expr_ref e, set<allocsite_t> &locals, consts_struct_t const &cs);
 map<nextpc_id_t, set<unsigned>> expr_gen_nextpc_farg_pos_map(expr_ref haystack, expr_ref needle);
 bool nextpc_farg_pos_maps_are_compatible(map<nextpc_id_t, set<unsigned>> const &a, map<nextpc_id_t, set<unsigned>> const &b);
 //bool memlabel_is_local_or_symbol(memlabel_t const &ml, tuple<expr_ref, size_t, memlabel_t> &t, consts_struct_t const &cs);
@@ -850,9 +1070,16 @@ string to_string_node_node(string op, vector<string> args);
 bool string_is_register_id(string const &s, exreg_group_id_t &group, exreg_id_t &regnum);
 expr_ref expr_introduce_src_dst_prefix(expr_ref const &e, char const *prefix);
 list<expr_ref> expr_get_arg_list(expr_ref const &e);
+set<graph_loc_id_t> expr_get_pred_loc_ids(expr_ref e);
 //set<graph_loc_id_t> expr_get_pred_loc_ids(expr_ref e);
 bool is_overlapping_syntactic(context* ctx, expr_ref const &a1, int a1nbytes, expr_ref const &b1, int b1nbytes);
-bool expr_contains_only_constants_or_arguments_or_esp_versions(expr_ref e, consts_struct_t const &cs, graph_arg_regs_t const &argument_regs);
+bool expr_is_stack_pointer(expr_ref const& e);
+void expr_identify_stack_pointer_relative_expressions(expr_ref e, set<expr_ref> &exprs, consts_struct_t const &cs);
+bool is_bv_expr_with_size_greater_than_and_multiple_of_input_size(expr_ref const& e, unsigned unit_size);
+set<expr_ref> break_longer_expr_to_input_size_exprs(expr_ref const& e, unsigned unit_size);
+unsigned compute_min_dword_multiple_bvlen(set<expr_ref>const& src_interesting_exprs, set<expr_ref>const& dst_interesting_exprs);
+unsigned get_max_bvlen_rounded_to_dword_multiple(set<expr_ref> const& exprs);
+expr_ref expr_retain_boolean_subexprs_with_acceptable_atoms_only(expr_ref const& e, set<expr_ref> const& acceptable_atoms);
 
 }
 
@@ -866,5 +1093,5 @@ pair<expr_ref, map<expr_id_t, expr_ref>> parse_expr(context* ctx, const char* st
   } */\
 } while(0)
 
-void g_ctx_init();
+void g_ctx_init(bool init_consts_db = true);
 typedef expr_ref memvar_t;

@@ -1,7 +1,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "expr/memlabel.h"
 #include "expr/z3_solver.h"
@@ -11,10 +11,11 @@
 #include "support/globals.h"
 #include "eq/corr_graph.h"
 #include "support/globals_cpp.h"
-#include "codegen/etfg_insn.h"
+#include "etfg/etfg_insn.h"
 #include "i386/insn.h"
-#include "rewrite/src-insn.h"
-#include "rewrite/dst-insn.h"
+#include "x64/insn.h"
+#include "insn/src-insn.h"
+#include "insn/dst-insn.h"
 #include "rewrite/peep_entry_list.h"
 #include "superopt/rand_states.h"
 #include "support/timers.h"
@@ -385,8 +386,8 @@ main(int argc, char **argv)
   cmd.add_arg(&debug);
   cmd.parse(argc, argv);
 
-  eqspace::init_dyn_debug_from_string(debug.get_value());
-  CPP_DBG_EXEC(DYN_DEBUG, eqspace::print_debug_class_levels());
+  init_dyn_debug_from_string(debug.get_value());
+  CPP_DBG_EXEC(DYN_DEBUG, print_debug_class_levels());
 
   malloc32(1); //allocate one byte to initialize the malloc32 structures in the beginning; late initialization can cause memory errors because of already existing heap mappings at the desired addresses
   if (failures.get_value() == "") {
@@ -458,7 +459,7 @@ main(int argc, char **argv)
   CPP_DBG_EXEC(STATS,
     print_all_timers();
     g_stats_print();
-    cout << ctx->stat() << endl;
+    cout << ctx->stats() << endl;
   );
 
   solver_kill();

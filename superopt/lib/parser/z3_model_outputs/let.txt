@@ -1,0 +1,6 @@
+sat
+(model
+  (define-fun input.llvm-%37 () (_ BitVec 32)
+    (let ((a!1 #x00))
+  		(concat #xffffff (bvnot a!1))))
+)

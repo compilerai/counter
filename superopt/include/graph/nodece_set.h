@@ -31,7 +31,7 @@ public:
   size_t size() const { return m_nodeces.size(); }
   //void push_back(nodece_ref<T_PC, T_N, T_E> const &nce) { m_nodeces.push_back(nce); }
 
-  static string nodece_set_from_stream(istream& is/*, state const& start_state*/, context* ctx, string const& inprefix, nodece_set_ref<T_PC, T_N, T_E>& nce_set)
+  static string nodece_set_from_stream(istream& is, graph_with_predicates<T_PC,T_N,T_E,predicate> const& g, context* ctx, string const& inprefix, nodece_set_ref<T_PC, T_N, T_E>& nce_set)
   {
     string line;
     bool end = !getline(is, line);
@@ -43,7 +43,7 @@ public:
       nodece_ref<T_PC, T_N, T_E> nce;
       stringstream prefixss;
       prefixss << prefix << i << " ";
-      line = nodece_t<T_PC, T_N, T_E>::nodece_from_stream(is/*, start_state*/, ctx, prefixss.str(), nce);
+      line = nodece_t<T_PC, T_N, T_E>::nodece_from_stream(is, g, ctx, prefixss.str(), nce);
       nces.push_back(nce);
       i++;
     }
@@ -70,6 +70,7 @@ public:
     ASSERT(!m_is_managed);
     m_is_managed = true;
   }
+  //void nodece_set_union(shared_ptr<nodece_set_t<T_PC, T_N, T_E> const> const& other);
   static manager<nodece_set_t<T_PC, T_N, T_E>> *get_nodece_set_manager();
   template<typename T_PC_ANY, typename T_N_ANY, typename T_E_ANY>
   friend shared_ptr<nodece_set_t<T_PC_ANY, T_N_ANY, T_E_ANY> const> mk_nodece_set(list<nodece_ref<T_PC_ANY, T_N_ANY, T_E_ANY>> const &nodece_ls);

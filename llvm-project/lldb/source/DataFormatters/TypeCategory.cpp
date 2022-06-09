@@ -15,11 +15,9 @@ using namespace lldb_private;
 
 TypeCategoryImpl::TypeCategoryImpl(IFormatChangeListener *clist,
                                    ConstString name)
-    : m_format_cont("format", "regex-format", clist),
-      m_summary_cont("summary", "regex-summary", clist),
-      m_filter_cont("filter", "regex-filter", clist),
-      m_synth_cont("synth", "regex-synth", clist), m_enabled(false),
-      m_change_listener(clist), m_mutex(), m_name(name), m_languages() {}
+    : m_format_cont(clist), m_summary_cont(clist), m_filter_cont(clist),
+      m_synth_cont(clist), m_enabled(false), m_change_listener(clist),
+      m_mutex(), m_name(name), m_languages() {}
 
 static bool IsApplicable(lldb::LanguageType category_lang,
                          lldb::LanguageType valobj_lang) {
@@ -112,17 +110,15 @@ bool TypeCategoryImpl::Get(lldb::LanguageType lang,
   if (!IsEnabled() || !IsApplicable(lang))
     return false;
   TypeFilterImpl::SharedPointer filter_sp;
-  bool regex_filter = false;
   // first find both Filter and Synth, and then check which is most recent
 
   if (!GetTypeFiltersContainer()->Get(candidates, filter_sp))
-    regex_filter = GetRegexTypeFiltersContainer()->Get(candidates, filter_sp);
+    GetRegexTypeFiltersContainer()->Get(candidates, filter_sp);
 
-  bool regex_synth = false;
   bool pick_synth = false;
   ScriptedSyntheticChildren::SharedPointer synth;
   if (!GetTypeSyntheticsContainer()->Get(candidates, synth))
-    regex_synth = GetRegexTypeSyntheticsContainer()->Get(candidates, synth);
+    GetRegexTypeSyntheticsContainer()->Get(candidates, synth);
   if (!filter_sp.get() && !synth.get())
     return false;
   else if (!filter_sp.get() && synth.get())

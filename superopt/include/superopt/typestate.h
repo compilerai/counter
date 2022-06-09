@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <vector>
 #include "i386/regs.h"
+#include "x64/regs.h"
 #include "ppc/regs.h"
 #include "valtag/regset.h"
 #include "exec/state.h"

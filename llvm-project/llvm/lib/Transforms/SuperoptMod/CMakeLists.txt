@@ -1,6 +1,7 @@
 add_llvm_library( LLVMSuperopt MODULE
   SplitModule.cpp
   InstrumentMarkerCall.cpp
+  ConvertLocalLinkageToGlobal.cpp
 
   DEPENDS
   intrinsics_gen
@@ -8,4 +9,5 @@ add_llvm_library( LLVMSuperopt MODULE
   opt
   )
 
-#target_link_libraries(LLVMSuperopt PRIVATE ${SUPEROPT_LIBS})
+#add_superopt_libs(slibs)
+#target_link_libraries(LLVMSuperopt PRIVATE ${slibs})

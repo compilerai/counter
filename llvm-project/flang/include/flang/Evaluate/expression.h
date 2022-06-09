@@ -775,7 +775,7 @@ struct NullPointer {
 
 // Procedure pointer targets are treated as if they were typeless.
 // They are either procedure designators or values returned from
-// function references.
+// references to functions that return procedure (not object) pointers.
 using TypelessExpression = std::variant<BOZLiteralConstant, NullPointer,
     ProcedureDesignator, ProcedureRef>;
 
@@ -841,6 +841,7 @@ struct GenericExprWrapper {
   explicit GenericExprWrapper(std::optional<Expr<SomeType>> &&x)
       : v{std::move(x)} {}
   ~GenericExprWrapper();
+  static void Deleter(GenericExprWrapper *);
   std::optional<Expr<SomeType>> v; // vacant if error
 };
 
@@ -849,6 +850,7 @@ struct GenericAssignmentWrapper {
   GenericAssignmentWrapper() {}
   explicit GenericAssignmentWrapper(Assignment &&x) : v{std::move(x)} {}
   ~GenericAssignmentWrapper();
+  static void Deleter(GenericAssignmentWrapper *);
   std::optional<Assignment> v; // vacant if error
 };
 

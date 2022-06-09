@@ -1,12 +1,12 @@
 llvm_canonicalize_cmake_booleans(
   BUILD_SHARED_LIBS
   HAVE_LIBXAR
-  HAVE_LIBZ
   HAVE_OCAMLOPT
   HAVE_OCAML_OUNIT
   LLVM_ENABLE_DIA_SDK
   LLVM_ENABLE_FFI
   LLVM_ENABLE_THREADS
+  LLVM_ENABLE_ZLIB
   LLVM_INCLUDE_GO_TESTS
   LLVM_LIBXML2_ENABLED
   LLVM_LINK_LLVM_DYLIB
@@ -15,6 +15,8 @@ llvm_canonicalize_cmake_booleans(
   LLVM_BUILD_EXAMPLES
   LLVM_ENABLE_PLUGINS
   LLVM_BYE_LINK_INTO_TOOLS
+  LLVM_HAVE_TF_AOT
+  LLVM_HAVE_TF_API
   )
 
 configure_lit_site_cfg(
@@ -81,6 +83,7 @@ set(LLVM_TEST_DEPENDS
           llvm-install-name-tool
           llvm-jitlink
           llvm-lib
+          llvm-libtool-darwin
           llvm-link
           llvm-lipo
           llvm-locstats
@@ -144,13 +147,17 @@ endif()
 
 if(LLVM_BUILD_EXAMPLES)
   list(APPEND LLVM_TEST_DEPENDS
-    Bye
     Kaleidoscope-Ch3
     Kaleidoscope-Ch4
     Kaleidoscope-Ch5
     Kaleidoscope-Ch6
     Kaleidoscope-Ch7
     )
+  if (NOT WIN32)
+    list(APPEND LLVM_TEST_DEPENDS
+      Bye
+      )
+  endif()
 endif()
 
 if(TARGET ocaml_llvm)
@@ -198,8 +205,7 @@ add_lit_testsuites(LLVM ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS ${LLVM_TEST_DEPENDS}
   )
 
-# Setup a legacy alias for 'check-llvm'. This will likely change to be an
-# alias for 'check-all' at some point in the future.
+# Setup an alias for 'check-all'.
 add_custom_target(check)
-add_dependencies(check check-llvm)
+add_dependencies(check check-all)
 set_target_properties(check PROPERTIES FOLDER "Tests")

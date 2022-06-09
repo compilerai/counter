@@ -1,5 +1,5 @@
 #pragma once
-#include "rewrite/src-insn.h"
+#include "insn/src-insn.h"
 
 void src_iseq_compute_fingerprint(uint64_t *fingerprint,
     src_insn_t const *src_iseq, long src_iseq_len,

@@ -27,6 +27,7 @@ const ASTNodeKind::KindInfo ASTNodeKind::AllKindInfo[] = {
   { NKI_None, "NestedNameSpecifierLoc" },
   { NKI_None, "QualType" },
   { NKI_None, "TypeLoc" },
+  { NKI_None, "CXXBaseSpecifier" },
   { NKI_None, "CXXCtorInitializer" },
   { NKI_None, "NestedNameSpecifier" },
   { NKI_None, "Decl" },
@@ -117,6 +118,8 @@ ASTNodeKind ASTNodeKind::getFromNode(const OMPClause &C) {
 #define OMP_CLAUSE_NO_CLASS(Enum, Str)                                         \
   case llvm::omp::Clause::Enum:                                                \
     llvm_unreachable("unexpected OpenMP clause kind");
+  default:
+    break;
 #include "llvm/Frontend/OpenMP/OMPKinds.def"
   }
   llvm_unreachable("invalid stmt kind");
@@ -149,13 +152,14 @@ void DynTypedNode::print(llvm::raw_ostream &OS,
     OS << "Unable to print values of type " << NodeKind.asStringRef() << "\n";
 }
 
-void DynTypedNode::dump(llvm::raw_ostream &OS, SourceManager &SM) const {
+void DynTypedNode::dump(llvm::raw_ostream &OS,
+                        const ASTContext &Context) const {
   if (const Decl *D = get<Decl>())
     D->dump(OS);
   else if (const Stmt *S = get<Stmt>())
-    S->dump(OS, SM);
+    S->dump(OS, Context);
   else if (const Type *T = get<Type>())
-    T->dump(OS);
+    T->dump(OS, Context);
   else
     OS << "Unable to dump values of type " << NodeKind.asStringRef() << "\n";
 }

@@ -24,10 +24,11 @@
 #define SUPEROPTDBS_DIR SUPEROPT_INSTALL_DIR "/superoptdbs/" SRC_DST "/"
 //#define Z3_EXE "${z3_exe}"
 #define Z3_EXE  SUPEROPT_INSTALL_DIR "/bin/z3"
+#define Z3v487_EXE  SUPEROPT_INSTALL_DIR "/bin/z3v487"
 #define YICES_EXE SUPEROPT_INSTALL_DIR "/bin/yices_smt2"
 #define CVC4_EXE SUPEROPT_INSTALL_DIR "/bin/cvc4"
 #define BOOLECTOR_EXE SUPEROPT_INSTALL_DIR "/bin/boolector"
 
 #define CALLING_CONVENTIONS CDECL
 
-#include "${CMAKE_SOURCE_DIR}/lib/rewrite/config-all.h"
+#include "${CMAKE_SOURCE_DIR}/include/support/config-all.h"

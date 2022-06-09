@@ -67,6 +67,18 @@ def : GINodeEquiv<G_XOR, xor>;
 def : GINodeEquiv<G_SHL, shl>;
 def : GINodeEquiv<G_LSHR, srl>;
 def : GINodeEquiv<G_ASHR, sra>;
+def : GINodeEquiv<G_SADDSAT, saddsat>;
+def : GINodeEquiv<G_UADDSAT, uaddsat>;
+def : GINodeEquiv<G_SSUBSAT, ssubsat>;
+def : GINodeEquiv<G_USUBSAT, usubsat>;
+def : GINodeEquiv<G_SMULFIX, smulfix>;
+def : GINodeEquiv<G_UMULFIX, umulfix>;
+def : GINodeEquiv<G_SMULFIXSAT, smulfixsat>;
+def : GINodeEquiv<G_UMULFIXSAT, umulfixsat>;
+def : GINodeEquiv<G_SDIVFIX, sdivfix>;
+def : GINodeEquiv<G_UDIVFIX, udivfix>;
+def : GINodeEquiv<G_SDIVFIXSAT, sdivfixsat>;
+def : GINodeEquiv<G_UDIVFIXSAT, udivfixsat>;
 def : GINodeEquiv<G_SELECT, select>;
 def : GINodeEquiv<G_FNEG, fneg>;
 def : GINodeEquiv<G_FPEXT, fpextend>;
@@ -113,6 +125,7 @@ def : GINodeEquiv<G_FRINT, frint>;
 def : GINodeEquiv<G_FNEARBYINT, fnearbyint>;
 def : GINodeEquiv<G_INTRINSIC_TRUNC, ftrunc>;
 def : GINodeEquiv<G_INTRINSIC_ROUND, fround>;
+def : GINodeEquiv<G_INTRINSIC_LRINT, lrint>;
 def : GINodeEquiv<G_FCOPYSIGN, fcopysign>;
 def : GINodeEquiv<G_SMIN, smin>;
 def : GINodeEquiv<G_SMAX, smax>;
@@ -123,6 +136,14 @@ def : GINodeEquiv<G_FMAXNUM, fmaxnum>;
 def : GINodeEquiv<G_FMINNUM_IEEE, fminnum_ieee>;
 def : GINodeEquiv<G_FMAXNUM_IEEE, fmaxnum_ieee>;
 def : GINodeEquiv<G_READCYCLECOUNTER, readcyclecounter>;
+
+def : GINodeEquiv<G_STRICT_FADD, strict_fadd>;
+def : GINodeEquiv<G_STRICT_FSUB, strict_fsub>;
+def : GINodeEquiv<G_STRICT_FMUL, strict_fmul>;
+def : GINodeEquiv<G_STRICT_FDIV, strict_fdiv>;
+def : GINodeEquiv<G_STRICT_FREM, strict_frem>;
+def : GINodeEquiv<G_STRICT_FMA, strict_fma>;
+def : GINodeEquiv<G_STRICT_FSQRT, strict_fsqrt>;
 
 // Broadly speaking G_LOAD is equivalent to ISD::LOAD but there are some
 // complications that tablegen must take care of. For example, Predicates such

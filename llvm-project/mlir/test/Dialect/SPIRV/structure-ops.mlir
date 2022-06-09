@@ -11,7 +11,7 @@ spv.module Logical GLSL450 {
     // CHECK: [[VAR1:%.*]] = spv._address_of @var1 : !spv.ptr<!spv.struct<f32, !spv.array<4 x f32>>, Input>
     // CHECK-NEXT: spv.AccessChain [[VAR1]][{{.*}}, {{.*}}] : !spv.ptr<!spv.struct<f32, !spv.array<4 x f32>>, Input>
     %1 = spv._address_of @var1 : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Input>
-    %2 = spv.AccessChain %1[%0, %0] : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Input>
+    %2 = spv.AccessChain %1[%0, %0] : !spv.ptr<!spv.struct<f32, !spv.array<4xf32>>, Input>, i32, i32
     spv.Return
   }
 }
@@ -53,15 +53,15 @@ spv.module Logical GLSL450 {
 //===----------------------------------------------------------------------===//
 
 func @const() -> () {
-  // CHECK: %0 = spv.constant true
-  // CHECK: %1 = spv.constant 42 : i32
-  // CHECK: %2 = spv.constant 5.000000e-01 : f32
-  // CHECK: %3 = spv.constant dense<[2, 3]> : vector<2xi32>
-  // CHECK: %4 = spv.constant [dense<3.000000e+00> : vector<2xf32>] : !spv.array<1 x vector<2xf32>>
-  // CHECK: %5 = spv.constant dense<1> : tensor<2x3xi32> : !spv.array<2 x !spv.array<3 x i32>>
-  // CHECK: %6 = spv.constant dense<1.000000e+00> : tensor<2x3xf32> : !spv.array<2 x !spv.array<3 x f32>>
-  // CHECK: %7 = spv.constant dense<{{\[}}[1, 2, 3], [4, 5, 6]]> : tensor<2x3xi32> : !spv.array<2 x !spv.array<3 x i32>>
-  // CHECK: %8 = spv.constant dense<{{\[}}[1.000000e+00, 2.000000e+00, 3.000000e+00], [4.000000e+00, 5.000000e+00, 6.000000e+00]]> : tensor<2x3xf32> : !spv.array<2 x !spv.array<3 x f32>>
+  // CHECK: spv.constant true
+  // CHECK: spv.constant 42 : i32
+  // CHECK: spv.constant 5.000000e-01 : f32
+  // CHECK: spv.constant dense<[2, 3]> : vector<2xi32>
+  // CHECK: spv.constant [dense<3.000000e+00> : vector<2xf32>] : !spv.array<1 x vector<2xf32>>
+  // CHECK: spv.constant dense<1> : tensor<2x3xi32> : !spv.array<2 x !spv.array<3 x i32>>
+  // CHECK: spv.constant dense<1.000000e+00> : tensor<2x3xf32> : !spv.array<2 x !spv.array<3 x f32>>
+  // CHECK: spv.constant dense<{{\[}}[1, 2, 3], [4, 5, 6]]> : tensor<2x3xi32> : !spv.array<2 x !spv.array<3 x i32>>
+  // CHECK: spv.constant dense<{{\[}}[1.000000e+00, 2.000000e+00, 3.000000e+00], [4.000000e+00, 5.000000e+00, 6.000000e+00]]> : tensor<2x3xf32> : !spv.array<2 x !spv.array<3 x f32>>
 
   %0 = spv.constant true
   %1 = spv.constant 42 : i32
@@ -175,7 +175,7 @@ spv.module Logical GLSL450 {
    spv.EntryPoint "GLCompute" @do_something
 }
 
-/// TODO(ravishankarm) : Add a test that verifies an error is thrown
+/// TODO: Add a test that verifies an error is thrown
 /// when interface entries of EntryPointOp are not
 /// spv.Variables. There is currently no other op that has a spv.ptr
 /// return type
@@ -343,6 +343,13 @@ spv.module Logical GLSL450 {
 spv.module Logical GLSL450 {
   // expected-error @+1 {{storage class cannot be 'Generic'}}
   spv.globalVariable @var0 : !spv.ptr<f32, Generic>
+}
+
+// -----
+
+spv.module Logical GLSL450 {
+  // expected-error @+1 {{storage class cannot be 'Function'}}
+  spv.globalVariable @var0 : !spv.ptr<f32, Function>
 }
 
 // -----

@@ -9,6 +9,7 @@
 #include "Error.h"
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/Object/ELFObjectFile.h"
 #include "llvm/ObjectYAML/ELFYAML.h"
 #include "llvm/Support/DataExtractor.h"
@@ -129,7 +130,7 @@ ELFDumper<ELFT>::getUniquedSectionName(const Elf_Shdr *Sec) {
 
   auto It = UsedSectionNames.insert({Name, 0});
   if (!It.second)
-    Ret = (Name + " [" + Twine(++It.first->second) + "]").str();
+    Ret = ELFYAML::appendUniqueSuffix(Name, Twine(++It.first->second));
   else
     Ret = std::string(Name);
   return Ret;
@@ -161,7 +162,7 @@ ELFDumper<ELFT>::getUniquedSymbolName(const Elf_Sym *Sym, StringRef StrTable,
     auto It = UsedSymbolNames.insert({Name, 0});
     if (!It.second)
       SymbolNames[Index] =
-          (Name + " [" + Twine(++It.first->second) + "]").str();
+          ELFYAML::appendUniqueSuffix(Name, Twine(++It.first->second));
     else
       SymbolNames[Index] = std::string(Name);
     return SymbolNames[Index];
@@ -199,9 +200,9 @@ bool ELFDumper<ELFT>::shouldPrintSection(const ELFYAML::Section &S,
 template <class ELFT> Expected<ELFYAML::Object *> ELFDumper<ELFT>::dump() {
   auto Y = std::make_unique<ELFYAML::Object>();
 
-  // Dump header. We do not dump SHEntSize, SHOff, SHNum and SHStrNdx fields.
-  // When not explicitly set, the values are set by yaml2obj automatically
-  // and there is no need to dump them here.
+  // Dump header. We do not dump EPh* and ESh* fields. When not explicitly set,
+  // the values are set by yaml2obj automatically and there is no need to dump
+  // them here.
   Y->Header.Class = ELFYAML::ELF_ELFCLASS(Obj.getHeader()->getFileClass());
   Y->Header.Data = ELFYAML::ELF_ELFDATA(Obj.getHeader()->getDataEncoding());
   Y->Header.OSABI = Obj.getHeader()->e_ident[ELF::EI_OSABI];
@@ -305,17 +306,25 @@ static bool isInSegment(const ELFYAML::Section &Sec,
       SHdr.sh_offset >= Phdr.p_offset &&
       (SHdr.sh_offset + SHdr.sh_size <= Phdr.p_offset + Phdr.p_filesz);
 
-  if (FileOffsetsMatch)
+  bool VirtualAddressesMatch = SHdr.sh_addr >= Phdr.p_vaddr &&
+                               SHdr.sh_addr <= Phdr.p_vaddr + Phdr.p_memsz;
+
+  if (FileOffsetsMatch) {
+    // An empty section on the edges of a program header can be outside of the
+    // virtual address space of the segment. This means it is not included in
+    // the segment and we should ignore it.
+    if (SHdr.sh_size == 0 && (SHdr.sh_offset == Phdr.p_offset ||
+                              SHdr.sh_offset == Phdr.p_offset + Phdr.p_filesz))
+      return VirtualAddressesMatch;
     return true;
+  }
 
   // SHT_NOBITS sections usually occupy no physical space in a file. Such
   // sections belong to a segment when they reside in the segment's virtual
   // address space.
   if (Sec.Type != ELF::SHT_NOBITS)
     return false;
-
-  return SHdr.sh_addr >= Phdr.p_vaddr &&
-         SHdr.sh_addr <= Phdr.p_vaddr + Phdr.p_memsz;
+  return VirtualAddressesMatch;
 }
 
 template <class ELFT>

@@ -45,7 +45,6 @@
 namespace llvm {
 
 class StringSaver;
-class raw_ostream;
 
 /// cl Namespace - This namespace contains all of the command line option
 /// processing machinery.  It is intentionally a short name to make qualified
@@ -71,13 +70,6 @@ bool ParseCommandLineOptions(int argc, const char *const *argv,
                              raw_ostream *Errs = nullptr,
                              const char *EnvVar = nullptr,
                              bool LongOptionsUseDoubleDash = false);
-
-//===----------------------------------------------------------------------===//
-// ParseEnvironmentOptions - Environment variable option processing alternate
-//                           entry point.
-//
-void ParseEnvironmentOptions(const char *progName, const char *envvar,
-                             const char *Overview = "");
 
 // Function pointer type for printing version information.
 using VersionPrinterTy = std::function<void(raw_ostream &)>;
@@ -2026,6 +2018,13 @@ void TokenizeGNUCommandLine(StringRef Source, StringSaver &Saver,
 void TokenizeWindowsCommandLine(StringRef Source, StringSaver &Saver,
                                 SmallVectorImpl<const char *> &NewArgv,
                                 bool MarkEOLs = false);
+
+/// Tokenizes a Windows command line while attempting to avoid copies. If no
+/// quoting or escaping was used, this produces substrings of the original
+/// string. If a token requires unquoting, it will be allocated with the
+/// StringSaver.
+void TokenizeWindowsCommandLineNoCopy(StringRef Source, StringSaver &Saver,
+                                      SmallVectorImpl<StringRef> &NewArgv);
 
 /// String tokenization function type.  Should be compatible with either
 /// Windows or Unix command line tokenizers.

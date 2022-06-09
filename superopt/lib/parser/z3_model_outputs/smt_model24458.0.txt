@@ -1,0 +1,50 @@
+sat
+(model 
+  (define-fun local.1 () (_ BitVec 32)
+    #x00000004)
+  (define-fun input.llvm-mem () (Array (_ BitVec 32) (_ BitVec 8))
+    (_ as-array k!4))
+  (define-fun local.2 () (_ BitVec 32)
+    #x00000004)
+  (define-fun input_memory_const () (Array (_ BitVec 32) (_ BitVec 8))
+    (_ as-array k!2))
+  (define-fun input_llvm-%j_const () (_ BitVec 32)
+    #x00000008)
+  (define-fun input_llvm-%i_const () (_ BitVec 32)
+    #x00000004)
+  (define-fun local.4 () (_ BitVec 32)
+    #x00000004)
+  (define-fun local.3 () (_ BitVec 32)
+    #x00000004)
+  (define-fun local.0 () (_ BitVec 32)
+    #xffffffff)
+  (define-fun input.io () (_ BitVec 32)
+    #x00000000)
+  (define-fun input.llvm-io () (_ BitVec 32)
+    #x00000000)
+  (define-fun k!4 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000000) #x00
+      #x00))
+  (define-fun memlabels_uif ((x!1 (_ BitVec 32))) (_ BitVec 4)
+    (ite (= x!1 #xffffffff) #x0
+    (ite (= x!1 #x00000001) #x0
+      #x0)))
+  (define-fun memmask_uif ((x!1 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!2 (_ BitVec 4))) (Array (_ BitVec 32) (_ BitVec 8))
+    (ite (and (= x!1 (_ as-array k!2)) (= x!2 #x0)) (_ as-array k!3)
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #x0)) (_ as-array k!3)
+      (_ as-array k!3))))
+  (define-fun k!2 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000000) #x08
+      #x08))
+  (define-fun k!3 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000007) #x80
+    (ite (= x!1 #x00000008) #x01
+    (ite (= x!1 #x00000004) #x00
+    (ite (= x!1 #x00000006) #x00
+    (ite (= x!1 #x0000000b) #x00
+    (ite (= x!1 #x0000000a) #x01
+    (ite (= x!1 #x00000009) #x01
+    (ite (= x!1 #x00000005) #x00
+      #x00)))))))))
+)

@@ -1,6 +1,7 @@
 add_mlir_dialect_library(MLIRSPIRVTransforms
   DecorateSPIRVCompositeTypeLayoutPass.cpp
   LowerABIAttributesPass.cpp
+  RewriteInsertsPass.cpp
   UpdateVCEPass.cpp
 
   ADDITIONAL_HEADER_DIRS
@@ -8,10 +9,8 @@ add_mlir_dialect_library(MLIRSPIRVTransforms
 
   DEPENDS
   MLIRSPIRVPassIncGen
-  )
 
-target_link_libraries(MLIRSPIRVTransforms
-  PUBLIC
+  LINK_LIBS PUBLIC
   MLIRPass
   MLIRSPIRV
   )

@@ -28,8 +28,9 @@ using token = yy::Z3_Parser::token;
 digit [0-9]
 number {digit}+
 letter [A-Za-z]
-connectors (%|\.|-|_)
+connectors (%|\.|-|_|!|=|\/)
 func_name (_)?({letter})({letter}|{digit}|{connectors})*
+internal_func_name {func_name}(!{number})+
 WS  [ \t\v\f]
 
 %%
@@ -42,13 +43,20 @@ WS  [ \t\v\f]
 "sat"          ;
 "model"	       ;
 
+"(define-fun axpred." {
+  int par_balance = 1;
+  while (par_balance) {
+    char c = yyinput();
+    if (c == '(') {
+      ++par_balance;
+    } else if(c == ')')
+      --par_balance;
+  }
+}
+
 "x!"{number}	{
 	yylval->build<string>(yytext);
 	return token::PARAMVAR;
-}
-"k!"{number}	{
-	yylval->build<string>(yytext);
-	return token::INTERNAL_FUNC_NAME;
 }
 
 "a!"{number}	{
@@ -56,16 +64,61 @@ WS  [ \t\v\f]
 	return token::LETVAR;
 }
 
+{internal_func_name}	{
+	yylval->build<string>(yytext);
+	return token::INTERNAL_FUNC_NAME;
+}
+
 "#x"[0-9a-f]+ { yylval->build<pair<size_t,bv_const>>(str_to_bvlen_val_pair(yytext)); return token::BVCONST; }
 "#b"[0-1]+    { yylval->build<pair<size_t,bv_const>>(str_to_bvlen_val_pair(yytext)); return token::BVCONST; }
 [-<>*+;/{}_]  { return *yytext; }
 
-"_ BitVec"{WS}+{number}	{
-	  string str = string(yytext);
-	  int l = str.find_last_not_of("0123456789");
-	  str = str.substr(l + 1);
-    yylval->build<int>(stoi(str));
+"_ BitVec"	{
+	  //string str = string(yytext);
+	  //int l = str.find_last_not_of("0123456789");
+	  //str = str.substr(l + 1);
+    //yylval->build<int>(stoi(str));
 	  return token::BV;
+  }
+
+"_ FloatingPoint"	{
+	  //string str = string(yytext);
+	  //int l = str.find_last_not_of("0123456789");
+	  //str = str.substr(l + 1);
+    //yylval->build<int>(stoi(str));
+	  return token::FLOATINGPOINT;
+  }
+
+"fp"	{
+	  return token::FP;
+  }
+
+"_ +zero" {
+    return token::FP_POSITIVE_ZERO;
+  }
+
+"_ -zero" {
+    return token::FP_NEGATIVE_ZERO;
+  }
+
+"_ NaN" {
+    return token::FP_NAN_IDENTIFIER;
+  }
+
+"_ +oo" {
+    return token::FP_POSITIVE_INFINITY;
+  }
+
+"_ -oo" {
+    return token::FP_NEGATIVE_INFINITY;
+  }
+
+{number}   {
+	  string str = string(yytext);
+	  //int l = str.find_last_not_of("0123456789");
+	  //str = str.substr(l + 1);
+    yylval->build<int>(stoi(str));
+    return token::NUM;
   }
 
 "_ extract"{WS}+{number}{WS}+{number}	{

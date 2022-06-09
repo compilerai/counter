@@ -1,28 +1,30 @@
 #pragma once
 
-#include "gsupport/pc.h"
-#include "expr/state.h"
-#include "expr/expr.h"
-#include "expr/expr_utils.h"
-#include "support/log.h"
 #include <list>
 #include <map>
 #include <stack>
-//#include "expr/sprel_map.h"
+
+#include "support/log.h"
 #include "support/types.h"
 #include "support/serpar_composition.h"
-//#include "rewrite/transmap.h"
+
+#include "expr/state.h"
+#include "expr/expr.h"
+#include "expr/expr_utils.h"
+#include "expr/pc.h"
+
+#include "gsupport/node.h"
+#include "gsupport/te_comment.h"
+#include "gsupport/edge_with_cond.h"
+
+//#include "tfg/nextpc_function_name_map.h"
+
 class transmap_t;
 
-//#include "rewrite/symbol_map.h"
-#include "rewrite/nextpc_function_name_map.h"
-#include "graph/te_comment.h"
-#include "gsupport/edge_with_cond.h"
 //#include "rewrite/locals_info.h"
 //#include "rewrite/nextpc_map.h"
 struct nextpc_map_t;
 struct nextpc_function_name_map_t;
-
 
 namespace eqspace {
 
@@ -45,7 +47,7 @@ public:
 
   //const state& get_state() const { return m_state; }
 
-  virtual string to_string() const;
+  string to_string() const override;
 
   virtual ~tfg_node() = default;
 

@@ -11,13 +11,14 @@
 #include "config-host.h"
 //#include "cpu.h"
 //#include "exec-all.h"
-#include "rewrite/jumptable.h"
+#include "insn/jumptable.h"
 //#include "imm_map.h"
 #include "i386/disas.h"
 #include "i386/insn.h"
-#include "codegen/etfg_insn.h"
-#include "rewrite/ldst_input.h"
-#include "rewrite/cfg.h"
+#include "x64/insn.h"
+#include "etfg/etfg_insn.h"
+#include "valtag/ldst_input.h"
+#include "insn/cfg.h"
 #include "rewrite/tagline.h"
 #include "expr/z3_solver.h"
 #include "cutils/imap_elem.h"
@@ -30,34 +31,31 @@
 
 #include "ppc/regs.h"
 #include "i386/regs.h"
-#include "rewrite/rdefs.h"
+#include "x64/regs.h"
+#include "insn/rdefs.h"
 #include "valtag/memset.h"
 #include "support/globals.h"
 #include "ppc/insn.h"
-#include "rewrite/src-insn.h"
+#include "insn/src-insn.h"
 
-#include "rewrite/edge_table.h"
+#include "insn/edge_table.h"
 #include "support/timers.h"
 
 #include "valtag/elf/elftypes.h"
 #include "rewrite/translation_instance.h"
 #include "rewrite/static_translate.h"
 //#include "tfg/annotate_locals_using_dwarf.h"
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 #include "rewrite/peephole.h"
 //#include "rewrite/harvest.h"
 #include "support/mytimer.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "valtag/nextpc.h"
 #include "support/cl.h"
 #include "rewrite/assembly_handling.h"
 #include "eq/corr_graph.h"
 #include "eq/cg_with_asm_annotation.h"
 #include "eq/function_cg_map.h"
-
-static char as1[409600];
-static char as2[1024];
-static char as3[1024];
 
 using namespace eqspace;
 

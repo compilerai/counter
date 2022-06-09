@@ -2,7 +2,7 @@
 #define SUPEROPTDB_H
 #include "support/src-defs.h"
 #include <stdlib.h>
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 #include "valtag/regmap.h"
 #include "superopt/typestate.h"
 #include "equiv/equiv.h"

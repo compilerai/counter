@@ -1,5 +1,5 @@
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 
   ASSERT(is_line(line, "=memlabel_map"));
   getline(in, line);
-  line = read_memlabel_map(in, &ctx, line, /*dst_*/memlabel_map);
+  NOT_IMPLEMENTED(); //line = tfg::read_memlabel_map(in, &ctx, line, /*dst_*/memlabel_map);
 
   ASSERT(is_line(line, "=expr"));
   line = read_expr(in, e, &ctx);

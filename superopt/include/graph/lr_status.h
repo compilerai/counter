@@ -1,14 +1,17 @@
 #pragma once
+
+#include "support/debug.h"
+#include "support/timers.h"
+#include "support/types.h"
+
+#include "expr/state.h"
 #include "expr/context.h"
 #include "expr/consts_struct.h"
-#include "support/debug.h"
-#include "graph/graph_cp_location.h"
 #include "expr/graph_arg_regs.h"
-#include "graph/callee_summary.h"
-#include "expr/state.h"
-#include "support/types.h"
 #include "expr/memlabel.h"
-#include "support/timers.h"
+
+#include "graph/graph_cp_location.h"
+#include "graph/callee_summary.h"
 
 namespace eqspace {
 struct consts_struct_t;
@@ -17,14 +20,15 @@ typedef enum { LR_STATUS_TOP, LR_STATUS_LINEARLY_RELATED, LR_STATUS_BOTTOM } lr_
 
 class lr_status_t;
 using lr_status_ref = shared_ptr<lr_status_t const>;
-lr_status_ref mk_lr_status(lr_status_type_t typ, set<cs_addr_ref_id_t> const &cs_addr_ref_ids, set<memlabel_t> const &bottom_set);
+lr_status_ref mk_lr_status(lr_status_type_t typ, set<memlabel_ref> const &cs_addr_ref_ids, set<memlabel_t> const &bottom_set);
+lr_status_ref mk_lr_status(istream& is, context *ctx);
 
 
 class lr_status_t
 {
 private:
   lr_status_type_t m_lr_status;
-  set<cs_addr_ref_id_t> m_cs_addr_ref_ids;
+  set<memlabel_ref> m_cs_addr_ref_ids;
   set<memlabel_t> m_bottom_set;
 
   bool m_is_managed;
@@ -39,16 +43,17 @@ public:
     m_is_managed = true;
   }
   static manager<lr_status_t> *get_lr_status_manager();
-  friend shared_ptr<lr_status_t const> mk_lr_status(lr_status_type_t typ, set<cs_addr_ref_id_t> const &cs_addr_ref_ids, set<memlabel_t> const &bottom_set);
+  friend shared_ptr<lr_status_t const> mk_lr_status(lr_status_type_t typ, set<memlabel_ref> const &cs_addr_ref_ids, set<memlabel_t> const &bottom_set);
+  friend shared_ptr<lr_status_t const> mk_lr_status(istream& is, context *ctx);
   friend struct std::hash<lr_status_t>;
 
-  static lr_status_ref top()
+  static lr_status_ref lr_status_top()
   {
     //lr_status_t ret(LR_STATUS_TOP, set<cs_addr_ref_id_t>(), set<memlabel_t>());
     //ret.m_lr_status = LR_STATUS_TOP;
-    return mk_lr_status(LR_STATUS_TOP, set<cs_addr_ref_id_t>(), set<memlabel_t>());
+    return mk_lr_status(LR_STATUS_TOP, set<memlabel_ref>(), set<memlabel_t>());
   }
-  static lr_status_ref bottom(set<cs_addr_ref_id_t> const &cs_addr_ref_ids, set<memlabel_t> const &bottom_set)
+  static lr_status_ref bottom(set<memlabel_ref> const &cs_addr_ref_ids, set<memlabel_t> const &bottom_set)
   {
     //lr_status_t ret(LR_STATUS_BOTTOM, cs_addr_ref_ids, bottom_set);
     //ret.m_lr_status = LR_STATUS_BOTTOM;
@@ -56,15 +61,15 @@ public:
     //ret.m_bottom_set = bottom_set;
     return mk_lr_status(LR_STATUS_BOTTOM, cs_addr_ref_ids, bottom_set);
   }
-  static lr_status_ref linearly_related(cs_addr_ref_id_t cs_addr_ref_id)
+  static lr_status_ref linearly_related(memlabel_ref mlr)
   {
     //lr_status_t ret(LR_STATUS_LINEARLY_RELATED, {cs_addr_ref_id}, {});
     //ret.m_lr_status = LR_STATUS_LINEARLY_RELATED;
     //ret.m_cs_addr_ref_ids.insert(cs_addr_ref_id);
     //return ret;
-    return mk_lr_status(LR_STATUS_LINEARLY_RELATED, {cs_addr_ref_id}, {});
+    return mk_lr_status(LR_STATUS_LINEARLY_RELATED, {mlr}, {});
   }
-  static lr_status_ref linearly_related(set<cs_addr_ref_id_t> const &cs_addr_ref_ids)
+  static lr_status_ref linearly_related(set<memlabel_ref> const &cs_addr_ref_ids)
   {
     //lr_status_t ret(LR_STATUS_LINEARLY_RELATED, cs_addr_ref_ids, {});
     //ret.m_lr_status = LR_STATUS_LINEARLY_RELATED;
@@ -72,58 +77,14 @@ public:
     //return ret;
     return mk_lr_status(LR_STATUS_LINEARLY_RELATED, cs_addr_ref_ids, {});
   }
-  static set<cs_addr_ref_id_t> subtract_memlocs_from_addr_ref_ids(set<cs_addr_ref_id_t> const &m_relevant_addr_ref_ids, graph_symbol_map_t const &symbol_map, context *ctx);
-  static lr_status_ref start_pc_value(expr_ref const &e, set<cs_addr_ref_id_t> const &relevant_addr_refs, context *ctx, graph_arg_regs_t const &argument_regs, graph_symbol_map_t const &symbol_map);
+  static set<memlabel_ref> subtract_memlocs_from_addr_ref_ids(set<memlabel_ref> const &m_relevant_addr_ref_ids, graph_symbol_map_t const &symbol_map, context *ctx);
+  static lr_status_ref lr_status_start_pc_value(expr_ref const &e, set<memlabel_ref> const &relevant_addr_refs, context *ctx, graph_arg_regs_t const &argument_regs, graph_symbol_map_t const &symbol_map, string const& fname, bool function_is_program_entry);
 
-  static lr_status_ref lr_status_union(lr_status_ref const &a, lr_status_ref const &b)
-  {
-    ASSERT(a->m_lr_status == LR_STATUS_LINEARLY_RELATED || a->m_lr_status == LR_STATUS_BOTTOM);
-    ASSERT(a->m_lr_status == b->m_lr_status);
-    set<cs_addr_ref_id_t> cs_addr_ref_ids = a->m_cs_addr_ref_ids;
-    set_union(cs_addr_ref_ids, b->m_cs_addr_ref_ids);
+  //static lr_status_ref lr_status_union(lr_status_ref const &a, lr_status_ref const &b);
 
-    set<memlabel_t> bottom_set = a->m_bottom_set;
-    set_union(bottom_set, b->m_bottom_set);
+  static lr_status_ref lr_status_meet(lr_status_ref const &a, lr_status_ref const &b);
 
-    //lr_status_t ret = a;
-    //set_union(ret.m_cs_addr_ref_ids, b.m_cs_addr_ref_ids);
-    //set_union(ret.m_bottom_set, b.m_bottom_set);
-    //lr_status_t ret(a.m_lr_status, cs_addr_ref_ids, bottom_set);
-    //return ret;
-    return mk_lr_status(a->m_lr_status, cs_addr_ref_ids, bottom_set);
-  }
-
-  static lr_status_ref lr_status_meet(lr_status_ref const &a, lr_status_ref const &b)
-  {
-    autostop_timer func_timer(__func__);
-    if (a->is_top()) {
-      return b;
-    }
-    if (b->is_top()) {
-      return a;
-    }
-    //lr_status_t ret = a;
-    set<cs_addr_ref_id_t> cs_addr_ref_ids = a->m_cs_addr_ref_ids;
-    set_union(cs_addr_ref_ids, b->m_cs_addr_ref_ids);
-
-    set<memlabel_t> bottom_set = a->m_bottom_set;
-    set_union(bottom_set, b->m_bottom_set);
-
-    if (   a->is_bottom() 
-        || b->is_bottom()) {
-      //ret.m_lr_status = LR_STATUS_BOTTOM;
-      //set_union(ret.m_bottom_set, b.m_bottom_set);
-      //return lr_status_t(LR_STATUS_BOTTOM, cs_addr_ref_ids, bottom_set);
-      return mk_lr_status(LR_STATUS_BOTTOM, cs_addr_ref_ids, bottom_set);
-    }
-    ASSERT(a->m_lr_status == LR_STATUS_LINEARLY_RELATED);
-    ASSERT(b->m_lr_status == LR_STATUS_LINEARLY_RELATED);
-    //return lr_status_t(LR_STATUS_LINEARLY_RELATED, cs_addr_ref_ids, bottom_set);
-    //return lr_status_t(LR_STATUS_LINEARLY_RELATED, cs_addr_ref_ids, bottom_set);
-    return mk_lr_status(LR_STATUS_LINEARLY_RELATED, cs_addr_ref_ids, bottom_set);
-  }
-
-  set<cs_addr_ref_id_t> const &get_cs_addr_ref_ids() const
+  set<memlabel_ref> const &get_cs_addr_ref_ids() const
   {
     ASSERT(m_lr_status == LR_STATUS_LINEARLY_RELATED || m_lr_status == LR_STATUS_BOTTOM);
     return m_cs_addr_ref_ids;
@@ -190,7 +151,7 @@ public:
     stringstream ss;
     ss << prefix << "(";
     for (auto cs_addr_ref_id : m_cs_addr_ref_ids) {
-      ss << cs.get_addr_ref(cs_addr_ref_id).first << ", ";
+      ss << cs.get_addr_ref(cs_addr_ref_id) << ", ";
     }
     ss << "; ";
     for (const auto &m : m_bottom_set) {
@@ -200,8 +161,10 @@ public:
     return ss.str();
   }
 private:
-  lr_status_t(lr_status_type_t typ, set<cs_addr_ref_id_t> const &cs_addr_ref_ids, set<memlabel_t> const &bottom_set) : m_lr_status(typ), m_cs_addr_ref_ids(cs_addr_ref_ids), m_bottom_set(bottom_set), m_is_managed(false)
+  lr_status_t(lr_status_type_t typ, set<memlabel_ref> const &cs_addr_ref_ids, set<memlabel_t> const &bottom_set) : m_lr_status(typ), m_cs_addr_ref_ids(cs_addr_ref_ids), m_bottom_set(bottom_set), m_is_managed(false)
   { }
+
+  lr_status_t(istream& is, context *ctx);
 };
 
 }
@@ -223,9 +186,9 @@ struct hash<lr_status_t>
       seed = 3;
     } else NOT_REACHED();
     for (auto const &cs_addr_ref_id : lrs.m_cs_addr_ref_ids) {
-      seed += 31 * cs_addr_ref_id;
+      seed += 31 * cs_addr_ref_id->get_ml().to_string().size();
     }
-    hash<memlabel_obj_t> h;
+    //hash<memlabel_obj_t> h;
     for (auto const &ml : lrs.m_bottom_set) {
       seed += 73 * ml.get_alias_set_size();
     }

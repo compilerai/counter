@@ -7,9 +7,8 @@ add_libc_unittest(
   SRCS
     write_test.cpp
   DEPENDS
-    libc.src.unistd.write
     libc.include.errno
-    # TODO(sivachandra): Remove redundant deps.
-    libc.src.errno.__errno_location
     libc.include.unistd
+    libc.src.unistd.write
+    libc.test.errno_setter_matcher
 )

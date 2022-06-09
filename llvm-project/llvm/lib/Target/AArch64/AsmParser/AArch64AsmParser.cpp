@@ -970,11 +970,15 @@ public:
   bool isMOVZMovAlias() const {
     if (!isImm()) return false;
 
-    const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
-    if (!CE) return false;
-    uint64_t Value = CE->getValue();
+    const MCExpr *E = getImm();
+    if (const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(E)) {
+      uint64_t Value = CE->getValue();
 
-    return AArch64_AM::isMOVZMovAlias(Value, Shift, RegWidth);
+      return AArch64_AM::isMOVZMovAlias(Value, Shift, RegWidth);
+    }
+    // Only supports the case of Shift being 0 if an expression is used as an
+    // operand
+    return !Shift && E;
   }
 
   template<int RegWidth, int Shift>
@@ -1774,9 +1778,13 @@ public:
   void addMOVZMovAliasOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
 
-    const MCConstantExpr *CE = cast<MCConstantExpr>(getImm());
-    uint64_t Value = CE->getValue();
-    Inst.addOperand(MCOperand::createImm((Value >> Shift) & 0xffff));
+    const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
+    if (CE) {
+      uint64_t Value = CE->getValue();
+      Inst.addOperand(MCOperand::createImm((Value >> Shift) & 0xffff));
+    } else {
+      addExpr(Inst, getImm());
+    }
   }
 
   template<int Shift>
@@ -2413,9 +2421,9 @@ AArch64AsmParser::tryParsePrefetch(OperandVector &Operands) {
     return MatchOperand_ParseFail;
   }
 
-  Parser.Lex(); // Eat identifier token.
   Operands.push_back(AArch64Operand::CreatePrefetch(
       *PRFM, Tok.getString(), S, getContext()));
+  Parser.Lex(); // Eat identifier token.
   return MatchOperand_Success;
 }
 
@@ -2436,9 +2444,9 @@ AArch64AsmParser::tryParsePSBHint(OperandVector &Operands) {
     return MatchOperand_ParseFail;
   }
 
-  Parser.Lex(); // Eat identifier token.
   Operands.push_back(AArch64Operand::CreatePSBHint(
       PSB->Encoding, Tok.getString(), S, getContext()));
+  Parser.Lex(); // Eat identifier token.
   return MatchOperand_Success;
 }
 
@@ -2459,9 +2467,9 @@ AArch64AsmParser::tryParseBTIHint(OperandVector &Operands) {
     return MatchOperand_ParseFail;
   }
 
-  Parser.Lex(); // Eat identifier token.
   Operands.push_back(AArch64Operand::CreateBTIHint(
       BTI->Encoding, Tok.getString(), S, getContext()));
+  Parser.Lex(); // Eat identifier token.
   return MatchOperand_Success;
 }
 
@@ -2836,6 +2844,7 @@ static const struct Extension {
     {"tlb-rmi", {AArch64::FeatureTLB_RMI}},
     {"pan-rwv", {AArch64::FeaturePAN_RWV}},
     {"ccpp", {AArch64::FeatureCCPP}},
+    {"rcpc", {AArch64::FeatureRCPC}},
     {"sve", {AArch64::FeatureSVE}},
     {"sve2", {AArch64::FeatureSVE2}},
     {"sve2-aes", {AArch64::FeatureSVE2AES}},
@@ -4256,6 +4265,8 @@ bool AArch64AsmParser::showMatchError(SMLoc Loc, unsigned ErrCode,
     return Error(Loc, "index must be a multiple of 4 in range [-32, 28].");
   case Match_InvalidMemoryIndexed16SImm4:
     return Error(Loc, "index must be a multiple of 16 in range [-128, 112].");
+  case Match_InvalidMemoryIndexed32SImm4:
+    return Error(Loc, "index must be a multiple of 32 in range [-256, 224].");
   case Match_InvalidMemoryIndexed1SImm6:
     return Error(Loc, "index must be an integer in range [-32, 31].");
   case Match_InvalidMemoryIndexedSImm8:
@@ -4915,6 +4926,7 @@ bool AArch64AsmParser::MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
   case Match_InvalidMemoryIndexed4SImm4:
   case Match_InvalidMemoryIndexed1SImm6:
   case Match_InvalidMemoryIndexed16SImm4:
+  case Match_InvalidMemoryIndexed32SImm4:
   case Match_InvalidMemoryIndexed4SImm7:
   case Match_InvalidMemoryIndexed8SImm7:
   case Match_InvalidMemoryIndexed16SImm7:
@@ -5077,12 +5089,8 @@ bool AArch64AsmParser::ParseDirective(AsmToken DirectiveID) {
 
 static void ExpandCryptoAEK(AArch64::ArchKind ArchKind,
                             SmallVector<StringRef, 4> &RequestedExtensions) {
-  const bool NoCrypto =
-      (std::find(RequestedExtensions.begin(), RequestedExtensions.end(),
-                 "nocrypto") != std::end(RequestedExtensions));
-  const bool Crypto =
-      (std::find(RequestedExtensions.begin(), RequestedExtensions.end(),
-                 "crypto") != std::end(RequestedExtensions));
+  const bool NoCrypto = llvm::is_contained(RequestedExtensions, "nocrypto");
+  const bool Crypto = llvm::is_contained(RequestedExtensions, "crypto");
 
   if (!NoCrypto && Crypto) {
     switch (ArchKind) {

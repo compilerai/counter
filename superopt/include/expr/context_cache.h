@@ -1,13 +1,31 @@
 #pragma once
-#include "support/debug.h"
-#include "support/lru.h"
-#include "expr/expr.h"
-//#include "graph/predicate.h"
-//#include "expr/expr_query_cache.h"
 
 #include <string>
 #include <list>
 #include <map>
+
+#include "support/debug.h"
+#include "support/lru.h"
+
+#include "expr/expr.h"
+#include "expr/expr_eval_status.h"
+
+//namespace std {
+//template<>
+//struct hash<tuple<unordered_set<predicate>, precond_t, sprel_map_pair_t, tfg_suffixpath_t, avail_exprs_t>>
+//{
+//  std::size_t operator()(tuple<unordered_set<predicate>, precond_t, sprel_map_pair_t, tfg_suffixpath_t, avail_exprs_t> const &t) const
+//  {
+//    size_t seed = 0;
+//    for (auto const& p : get<0>(t)) myhash_combine<size_t>(seed, hash<predicate>()(p));
+//    myhash_combine<size_t>(seed, hash<precond_t>()(get<1>(t)));
+//    myhash_combine<size_t>(seed, hash<sprel_map_pair_t>()(get<2>(t)));
+//    myhash_combine<size_t>(seed, hash<tfg_suffixpath_t>()(get<3>(t)));
+//    myhash_combine<size_t>(seed, hash<avail_exprs_t>()(get<4>(t)));
+//    return seed;
+//  }
+//};
+//}
 
 //namespace std {
 //template<>
@@ -111,8 +129,8 @@ public:
   lookup_cache_t<pair<expr_id_t, expr_id_t>, pair<pair<expr_ref, expr_ref>, bool>> m_is_expr_not_equal_syntactic;
 
   lookup_cache_t<expr_id_t, pair<expr_ref, size_t>> m_expr_size;
-  lookup_cache_t<pair<expr_ref, vector<expr_ref>>, bool> m_contains_only_constants_or_arguments_or_esp_versions;
-  lookup_cache_t<expr_id_t, pair<expr_ref,pair<bool,expr_ref>>> m_expr_evaluates_to_constant_visitor;
+  lookup_cache_t<pair<expr_ref, vector<expr_ref>>, bool> m_contains_only_constants_or_arguments_or_sp_versions;
+  lookup_cache_t<expr_id_t, pair<expr_ref,pair<expr_eval_status_t,expr_ref>>> m_expr_evaluates_to_constant_visitor;
 
   void clear() {
     //m_simplify_using_proof_queries.clear();
@@ -138,7 +156,7 @@ public:
     m_is_expr_not_equal_syntactic.clear();
 
     m_expr_size.clear();
-    m_contains_only_constants_or_arguments_or_esp_versions.clear();
+    m_contains_only_constants_or_arguments_or_sp_versions.clear();
     m_expr_evaluates_to_constant_visitor.clear();
   }
 

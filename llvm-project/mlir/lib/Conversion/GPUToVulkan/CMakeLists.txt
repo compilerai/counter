@@ -1,13 +1,11 @@
-add_mlir_conversion_library(MLIRGPUtoVulkanTransforms
+add_mlir_conversion_library(MLIRGPUToVulkanTransforms
   ConvertLaunchFuncToVulkanCalls.cpp
   ConvertGPULaunchFuncToVulkanLaunchFunc.cpp
 
   DEPENDS
   MLIRConversionPassIncGen
-  )
 
-target_link_libraries(MLIRGPUtoVulkanTransforms
-  PUBLIC
+  LINK_LIBS PUBLIC
   MLIRGPU
   MLIRIR
   MLIRLLVMIR
@@ -18,5 +16,4 @@ target_link_libraries(MLIRGPUtoVulkanTransforms
   MLIRSupport
   MLIRTransforms
   MLIRTranslation
-  LLVMSupport
   )

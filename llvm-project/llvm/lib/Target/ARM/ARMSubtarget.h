@@ -28,6 +28,7 @@
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
 #include "llvm/MC/MCInstrItineraries.h"
 #include "llvm/MC/MCSchedule.h"
+#include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 #include <memory>
 #include <string>
@@ -60,6 +61,8 @@ protected:
     CortexA73,
     CortexA75,
     CortexA76,
+    CortexA77,
+    CortexA78,
     CortexA8,
     CortexA9,
     CortexM3,
@@ -68,6 +71,7 @@ protected:
     CortexR5,
     CortexR52,
     CortexR7,
+    CortexX1,
     Exynos,
     Krait,
     Kryo,
@@ -259,6 +263,9 @@ protected:
 
   /// HasBF16 - True if subtarget supports BFloat16 floating point operations
   bool HasBF16 = false;
+
+  /// HasMatMulInt8 - True if subtarget supports 8-bit integer matrix multiply
+  bool HasMatMulInt8 = false;
 
   /// HasD32 - True if subtarget has the full 32 double precision
   /// FP registers for VFPv3.
@@ -698,11 +705,14 @@ public:
   bool hasD32() const { return HasD32; }
   bool hasFullFP16() const { return HasFullFP16; }
   bool hasFP16FML() const { return HasFP16FML; }
+  bool hasBF16() const { return HasBF16; }
 
   bool hasFuseAES() const { return HasFuseAES; }
   bool hasFuseLiterals() const { return HasFuseLiterals; }
   /// Return true if the CPU supports any kind of instruction fusion.
   bool hasFusion() const { return hasFuseAES() || hasFuseLiterals(); }
+
+  bool hasMatMulInt8() const { return HasMatMulInt8; }
 
   const Triple &getTargetTriple() const { return TargetTriple; }
 

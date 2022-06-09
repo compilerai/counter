@@ -2,6 +2,7 @@
 #include <map>
 #include <string>
 #include <set>
+#include <assert.h>
 #include "support/types.h"
 
 namespace eqspace {
@@ -23,7 +24,7 @@ public:
   bool id_is_zero() const { return !m_is_managed; }
   void set_id_to_free_id(unsigned suggested_id)
   {
-    ASSERT(!m_is_managed);
+    assert(!m_is_managed);
     m_is_managed = true;
   }
   static manager<locset_t> *get_locset_manager();

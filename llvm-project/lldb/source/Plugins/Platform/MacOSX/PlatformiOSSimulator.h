@@ -64,9 +64,6 @@ public:
   FindProcesses(const lldb_private::ProcessInstanceInfoMatch &match_info,
                 lldb_private::ProcessInstanceInfoList &process_infos) override;
 
-  bool GetSupportedArchitectureAtIndex(uint32_t idx,
-                                       lldb_private::ArchSpec &arch) override;
-
   void
   AddClangModuleCompilationOptions(lldb_private::Target *target,
                                    std::vector<std::string> &options) override {
@@ -79,10 +76,11 @@ protected:
   std::string m_sdk_directory;
   std::string m_build_update;
 
-  const char *GetSDKDirectoryAsCString();
+  llvm::StringRef GetSDKDirectoryAsCString();
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(PlatformiOSSimulator);
+  PlatformiOSSimulator(const PlatformiOSSimulator &) = delete;
+  const PlatformiOSSimulator &operator=(const PlatformiOSSimulator &) = delete;
 };
 
 #endif // LLDB_SOURCE_PLUGINS_PLATFORM_MACOSX_PLATFORMIOSSIMULATOR_H

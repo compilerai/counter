@@ -23,14 +23,18 @@ struct Env {
    */
   set<string> m_global_funcs; /* these are returned to user */
   map<string, pair<expr_ref,sort_ref>> m_funcs;
+  unsigned m_undefined_counter;    /* the counter of undefined functions, we use it for tracking completion
+                                      0 => evaluation is complete */
+
+  // env info specific to current function
   // TODO -- add sort?
   vector<pair<string, expr_ref>> m_letfuncs;   /* stack of funcs/exprs declared with "let"
                                                   we push/pop these as we eval */
   vector<expr_ref> m_curfuncparams;       /* the params of currently evaluated function;
                                              the exprs are just vars */
-  unsigned m_undefined_counter;    /* the counter of undefined functions, we use it for tracking completion
-                                      0 => evaluation is complete */
   stack<vector<expr_ref>> m_lambdaparams;    /* stack the params of currently evaluated lambda function */
+  string m_curfuncname;
+  sort_ref m_curfuncsort;
 
   void add_letfunc(string const& name, expr_ref const& e)
   {
@@ -56,6 +60,6 @@ struct Env {
 };
 
 pair<int,bv_const> str_to_bvlen_val_pair(string const& s);
-expr_ref resolve_params(expr_ref const& e, vector<sort_ref> const& dom, sort_ref range, vector<expr_ref>const& params);
+expr_ref resolve_params(expr_ref const& e, vector<sort_ref> const& dom, sort_ref const& range, vector<expr_ref>const& params, string const& name = "");
 
 }

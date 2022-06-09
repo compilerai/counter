@@ -382,7 +382,7 @@ static PassPipelineRegistration<> pipeline(
 ```
 
 Pipeline registration also allows for simplified registration of
-specifializations for existing passes:
+specializations for existing passes:
 
 ```c++
 static PassPipelineRegistration<> foo10(
@@ -622,18 +622,34 @@ def MyPass : Pass<"my-pass", "ModuleOp"> {
 }
 ```
 
-We can include the generated registration calls via:
+Using the `gen-pass-decls` generator, we can generate the much of the
+boilerplater above automatically. This generator takes as an input a `-name`
+parameter, that provides a tag for the group of passes that are being generated.
+This generator produces two chunks of output:
+
+The first is the code for registering the declarative passes with the global
+registry. For each pass, the generator produces a `registerFooPass` where `Foo`
+is the name of the definition specified in tablegen. It also generates a
+`registerGroupPasses`, where `Group` is the tag provided via the `-name` input
+parameter, that registers all of the passes present.
 
 ```c++
-void registerMyPasses() {
-  // The generated registration is not static, so we need to include this in
-  // a location that we can call into.
 #define GEN_PASS_REGISTRATION
 #include "Passes.h.inc"
+
+void registerMyPasses() {
+  // Register all of our passes.
+  registerMyPasses();
+
+  // Register `MyPass` specifically.
+  registerMyPassPass();
 }
 ```
 
-We can then update the original C++ pass definition:
+The second is a base class for each of the passes, with each containing most of
+the boiler plate related to pass definition. These classes are named in the form
+of `MyPassBase`, where `MyPass` is the name of the definition in tablegen. We
+can update the original C++ pass definition as so:
 
 ```c++
 /// Include the generated base pass class definitions.
@@ -650,6 +666,10 @@ std::unique_ptr<Pass> foo::createMyPass() {
   return std::make_unique<MyPass>();
 }
 ```
+
+Using the `gen-pass-doc` generator, we can generate markdown documentation for
+each of our passes. See [Passes.md](Passes.md) for example output of real MLIR
+passes.
 
 ### Tablegen Specification
 
@@ -801,7 +821,7 @@ pipeline. This display mode is available in mlir-opt via
 `-pass-timing-display=list`.
 
 ```shell
-$ mlir-opt foo.mlir -disable-pass-threading -pass-pipeline='func(cse,canonicalize)' -convert-std-to-llvm -pass-timing -pass-timing-display=list
+$ mlir-opt foo.mlir -mlir-disable-threading -pass-pipeline='func(cse,canonicalize)' -convert-std-to-llvm -pass-timing -pass-timing-display=list
 
 ===-------------------------------------------------------------------------===
                       ... Pass execution timing report ...
@@ -826,7 +846,7 @@ the most time, and can also be used to identify when analyses are being
 invalidated and recomputed. This is the default display mode.
 
 ```shell
-$ mlir-opt foo.mlir -disable-pass-threading -pass-pipeline='func(cse,canonicalize)' -convert-std-to-llvm -pass-timing
+$ mlir-opt foo.mlir -mlir-disable-threading -pass-pipeline='func(cse,canonicalize)' -convert-std-to-llvm -pass-timing
 
 ===-------------------------------------------------------------------------===
                       ... Pass execution timing report ...
@@ -943,10 +963,10 @@ func @simple_constant() -> (i32, i32) {
     *   Always print the top-level module operation, regardless of pass type or
         operation nesting level.
     *   Note: Printing at module scope should only be used when multi-threading
-        is disabled(`-disable-pass-threading`)
+        is disabled(`-mlir-disable-threading`)
 
 ```shell
-$ mlir-opt foo.mlir -disable-pass-threading -pass-pipeline='func(cse)' -print-ir-after=cse -print-ir-module-scope
+$ mlir-opt foo.mlir -mlir-disable-threading -pass-pipeline='func(cse)' -print-ir-after=cse -print-ir-module-scope
 
 *** IR Dump After CSE ***  ('func' operation: @bar)
 func @bar(%arg0: f32, %arg1: f32) -> f32 {
@@ -984,6 +1004,31 @@ reproducible may have the form:
 
 ```mlir
 // configuration: -pass-pipeline='func(cse, canonicalize), inline'
+// note: verifyPasses=false
+
+module {
+  func @foo() {
+    ...
+  }
+}
+```
+
+### Local Reproducer Generation
+
+An additional flag may be passed to
+`PassManager::enableCrashReproducerGeneration`, and specified via
+`pass-pipeline-local-reproducer` on the command line, that signals that the pass
+manager should attempt to generate a "local" reproducer. This will attempt to
+generate a reproducer containing IR right before the pass that fails. This is
+useful for situations where the crash is known to be within a specific pass, or
+when the original input relies on components (like dialects or passes) that may
+not always be available.
+
+For example, if the failure in the previous example came from `canonicalize`,
+the following reproducer will be generated:
+
+```mlir
+// configuration: -pass-pipeline='func(canonicalize)'
 // note: verifyPasses=false
 
 module {

@@ -51,6 +51,11 @@ def gi_vop3opselmods :
     GIComplexOperandMatcher<s32, "selectVOP3OpSelMods">,
     GIComplexPatternEquiv<VOP3OpSelMods>;
 
+// FIXME: Why do we have both VOP3OpSel and VOP3OpSelMods?
+def gi_vop3opsel :
+    GIComplexOperandMatcher<s32, "selectVOP3OpSelMods">,
+    GIComplexPatternEquiv<VOP3OpSel>;
+
 def gi_smrd_imm :
     GIComplexOperandMatcher<s64, "selectSmrdImm">,
     GIComplexPatternEquiv<SMRDImm>;
@@ -265,7 +270,7 @@ multiclass GISelVop2IntrPat <
 
   def : GISelVop2Pat <node, inst, dst_vt, src_vt>;
 
-  // FIXME: Intrinsics aren't marked as commutable, so we need to add an explcit
+  // FIXME: Intrinsics aren't marked as commutable, so we need to add an explicit
   // pattern to handle commuting.  This is another reason why legalizing to a
   // generic machine instruction may be better that matching the intrinsic
   // directly.

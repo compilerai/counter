@@ -6,7 +6,9 @@
 #include "support/src-defs.h"
 #include "i386/cpu_consts.h"
 #include "i386/regs.h"
+#include "x64/regs.h"
 #include "ppc/regs.h"
+#include "x64/insntypes.h"
 #include "valtag/imm_vt_map.h"
 #include "rewrite/txinsn.h"
 

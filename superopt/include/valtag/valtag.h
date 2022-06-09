@@ -7,8 +7,9 @@
 #include "support/src-defs.h"
 #include "support/src_tag.h"
 #include "i386/regs.h"
+#include "x64/regs.h"
 #include "ppc/regs.h"
-#include "codegen/etfg_regs.h"
+#include "etfg/etfg_regs.h"
 #include "support/debug.h"
 #include "support/consts.h"
 #ifdef __cplusplus
@@ -19,6 +20,7 @@ class memslot_map_t;
 struct input_exec_t;
 struct imm_vt_map_t;
 struct regmap_t;
+struct symbol_t;
 #ifdef __cplusplus
 class vconstants_t;
 #endif
@@ -91,7 +93,7 @@ bool imm_valtag_less(valtag_t const *a, valtag_t const *b);
 bool imm_valtags_equal(valtag_t const *a, valtag_t const *b);
 bool reg_valtags_equal(valtag_t const *a, valtag_t const *b);
 void valtag_canonicalize_local_symbol(valtag_t *vt, struct imm_vt_map_t *imm_vt_map, src_tag_t tag);
-void valtag_rename_address_to_symbol(valtag_t *vt, struct input_exec_t const *in, src_ulong pc, size_t pc_size);
+void valtag_rename_address_to_symbol(valtag_t *vt, struct input_exec_t const *in, src_ulong pc, size_t pc_size, src_ulong insn_end_pc);
 void valtag_rename_symbol_to_address(valtag_t *vt, struct input_exec_t const *in, struct chash const *tcodes);
 bool valtag_inv_rename_local_symbol(valtag_t *vt, struct imm_vt_map_t *imm_vt_map, src_tag_t tag);
 bool valtag_symbols_are_contained_in_map(valtag_t const *vt,
@@ -105,6 +107,14 @@ valtag_t vconstant_to_valtag(vconstants_t const &vconstant);
 void imm_valtag_rename_using_memslot_map(valtag_t *vt, memslot_map_t const &memslot_map);
 std::string src_tag_to_string(src_tag_t t);
 src_tag_t src_tag_from_string(std::string const &s);
+
+int get_input_section_by_name(struct input_exec_t const *in, char const *name);
+long fscanf_till_next_peephole_section(FILE *fp, char *tmap_string, size_t tmap_string_size);
+uint8_t const *tcodes_query(struct chash const *tcodes, src_ulong pc);
+
+long add_or_find_reloc_symbol_name(char **reloc_strings, long *reloc_strings_size,
+    char const *str);
+bool symbol_represents_nextpc_symbol(symbol_t const& s, nextpc_id_t& nextpc_id);
 
 
 #endif

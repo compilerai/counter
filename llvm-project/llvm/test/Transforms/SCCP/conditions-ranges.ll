@@ -227,16 +227,16 @@ false:
 define void @f7_nested_conds(i32* %a, i32 %b) {
 ; CHECK-LABEL: @f7_nested_conds(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    [[A_V:%.*]] = load i32, i32* [[A:%.*]]
+; CHECK-NEXT:    [[A_V:%.*]] = load i32, i32* [[A:%.*]], align 4
 ; CHECK-NEXT:    [[C_1:%.*]] = icmp ne i32 [[A_V]], 0
 ; CHECK-NEXT:    br i1 [[C_1]], label [[TRUE:%.*]], label [[FALSE:%.*]]
 ; CHECK:       false:
-; CHECK-NEXT:    br i1 true, label [[TRUE_2:%.*]], label [[TRUE]]
+; CHECK-NEXT:    br label [[TRUE_2:%.*]]
 ; CHECK:       true.2:
 ; CHECK-NEXT:    call void @use(i1 true)
 ; CHECK-NEXT:    ret void
 ; CHECK:       true:
-; CHECK-NEXT:    store i32 [[B:%.*]], i32* [[A]]
+; CHECK-NEXT:    store i32 [[B:%.*]], i32* [[A]], align 4
 ; CHECK-NEXT:    ret void
 ;
 entry:
@@ -814,14 +814,11 @@ define void @f16_conditions_and(i32 %a, i32 %b) {
 ; CHECK-NEXT:    [[BC:%.*]] = and i1 [[LT]], [[GT]]
 ; CHECK-NEXT:    br i1 [[BC]], label [[TRUE:%.*]], label [[FALSE:%.*]]
 ; CHECK:       true:
-; CHECK-NEXT:    [[F_1:%.*]] = icmp eq i32 [[A]], 0
-; CHECK-NEXT:    call void @use(i1 [[F_1]])
-; CHECK-NEXT:    [[F_2:%.*]] = icmp eq i32 [[A]], 20
-; CHECK-NEXT:    call void @use(i1 [[F_2]])
+; CHECK-NEXT:    call void @use(i1 false)
+; CHECK-NEXT:    call void @use(i1 false)
 ; CHECK-NEXT:    call void @use(i1 false)
 ; CHECK-NEXT:    call void @use(i1 true)
-; CHECK-NEXT:    [[T_2:%.*]] = icmp ne i32 [[A]], 20
-; CHECK-NEXT:    call void @use(i1 [[T_2]])
+; CHECK-NEXT:    call void @use(i1 true)
 ; CHECK-NEXT:    [[C_1:%.*]] = icmp eq i32 [[A]], 21
 ; CHECK-NEXT:    call void @use(i1 [[C_1]])
 ; CHECK-NEXT:    [[C_2:%.*]] = icmp ugt i32 [[A]], 21
@@ -899,10 +896,8 @@ define void @f17_conditions_or(i32 %a, i32 %b) {
 ; CHECK:       false:
 ; CHECK-NEXT:    call void @use(i1 false)
 ; CHECK-NEXT:    call void @use(i1 false)
-; CHECK-NEXT:    [[F_3:%.*]] = icmp ugt i32 [[A]], 100
-; CHECK-NEXT:    call void @use(i1 [[F_3]])
-; CHECK-NEXT:    [[T_1:%.*]] = icmp ult i32 [[A]], 100
-; CHECK-NEXT:    call void @use(i1 [[T_1]])
+; CHECK-NEXT:    call void @use(i1 false)
+; CHECK-NEXT:    call void @use(i1 true)
 ; CHECK-NEXT:    call void @use(i1 true)
 ; CHECK-NEXT:    [[C_1:%.*]] = icmp eq i32 [[A]], 21
 ; CHECK-NEXT:    call void @use(i1 [[C_1]])
@@ -989,6 +984,12 @@ define void @f18_conditions_chained_and(i32 %a, i32 %b) {
 ; CHECK-NEXT:    call void @use(i1 [[F_2]])
 ; CHECK-NEXT:    [[F_3:%.*]] = icmp ugt i32 [[A]], 100
 ; CHECK-NEXT:    call void @use(i1 [[F_3]])
+; CHECK-NEXT:    [[F_4:%.*]] = icmp eq i32 [[B]], 0
+; CHECK-NEXT:    call void @use(i1 [[F_3]])
+; CHECK-NEXT:    [[F_5:%.*]] = icmp eq i32 [[B]], 20
+; CHECK-NEXT:    call void @use(i1 [[F_5]])
+; CHECK-NEXT:    [[F_6:%.*]] = icmp ugt i32 [[B]], 100
+; CHECK-NEXT:    call void @use(i1 [[F_6]])
 ; CHECK-NEXT:    [[T_1:%.*]] = icmp ult i32 [[A]], 100
 ; CHECK-NEXT:    call void @use(i1 [[T_1]])
 ; CHECK-NEXT:    [[T_2:%.*]] = icmp ne i32 [[A]], 20
@@ -1001,8 +1002,8 @@ define void @f18_conditions_chained_and(i32 %a, i32 %b) {
 ; CHECK-NEXT:    call void @use(i1 [[C_3]])
 ; CHECK-NEXT:    ret void
 ; CHECK:       false:
-; CHECK-NEXT:    [[F_4:%.*]] = icmp eq i32 [[A]], 50
-; CHECK-NEXT:    call void @use(i1 [[F_4]])
+; CHECK-NEXT:    [[F_7:%.*]] = icmp eq i32 [[A]], 50
+; CHECK-NEXT:    call void @use(i1 [[F_7]])
 ; CHECK-NEXT:    [[T_3:%.*]] = icmp ne i32 [[A]], 50
 ; CHECK-NEXT:    call void @use(i1 [[T_3]])
 ; CHECK-NEXT:    [[C_4:%.*]] = icmp eq i32 [[A]], 10
@@ -1027,6 +1028,13 @@ true: ; %a in [21, 100)
   call void @use(i1 %f.2)
   %f.3 = icmp ugt i32 %a, 100
   call void @use(i1 %f.3)
+  %f.4 = icmp eq i32 %b, 0
+  call void @use(i1 %f.3)
+  %f.5 = icmp eq i32 %b, 20
+  call void @use(i1 %f.5)
+  %f.6 = icmp ugt i32 %b, 100
+  call void @use(i1 %f.6)
+
 
   ; Conditions below are true.
   %t.1 = icmp ult i32 %a, 100
@@ -1045,8 +1053,8 @@ true: ; %a in [21, 100)
 
 false:
   ; Conditions below are false;
-  %f.4 = icmp eq i32 %a, 50
-  call void @use(i1 %f.4)
+  %f.7 = icmp eq i32 %a, 50
+  call void @use(i1 %f.7)
 
   ; Conditions below are true;
   %t.3 = icmp ne i32 %a, 50

@@ -657,7 +657,7 @@ serializeValueProfDataFrom(ValueProfRecordClosure *Closure,
 /* Raw profile format version (start from 1). */
 #define INSTR_PROF_RAW_VERSION 5
 /* Indexed profile format version (start from 1). */
-#define INSTR_PROF_INDEX_VERSION 5
+#define INSTR_PROF_INDEX_VERSION 6
 /* Coverage mapping format version (start from 0). */
 #define INSTR_PROF_COVMAP_VERSION 3
 
@@ -671,6 +671,7 @@ serializeValueProfDataFrom(ValueProfRecordClosure *Closure,
 #define GET_VERSION(V) ((V) & ~VARIANT_MASKS_ALL)
 #define VARIANT_MASK_IR_PROF (0x1ULL << 56)
 #define VARIANT_MASK_CSIR_PROF (0x1ULL << 57)
+#define VARIANT_MASK_INSTR_ENTRY (0x1ULL << 58)
 #define INSTR_PROF_RAW_VERSION_VAR __llvm_profile_raw_version
 #define INSTR_PROF_PROFILE_RUNTIME_VAR __llvm_profile_runtime
 

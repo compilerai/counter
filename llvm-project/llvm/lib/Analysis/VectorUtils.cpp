@@ -43,13 +43,18 @@ static cl::opt<unsigned> MaxInterleaveGroupFactor(
 /// hasVectorInstrinsicScalarOpd).
 bool llvm::isTriviallyVectorizable(Intrinsic::ID ID) {
   switch (ID) {
-  case Intrinsic::bswap: // Begin integer bit-manipulation.
+  case Intrinsic::abs:   // Begin integer bit-manipulation.
+  case Intrinsic::bswap:
   case Intrinsic::bitreverse:
   case Intrinsic::ctpop:
   case Intrinsic::ctlz:
   case Intrinsic::cttz:
   case Intrinsic::fshl:
   case Intrinsic::fshr:
+  case Intrinsic::smax:
+  case Intrinsic::smin:
+  case Intrinsic::umax:
+  case Intrinsic::umin:
   case Intrinsic::sadd_sat:
   case Intrinsic::ssub_sat:
   case Intrinsic::uadd_sat:
@@ -78,6 +83,7 @@ bool llvm::isTriviallyVectorizable(Intrinsic::ID ID) {
   case Intrinsic::rint:
   case Intrinsic::nearbyint:
   case Intrinsic::round:
+  case Intrinsic::roundeven:
   case Intrinsic::pow:
   case Intrinsic::fma:
   case Intrinsic::fmuladd:
@@ -93,6 +99,7 @@ bool llvm::isTriviallyVectorizable(Intrinsic::ID ID) {
 bool llvm::hasVectorInstrinsicScalarOpd(Intrinsic::ID ID,
                                         unsigned ScalarOpdIdx) {
   switch (ID) {
+  case Intrinsic::abs:
   case Intrinsic::ctlz:
   case Intrinsic::cttz:
   case Intrinsic::powi:
@@ -112,7 +119,7 @@ bool llvm::hasVectorInstrinsicScalarOpd(Intrinsic::ID ID,
 /// its ID, in case it does not found it return not_intrinsic.
 Intrinsic::ID llvm::getVectorIntrinsicIDForCall(const CallInst *CI,
                                                 const TargetLibraryInfo *TLI) {
-  Intrinsic::ID ID = getIntrinsicForCallSite(CI, TLI);
+  Intrinsic::ID ID = getIntrinsicForCallSite(*CI, TLI);
   if (ID == Intrinsic::not_intrinsic)
     return Intrinsic::not_intrinsic;
 
@@ -263,10 +270,10 @@ Value *llvm::findScalarElement(Value *V, unsigned EltNo) {
   assert(V->getType()->isVectorTy() && "Not looking at a vector?");
   VectorType *VTy = cast<VectorType>(V->getType());
   // For fixed-length vector, return undef for out of range access.
-  if (!VTy->isScalable()) {
-    unsigned Width = VTy->getNumElements();
+  if (auto *FVTy = dyn_cast<FixedVectorType>(VTy)) {
+    unsigned Width = FVTy->getNumElements();
     if (EltNo >= Width)
-      return UndefValue::get(VTy->getElementType());
+      return UndefValue::get(FVTy->getElementType());
   }
 
   if (Constant *C = dyn_cast<Constant>(V))
@@ -288,9 +295,11 @@ Value *llvm::findScalarElement(Value *V, unsigned EltNo) {
     return findScalarElement(III->getOperand(0), EltNo);
   }
 
-  if (ShuffleVectorInst *SVI = dyn_cast<ShuffleVectorInst>(V)) {
+  ShuffleVectorInst *SVI = dyn_cast<ShuffleVectorInst>(V);
+  // Restrict the following transformation to fixed-length vector.
+  if (SVI && isa<FixedVectorType>(SVI->getType())) {
     unsigned LHSWidth =
-        cast<VectorType>(SVI->getOperand(0)->getType())->getNumElements();
+        cast<FixedVectorType>(SVI->getOperand(0)->getType())->getNumElements();
     int InEl = SVI->getMaskValue(EltNo);
     if (InEl < 0)
       return UndefValue::get(VTy->getElementType());
@@ -340,9 +349,9 @@ const llvm::Value *llvm::getSplatValue(const Value *V) {
 
   // shuf (inselt ?, Splat, 0), ?, <0, undef, 0, ...>
   Value *Splat;
-  if (match(V, m_ShuffleVector(
-                   m_InsertElement(m_Value(), m_Value(Splat), m_ZeroInt()),
-                   m_Value(), m_ZeroMask())))
+  if (match(V,
+            m_Shuffle(m_InsertElt(m_Value(), m_Value(Splat), m_ZeroInt()),
+                      m_Value(), m_ZeroMask())))
     return Splat;
 
   return nullptr;
@@ -814,8 +823,8 @@ static Value *concatenateTwoVectors(IRBuilderBase &Builder, Value *V1,
          VecTy1->getScalarType() == VecTy2->getScalarType() &&
          "Expect two vectors with the same element type");
 
-  unsigned NumElts1 = VecTy1->getNumElements();
-  unsigned NumElts2 = VecTy2->getNumElements();
+  unsigned NumElts1 = cast<FixedVectorType>(VecTy1)->getNumElements();
+  unsigned NumElts2 = cast<FixedVectorType>(VecTy2)->getNumElements();
   assert(NumElts1 >= NumElts2 && "Unexpect the first vector has less elements");
 
   if (NumElts1 > NumElts2) {
@@ -863,8 +872,9 @@ bool llvm::maskIsAllZeroOrUndef(Value *Mask) {
     return false;
   if (ConstMask->isNullValue() || isa<UndefValue>(ConstMask))
     return true;
-  for (unsigned I = 0,
-                E = cast<VectorType>(ConstMask->getType())->getNumElements();
+  for (unsigned
+           I = 0,
+           E = cast<FixedVectorType>(ConstMask->getType())->getNumElements();
        I != E; ++I) {
     if (auto *MaskElt = ConstMask->getAggregateElement(I))
       if (MaskElt->isNullValue() || isa<UndefValue>(MaskElt))
@@ -881,8 +891,9 @@ bool llvm::maskIsAllOneOrUndef(Value *Mask) {
     return false;
   if (ConstMask->isAllOnesValue() || isa<UndefValue>(ConstMask))
     return true;
-  for (unsigned I = 0,
-                E = cast<VectorType>(ConstMask->getType())->getNumElements();
+  for (unsigned
+           I = 0,
+           E = cast<FixedVectorType>(ConstMask->getType())->getNumElements();
        I != E; ++I) {
     if (auto *MaskElt = ConstMask->getAggregateElement(I))
       if (MaskElt->isAllOnesValue() || isa<UndefValue>(MaskElt))
@@ -896,7 +907,8 @@ bool llvm::maskIsAllOneOrUndef(Value *Mask) {
 /// vectors.  Is there something we can common this with?
 APInt llvm::possiblyDemandedEltsInMask(Value *Mask) {
 
-  const unsigned VWidth = cast<VectorType>(Mask->getType())->getNumElements();
+  const unsigned VWidth =
+      cast<FixedVectorType>(Mask->getType())->getNumElements();
   APInt DemandedElts = APInt::getAllOnesValue(VWidth);
   if (auto *CV = dyn_cast<ConstantVector>(Mask))
     for (unsigned i = 0; i < VWidth; i++)
@@ -944,13 +956,8 @@ void InterleavedAccessInfo::collectConstStrideAccesses(
       const SCEV *Scev = replaceSymbolicStrideSCEV(PSE, Strides, Ptr);
       PointerType *PtrTy = cast<PointerType>(Ptr->getType());
       uint64_t Size = DL.getTypeAllocSize(PtrTy->getElementType());
-
-      // An alignment of 0 means target ABI alignment.
-      MaybeAlign Alignment = MaybeAlign(getLoadStoreAlignment(&I));
-      if (!Alignment)
-        Alignment = Align(DL.getABITypeAlignment(PtrTy->getElementType()));
-
-      AccessStrideInfo[&I] = StrideDescriptor(Stride, Scev, Size, *Alignment);
+      AccessStrideInfo[&I] = StrideDescriptor(Stride, Scev, Size,
+                                              getLoadStoreAlignment(&I));
     }
 }
 
@@ -1236,24 +1243,23 @@ void InterleavedAccessInfo::invalidateGroupsRequiringScalarEpilogue() {
   if (!requiresScalarEpilogue())
     return;
 
-  // Avoid releasing a Group twice.
-  SmallPtrSet<InterleaveGroup<Instruction> *, 4> DelSet;
-  for (auto &I : InterleaveGroupMap) {
-    InterleaveGroup<Instruction> *Group = I.second;
-    if (Group->requiresScalarEpilogue())
-      DelSet.insert(Group);
-  }
-  assert(!DelSet.empty() && "At least one group must be invalidated, as a "
-                            "scalar epilogue was required");
-  for (auto *Ptr : DelSet) {
+  bool ReleasedGroup = false;
+  // Release groups requiring scalar epilogues. Note that this also removes them
+  // from InterleaveGroups.
+  for (auto *Group : make_early_inc_range(InterleaveGroups)) {
+    if (!Group->requiresScalarEpilogue())
+      continue;
     LLVM_DEBUG(
         dbgs()
         << "LV: Invalidate candidate interleaved group due to gaps that "
            "require a scalar epilogue (not allowed under optsize) and cannot "
            "be masked (not enabled). \n");
-    releaseGroup(Ptr);
+    releaseGroup(Group);
+    ReleasedGroup = true;
   }
-
+  assert(ReleasedGroup && "At least one group must be invalidated, as a "
+                          "scalar epilogue was required");
+  (void)ReleasedGroup;
   RequiresScalarEpilogue = false;
 }
 
@@ -1270,6 +1276,18 @@ void InterleaveGroup<Instruction>::addMetadata(Instruction *NewInst) const {
                  [](std::pair<int, Instruction *> p) { return p.second; });
   propagateMetadata(NewInst, VL);
 }
+}
+
+std::string VFABI::mangleTLIVectorName(StringRef VectorName,
+                                       StringRef ScalarName, unsigned numArgs,
+                                       unsigned VF) {
+  SmallString<256> Buffer;
+  llvm::raw_svector_ostream Out(Buffer);
+  Out << "_ZGV" << VFABI::_LLVM_ << "N" << VF;
+  for (unsigned I = 0; I < numArgs; ++I)
+    Out << "v";
+  Out << "_" << ScalarName << "(" << VectorName << ")";
+  return std::string(Out.str());
 }
 
 void VFABI::getVectorVariantNames(

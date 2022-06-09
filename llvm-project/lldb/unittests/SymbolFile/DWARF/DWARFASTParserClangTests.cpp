@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Plugins/SymbolFile/DWARF/DWARFASTParserClang.h"
+#include "Plugins/SymbolFile/DWARF/DWARFCompileUnit.h"
 #include "Plugins/SymbolFile/DWARF/DWARFDIE.h"
 #include "TestingSupport/Symbol/YAMLModuleTester.h"
 #include "gmock/gmock.h"
@@ -55,9 +56,7 @@ TEST_F(DWARFASTParserClangTests,
       "      - Attribute:       DW_AT_byte_size\n"
       "        Form:            DW_FORM_data1\n"
       "debug_info:\n"
-      "  - Length:\n"
-      "      TotalLength:     0\n"
-      "    Version:         4\n"
+      "  - Version:         4\n"
       "    AbbrOffset:      0\n"
       "    AddrSize:        8\n"
       "    Entries:\n"
@@ -114,3 +113,4 @@ TEST_F(DWARFASTParserClangTests,
   EXPECT_THAT(ast_parser.GetDeclContextToDIEMapKeys(),
               testing::UnorderedElementsAre(decl_ctxs[0], decl_ctxs[3]));
 }
+

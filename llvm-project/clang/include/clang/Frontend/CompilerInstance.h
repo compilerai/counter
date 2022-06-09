@@ -787,10 +787,7 @@ public:
   static bool InitializeSourceManager(const FrontendInputFile &Input,
                                       DiagnosticsEngine &Diags,
                                       FileManager &FileMgr,
-                                      SourceManager &SourceMgr,
-                                      HeaderSearch *HS,
-                                      DependencyOutputOptions &DepOpts,
-                                      const FrontendOptions &Opts);
+                                      SourceManager &SourceMgr);
 
   /// }
 

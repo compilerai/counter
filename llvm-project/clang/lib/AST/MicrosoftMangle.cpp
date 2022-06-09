@@ -947,12 +947,12 @@ void MicrosoftCXXNameMangler::mangleUnqualifiedName(const NamedDecl *ND,
 
           mangleSourceName(Name);
 
-          // If the context of a closure type is an initializer for a class
-          // member (static or nonstatic), it is encoded in a qualified name.
+          // If the context is a variable or a class member and not a parameter,
+          // it is encoded in a qualified name.
           if (LambdaManglingNumber && LambdaContextDecl) {
             if ((isa<VarDecl>(LambdaContextDecl) ||
                  isa<FieldDecl>(LambdaContextDecl)) &&
-                LambdaContextDecl->getDeclContext()->isRecord()) {
+                !isa<ParmVarDecl>(LambdaContextDecl)) {
               mangleUnqualifiedName(cast<NamedDecl>(LambdaContextDecl));
             }
           }
@@ -1372,9 +1372,9 @@ void MicrosoftCXXNameMangler::mangleIntegerLiteral(const llvm::APSInt &Value,
 
 void MicrosoftCXXNameMangler::mangleExpression(const Expr *E) {
   // See if this is a constant expression.
-  llvm::APSInt Value;
-  if (E->isIntegerConstantExpr(Value, Context.getASTContext())) {
-    mangleIntegerLiteral(Value, E->getType()->isBooleanType());
+  if (Optional<llvm::APSInt> Value =
+          E->getIntegerConstantExpr(Context.getASTContext())) {
+    mangleIntegerLiteral(*Value, E->getType()->isBooleanType());
     return;
   }
 
@@ -1798,7 +1798,7 @@ void MicrosoftCXXNameMangler::mangleAddressSpaceType(QualType T,
   // where:
   //  <language_addr_space> ::= <OpenCL-addrspace> | <CUDA-addrspace>
   //    <OpenCL-addrspace> ::= "CL" [ "global" | "local" | "constant" |
-  //                                "private"| "generic" ]
+  //                                "private"| "generic" | "device" | "host" ]
   //    <CUDA-addrspace> ::= "CU" [ "device" | "constant" | "shared" ]
   //    Note that the above were chosen to match the Itanium mangling for this.
   //
@@ -1822,6 +1822,12 @@ void MicrosoftCXXNameMangler::mangleAddressSpaceType(QualType T,
       llvm_unreachable("Not a language specific address space");
     case LangAS::opencl_global:
       Extra.mangleSourceName("_ASCLglobal");
+      break;
+    case LangAS::opencl_global_device:
+      Extra.mangleSourceName("_ASCLdevice");
+      break;
+    case LangAS::opencl_global_host:
+      Extra.mangleSourceName("_ASCLhost");
       break;
     case LangAS::opencl_local:
       Extra.mangleSourceName("_ASCLlocal");
@@ -2114,6 +2120,7 @@ void MicrosoftCXXNameMangler::mangleType(const BuiltinType *T, Qualifiers,
   case BuiltinType::SatUShortFract:
   case BuiltinType::SatUFract:
   case BuiltinType::SatULongFract:
+  case BuiltinType::BFloat16:
   case BuiltinType::Float128: {
     DiagnosticsEngine &Diags = Context.getDiags();
     unsigned DiagID = Diags.getCustomDiagID(
@@ -2728,6 +2735,23 @@ void MicrosoftCXXNameMangler::mangleType(const DependentSizedExtVectorType *T,
     "cannot mangle this dependent-sized extended vector type yet");
   Diags.Report(Range.getBegin(), DiagID)
     << Range;
+}
+
+void MicrosoftCXXNameMangler::mangleType(const ConstantMatrixType *T,
+                                         Qualifiers quals, SourceRange Range) {
+  DiagnosticsEngine &Diags = Context.getDiags();
+  unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
+                                          "Cannot mangle this matrix type yet");
+  Diags.Report(Range.getBegin(), DiagID) << Range;
+}
+
+void MicrosoftCXXNameMangler::mangleType(const DependentSizedMatrixType *T,
+                                         Qualifiers quals, SourceRange Range) {
+  DiagnosticsEngine &Diags = Context.getDiags();
+  unsigned DiagID = Diags.getCustomDiagID(
+      DiagnosticsEngine::Error,
+      "Cannot mangle this dependent-sized matrix type yet");
+  Diags.Report(Range.getBegin(), DiagID) << Range;
 }
 
 void MicrosoftCXXNameMangler::mangleType(const DependentAddressSpaceType *T,

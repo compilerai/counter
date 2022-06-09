@@ -10,7 +10,7 @@
 #include "config-host.h"
 //#include "cpu.h"
 //#include "exec-all.h"
-#include "rewrite/jumptable.h"
+#include "insn/jumptable.h"
 //#include "strtab.h"
 //#include "gas/disas.h"
 
@@ -20,19 +20,19 @@
 //#include "dbg_functions.h"
 
 #include "support/c_utils.h"
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 #include "rewrite/peephole.h"
 
 //#include "live_ranges.h"
 #include "ppc/regs.h"
-#include "rewrite/rdefs.h"
+#include "insn/rdefs.h"
 #include "valtag/memset.h"
 #include "ppc/insn.h"
 //#include "ppc/regmap.h"
 
 #include "rewrite/transmap_set.h"
 
-#include "rewrite/edge_table.h"
+#include "insn/edge_table.h"
 
 #include "valtag/elf/elftypes.h"
 #include "rewrite/translation_instance.h"

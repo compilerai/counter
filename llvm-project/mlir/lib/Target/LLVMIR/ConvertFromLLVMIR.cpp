@@ -106,7 +106,7 @@ private:
   /// Globals are inserted before the first function, if any.
   Block::iterator getGlobalInsertPt() {
     auto i = module.getBody()->begin();
-    while (!isa<LLVMFuncOp>(i) && !isa<ModuleTerminatorOp>(i))
+    while (!isa<LLVMFuncOp, ModuleTerminatorOp>(i))
       ++i;
     return i;
   }
@@ -168,12 +168,12 @@ LLVMType Importer::processType(llvm::Type *type) {
       return nullptr;
     return LLVMType::getArrayTy(elementType, type->getArrayNumElements());
   }
-  case llvm::Type::VectorTyID: {
-    auto *typeVTy = llvm::cast<llvm::VectorType>(type);
-    if (typeVTy->isScalable()) {
-      emitError(unknownLoc) << "scalable vector types not supported";
-      return nullptr;
-    }
+  case llvm::Type::ScalableVectorTyID: {
+    emitError(unknownLoc) << "scalable vector types not supported";
+    return nullptr;
+  }
+  case llvm::Type::FixedVectorTyID: {
+    auto *typeVTy = llvm::cast<llvm::FixedVectorType>(type);
     LLVMType elementType = processType(typeVTy->getElementType());
     if (!elementType)
       return nullptr;
@@ -234,18 +234,17 @@ Type Importer::getStdTypeForAttr(LLVMType type) {
     return nullptr;
 
   if (type.isIntegerTy())
-    return b.getIntegerType(type.getUnderlyingType()->getIntegerBitWidth());
+    return b.getIntegerType(type.getIntegerBitWidth());
 
-  if (type.getUnderlyingType()->isFloatTy())
+  if (type.isFloatTy())
     return b.getF32Type();
 
-  if (type.getUnderlyingType()->isDoubleTy())
+  if (type.isDoubleTy())
     return b.getF64Type();
 
   // LLVM vectors can only contain scalars.
   if (type.isVectorTy()) {
-    auto numElements = llvm::cast<llvm::VectorType>(type.getUnderlyingType())
-                           ->getElementCount();
+    auto numElements = type.getVectorElementCount();
     if (numElements.Scalable) {
       emitError(unknownLoc) << "scalable vectors not supported";
       return nullptr;
@@ -270,9 +269,7 @@ Type Importer::getStdTypeForAttr(LLVMType type) {
     // attribute type.
     if (type.getArrayElementType().isVectorTy()) {
       LLVMType vectorType = type.getArrayElementType();
-      auto numElements =
-          llvm::cast<llvm::VectorType>(vectorType.getUnderlyingType())
-              ->getElementCount();
+      auto numElements = vectorType.getVectorElementCount();
       if (numElements.Scalable) {
         emitError(unknownLoc) << "scalable vectors not supported";
         return nullptr;
@@ -405,6 +402,9 @@ Value Importer::processConstant(llvm::Constant *c) {
     LLVMType type = processType(c->getType());
     if (!type)
       return nullptr;
+    if (auto symbolRef = attr.dyn_cast<FlatSymbolRefAttr>())
+      return instMap[c] = bEntry.create<AddressOfOp>(unknownLoc, type,
+                                                     symbolRef.getValue());
     return instMap[c] = bEntry.create<ConstantOp>(unknownLoc, type, attr);
   }
   if (auto *cn = dyn_cast<llvm::ConstantPointerNull>(c)) {
@@ -415,8 +415,7 @@ Value Importer::processConstant(llvm::Constant *c) {
   }
   if (auto *GV = dyn_cast<llvm::GlobalVariable>(c))
     return bEntry.create<AddressOfOp>(UnknownLoc::get(context),
-                                      processGlobal(GV),
-                                      ArrayRef<NamedAttribute>());
+                                      processGlobal(GV));
 
   if (auto *ce = dyn_cast<llvm::ConstantExpr>(c)) {
     llvm::Instruction *i = ce->getAsInstruction();
@@ -720,11 +719,11 @@ LogicalResult Importer::processInstruction(llvm::Instruction *inst) {
       op = b.create<CallOp>(loc, tys, b.getSymbolRefAttr(callee->getName()),
                             ops);
     } else {
-      Value calledValue = processValue(ci->getCalledValue());
+      Value calledValue = processValue(ci->getCalledOperand());
       if (!calledValue)
         return failure();
       ops.insert(ops.begin(), calledValue);
-      op = b.create<CallOp>(loc, tys, ops, ArrayRef<NamedAttribute>());
+      op = b.create<CallOp>(loc, tys, ops);
     }
     if (!ci->getType()->isVoidTy())
       v = op->getResult(0);
@@ -766,7 +765,7 @@ LogicalResult Importer::processInstruction(llvm::Instruction *inst) {
                               ops, blocks[ii->getNormalDest()], normalArgs,
                               blocks[ii->getUnwindDest()], unwindArgs);
     } else {
-      ops.insert(ops.begin(), processValue(ii->getCalledValue()));
+      ops.insert(ops.begin(), processValue(ii->getCalledOperand()));
       op = b.create<InvokeOp>(loc, tys, ops, blocks[ii->getNormalDest()],
                               normalArgs, blocks[ii->getUnwindDest()],
                               unwindArgs);
@@ -806,7 +805,7 @@ LogicalResult Importer::processInstruction(llvm::Instruction *inst) {
     Type type = processType(inst->getType());
     if (!type)
       return failure();
-    v = b.create<GEPOp>(loc, type, ops, ArrayRef<NamedAttribute>());
+    v = b.create<GEPOp>(loc, type, ops);
     return success();
   }
   }
@@ -844,8 +843,9 @@ LogicalResult Importer::processFunction(llvm::Function *f) {
     return failure();
 
   b.setInsertionPoint(module.getBody(), getFuncInsertPt());
-  LLVMFuncOp fop = b.create<LLVMFuncOp>(UnknownLoc::get(context), f->getName(),
-                                        functionType);
+  LLVMFuncOp fop =
+      b.create<LLVMFuncOp>(UnknownLoc::get(context), f->getName(), functionType,
+                           convertLinkageFromLLVM(f->getLinkage()));
 
   if (FlatSymbolRefAttr personality = getPersonalityAsAttr(f))
     fop.setAttr(b.getIdentifier("personality"), personality);
@@ -924,9 +924,7 @@ OwningModuleRef translateLLVMIRToModule(llvm::SourceMgr &sourceMgr,
   llvm::SMDiagnostic err;
   std::unique_ptr<llvm::Module> llvmModule =
       llvm::parseIR(*sourceMgr.getMemoryBuffer(sourceMgr.getMainFileID()), err,
-                    dialect->getLLVMContext(),
-                    /*UpgradeDebugInfo=*/true,
-                    /*DataLayoutString=*/"");
+                    dialect->getLLVMContext());
   if (!llvmModule) {
     std::string errStr;
     llvm::raw_string_ostream errStream(errStr);

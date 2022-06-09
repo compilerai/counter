@@ -5,10 +5,10 @@
 
    See hash.h for basic information. */
 
-#include "cutils/chash.h"
 #include <support/debug.h>
 #include <stdlib.h>
 #include "support/timers.h"
+#include "cutils/chash.h"
 
 #define clist_elem_to_hash_elem(LIST_ELEM)                       \
         clist_entry(LIST_ELEM, struct myhash_elem, list_elem)

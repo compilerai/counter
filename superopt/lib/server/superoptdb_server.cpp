@@ -19,11 +19,12 @@
 #include "support/c_utils.h"
 #include "support/src-defs.h"
 #include "i386/insn.h"
-#include "codegen/etfg_insn.h"
+#include "x64/insn.h"
+#include "etfg/etfg_insn.h"
 #include "ppc/insn.h"
 #include "i386/execute.h"
 #include "ppc/execute.h"
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 #include "superopt/superopt.h"
 #include "equiv/equiv.h"
 #include "equiv/bequiv.h"
@@ -560,21 +561,22 @@ check_exists(char const *path)
 static char *
 get_client_addr(struct svc_req *req, char *buf, size_t size)
 {
-  struct hostent ret, *result;
-  struct sockaddr_in *clnt;
-  char tbuf[512];
-  int herrno, s;
+  NOT_IMPLEMENTED();
+  //struct hostent ret, *result;
+  //struct sockaddr_in *clnt;
+  //char tbuf[512];
+  //int herrno, s;
 
-  ASSERT(req);
-  ASSERT(req->rq_xprt);
-  clnt = svc_getcaller(req->rq_xprt);
-  s = gethostbyaddr_r(&clnt->sin_addr, sizeof(struct in_addr), AF_INET, &ret, tbuf,
-      sizeof tbuf, &result, &herrno);
-  ASSERT(s == 0);
-  DBG2(SUPEROPTDB_SERVER, "gethostbyaddr returned '%s'\n", ret.h_name);
-  ASSERT(strlen(ret.h_name) < size);
-  strncpy(buf, ret.h_name, size);
-  return buf;
+  //ASSERT(req);
+  //ASSERT(req->rq_xprt);
+  //clnt = svc_getcaller(req->rq_xprt);
+  //s = gethostbyaddr_r(&clnt->sin_addr, sizeof(struct in_addr), AF_INET, &ret, tbuf,
+  //    sizeof tbuf, &result, &herrno);
+  //ASSERT(s == 0);
+  //DBG2(SUPEROPTDB_SERVER, "gethostbyaddr returned '%s'\n", ret.h_name);
+  //ASSERT(strlen(ret.h_name) < size);
+  //strncpy(buf, ret.h_name, size);
+  //return buf;
 }
 
 int *

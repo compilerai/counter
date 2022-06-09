@@ -42,6 +42,8 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/CommandLine.h"
 
+#include "Superopt/sym_exec_llvm.h"
+
 using namespace llvm;
 
 // A handy option for disabling scoped no-alias functionality. The same effect
@@ -78,6 +80,8 @@ public:
 AliasResult ScopedNoAliasAAResult::alias(const MemoryLocation &LocA,
                                          const MemoryLocation &LocB,
                                          AAQueryInfo &AAQI) {
+  DYN_DEBUG2(aliasAnalysis, std::cout << "ScopedNoAliasAAResult::" << __func__ << " " << __LINE__ << ": LocA = " << sym_exec_common::get_value_name_using_srcdst_keyword(*LocA.Ptr, G_SRC_KEYWORD) << "\n");
+  DYN_DEBUG2(aliasAnalysis, std::cout << "ScopedNoAliasAAResult::" << __func__ << " " << __LINE__ << ": LocB = " << sym_exec_common::get_value_name_using_srcdst_keyword(*LocB.Ptr, G_SRC_KEYWORD) << "\n");
   if (!EnableScopedNoAlias)
     return AAResultBase::alias(LocA, LocB, AAQI);
 
@@ -185,7 +189,7 @@ ScopedNoAliasAAResult ScopedNoAliasAA::run(Function &F,
 
 char ScopedNoAliasAAWrapperPass::ID = 0;
 
-INITIALIZE_PASS(ScopedNoAliasAAWrapperPass, "scoped-noalias",
+INITIALIZE_PASS(ScopedNoAliasAAWrapperPass, "scoped-noalias-aa",
                 "Scoped NoAlias Alias Analysis", false, true)
 
 ImmutablePass *llvm::createScopedNoAliasAAWrapperPass() {

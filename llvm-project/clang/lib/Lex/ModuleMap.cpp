@@ -387,13 +387,17 @@ bool ModuleMap::isBuiltinHeader(StringRef FileName) {
            .Default(false);
 }
 
+bool ModuleMap::isBuiltinHeader(const FileEntry *File) {
+  return File->getDir() == BuiltinIncludeDir &&
+         ModuleMap::isBuiltinHeader(llvm::sys::path::filename(File->getName()));
+}
+
 ModuleMap::HeadersMap::iterator
 ModuleMap::findKnownHeader(const FileEntry *File) {
   resolveHeaderDirectives(File);
   HeadersMap::iterator Known = Headers.find(File);
   if (HeaderInfo.getHeaderSearchOpts().ImplicitModuleMaps &&
-      Known == Headers.end() && File->getDir() == BuiltinIncludeDir &&
-      ModuleMap::isBuiltinHeader(llvm::sys::path::filename(File->getName()))) {
+      Known == Headers.end() && ModuleMap::isBuiltinHeader(File)) {
     HeaderInfo.loadTopLevelSystemModules();
     return Headers.find(File);
   }
@@ -662,7 +666,20 @@ ModuleMap::findOrCreateModuleForHeaderInUmbrellaDir(const FileEntry *File) {
 }
 
 ArrayRef<ModuleMap::KnownHeader>
-ModuleMap::findAllModulesForHeader(const FileEntry *File) const {
+ModuleMap::findAllModulesForHeader(const FileEntry *File) {
+  HeadersMap::iterator Known = findKnownHeader(File);
+  if (Known != Headers.end())
+    return Known->second;
+
+  if (findOrCreateModuleForHeaderInUmbrellaDir(File))
+    return Headers.find(File)->second;
+
+  return None;
+}
+
+ArrayRef<ModuleMap::KnownHeader>
+ModuleMap::findResolvedModulesForHeader(const FileEntry *File) const {
+  // FIXME: Is this necessary?
   resolveHeaderDirectives(File);
   auto It = Headers.find(File);
   if (It == Headers.end())

@@ -23,6 +23,9 @@ else:
     # bash on Windows is usually very slow.
     execute_external = (not sys.platform in ['win32'])
 
+# Allow expanding substitutions that are based on other substitutions
+config.recursiveExpansionLimit = 10
+
 # Setup test format.
 config.test_format = lit.formats.ShTest(execute_external)
 if execute_external:
@@ -67,6 +70,8 @@ if config.android:
     # to link. In r19 and later we just use the default which is libc++.
     config.cxx_mode_flags.append('-stdlib=libstdc++')
 
+config.environment = dict(os.environ)
+
 # Clear some environment variables that might affect Clang.
 possibly_dangerous_env_vars = ['ASAN_OPTIONS', 'DFSAN_OPTIONS', 'LSAN_OPTIONS',
                                'MSAN_OPTIONS', 'UBSAN_OPTIONS',
@@ -102,6 +107,8 @@ config.available_features.add(config.host_os.lower())
 
 if re.match(r'^x86_64.*-linux', config.target_triple):
   config.available_features.add("x86_64-linux")
+
+config.available_features.add("host-byteorder-" + sys.byteorder + "-endian")
 
 if config.have_zlib == "1":
   config.available_features.add("zlib")
@@ -181,7 +188,7 @@ elif config.host_os == 'Darwin' and config.apple_platform != "osx":
   config.compile_wrapper = compile_wrapper
 
   try:
-    prepare_output = subprocess.check_output([prepare_script, config.apple_platform, config.clang]).strip()
+    prepare_output = subprocess.check_output([prepare_script, config.apple_platform, config.clang]).decode().strip()
   except subprocess.CalledProcessError as e:
     print("Command failed:")
     print(e.output)
@@ -307,7 +314,8 @@ if config.host_os == 'Darwin':
 
   osx_version = (10, 0, 0)
   try:
-    osx_version = subprocess.check_output(["sw_vers", "-productVersion"])
+    osx_version = subprocess.check_output(["sw_vers", "-productVersion"],
+                                          universal_newlines=True)
     osx_version = tuple(int(x) for x in osx_version.split('.'))
     if len(osx_version) == 2: osx_version = (osx_version[0], osx_version[1], 0)
     if osx_version >= (10, 11):
@@ -319,7 +327,7 @@ if config.host_os == 'Darwin':
       # this "feature", we can pass the test on newer OS X versions and other
       # platforms.
       config.available_features.add('osx-no-ld64-live_support')
-  except:
+  except subprocess.CalledProcessError:
     pass
 
   config.darwin_osx_version = osx_version
@@ -408,19 +416,18 @@ if os.path.exists(sancovcc_path):
 def is_darwin_lto_supported():
   return os.path.exists(os.path.join(config.llvm_shlib_dir, 'libLTO.dylib'))
 
-def is_linux_lto_supported():
-  if config.use_lld:
-    return True
-
+def is_binutils_lto_supported():
   if not os.path.exists(os.path.join(config.llvm_shlib_dir, 'LLVMgold.so')):
     return False
 
-  ld_cmd = subprocess.Popen([config.gold_executable, '--help'], stdout = subprocess.PIPE, env={'LANG': 'C'})
-  ld_out = ld_cmd.stdout.read().decode()
-  ld_cmd.wait()
-
-  if not '-plugin' in ld_out:
-    return False
+  # We require both ld.bfd and ld.gold exist and support plugins. They are in
+  # the same repository 'binutils-gdb' and usually built together.
+  for exe in (config.gnu_ld_executable, config.gold_executable):
+    ld_cmd = subprocess.Popen([exe, '--help'], stdout=subprocess.PIPE, env={'LANG': 'C'})
+    ld_out = ld_cmd.stdout.read().decode()
+    ld_cmd.wait()
+    if not '-plugin' in ld_out:
+      return False
 
   return True
 
@@ -431,13 +438,20 @@ if config.host_os == 'Darwin' and is_darwin_lto_supported():
   config.lto_supported = True
   config.lto_launch = ["env", "DYLD_LIBRARY_PATH=" + config.llvm_shlib_dir]
   config.lto_flags = []
-elif config.host_os in ['Linux', 'FreeBSD', 'NetBSD'] and is_linux_lto_supported():
-  config.lto_supported = True
-  config.lto_launch = []
+elif config.host_os in ['Linux', 'FreeBSD', 'NetBSD']:
+  config.lto_supported = False
   if config.use_lld:
-    config.lto_flags = ["-fuse-ld=lld"]
-  else:
-    config.lto_flags = ["-fuse-ld=gold"]
+    config.lto_supported = True
+  if is_binutils_lto_supported():
+    config.available_features.add('binutils_lto')
+    config.lto_supported = True
+
+  if config.lto_supported:
+    config.lto_launch = []
+    if config.use_lld:
+      config.lto_flags = ["-fuse-ld=lld"]
+    else:
+      config.lto_flags = ["-fuse-ld=gold"]
 elif config.host_os == 'Windows' and is_windows_lto_supported():
   config.lto_supported = True
   config.lto_launch = []

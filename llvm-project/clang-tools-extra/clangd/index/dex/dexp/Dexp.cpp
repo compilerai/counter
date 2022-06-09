@@ -11,13 +11,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "SourceCode.h"
 #include "index/Serialization.h"
 #include "index/dex/Dex.h"
+#include "index/remote/Client.h"
 #include "llvm/ADT/ScopeExit.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/ADT/StringSwitch.h"
 #include "llvm/LineEditor/LineEditor.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Signals.h"
@@ -26,17 +25,25 @@ namespace clang {
 namespace clangd {
 namespace {
 
-llvm::cl::opt<std::string> IndexPath(llvm::cl::desc("<INDEX FILE>"),
-                                     llvm::cl::Positional, llvm::cl::Required);
+llvm::cl::opt<std::string> IndexLocation(
+    llvm::cl::desc("<path to index file | remote:server.address>"),
+    llvm::cl::Positional);
 
 llvm::cl::opt<std::string>
     ExecCommand("c", llvm::cl::desc("Command to execute and then exit"));
 
-static const std::string Overview = R"(
+llvm::cl::opt<std::string> ProjectRoot("project-root",
+                                       llvm::cl::desc("Path to the project"));
+
+static constexpr char Overview[] = R"(
 This is an **experimental** interactive tool to process user-provided search
 queries over given symbol collection obtained via clangd-indexer. The
 tool can be used to evaluate search quality of existing index implementations
 and manually construct non-trivial test cases.
+
+You can connect to remote index by passing remote:address to dexp. Example:
+
+$ dexp remote:0.0.0.0:9000
 
 Type use "help" request to get information about the details.
 )";
@@ -150,7 +157,7 @@ class FuzzyFind : public Command {
     }
     Request.AnyScope = Request.Scopes.empty();
     // FIXME(kbobyrev): Print symbol final scores to see the distribution.
-    static const auto OutputFormat = "{0,-4} | {1,-40} | {2,-25}\n";
+    static const auto *OutputFormat = "{0,-4} | {1,-40} | {2,-25}\n";
     llvm::outs() << llvm::formatv(OutputFormat, "Rank", "Symbol ID",
                                   "Symbol Name");
     size_t Rank = 0;
@@ -174,7 +181,7 @@ class Lookup : public Command {
 
   void run() override {
     if (ID.getNumOccurrences() == 0 && Name.getNumOccurrences() == 0) {
-      llvm::outs()
+      llvm::errs()
           << "Missing required argument: please provide id or -name.\n";
       return;
     }
@@ -182,7 +189,7 @@ class Lookup : public Command {
     if (ID.getNumOccurrences()) {
       auto SID = SymbolID::fromStr(ID);
       if (!SID) {
-        llvm::outs() << llvm::toString(SID.takeError()) << "\n";
+        llvm::errs() << llvm::toString(SID.takeError()) << "\n";
         return;
       }
       IDs.push_back(*SID);
@@ -198,7 +205,7 @@ class Lookup : public Command {
       llvm::outs() << toYAML(Sym);
     });
     if (!FoundSymbol)
-      llvm::outs() << "not found\n";
+      llvm::errs() << "not found\n";
   }
 };
 
@@ -221,7 +228,7 @@ class Refs : public Command {
 
   void run() override {
     if (ID.getNumOccurrences() == 0 && Name.getNumOccurrences() == 0) {
-      llvm::outs()
+      llvm::errs()
           << "Missing required argument: please provide id or -name.\n";
       return;
     }
@@ -229,14 +236,14 @@ class Refs : public Command {
     if (ID.getNumOccurrences()) {
       auto SID = SymbolID::fromStr(ID);
       if (!SID) {
-        llvm::outs() << llvm::toString(SID.takeError()) << "\n";
+        llvm::errs() << llvm::toString(SID.takeError()) << "\n";
         return;
       }
       IDs.push_back(*SID);
     } else {
       IDs = getSymbolIDsFromIndex(Name, Index);
       if (IDs.size() > 1) {
-        llvm::outs() << llvm::formatv(
+        llvm::errs() << llvm::formatv(
             "The name {0} is ambiguous, found {1} different "
             "symbols. Please use id flag to disambiguate.\n",
             Name, IDs.size());
@@ -249,7 +256,7 @@ class Refs : public Command {
     Index->refs(RefRequest, [&RegexFilter](const Ref &R) {
       auto U = URI::parse(R.Location.FileURI);
       if (!U) {
-        llvm::outs() << U.takeError();
+        llvm::errs() << U.takeError();
         return;
       }
       if (RegexFilter.match(U->body()))
@@ -276,12 +283,12 @@ class Export : public Command {
   };
 
 public:
-  void run() {
+  void run() override {
     using namespace clang::clangd;
     // Read input file (as specified in global option)
-    auto Buffer = llvm::MemoryBuffer::getFile(IndexPath);
+    auto Buffer = llvm::MemoryBuffer::getFile(IndexLocation);
     if (!Buffer) {
-      llvm::errs() << llvm::formatv("Can't open {0}", IndexPath) << "\n";
+      llvm::errs() << llvm::formatv("Can't open {0}", IndexLocation) << "\n";
       return;
     }
 
@@ -316,13 +323,15 @@ struct {
     {"find", "Search for symbols with fuzzyFind", std::make_unique<FuzzyFind>},
     {"lookup", "Dump symbol details by ID or qualified name",
      std::make_unique<Lookup>},
-    {"refs", "Find references by ID or qualified name",
-     std::make_unique<Refs>},
+    {"refs", "Find references by ID or qualified name", std::make_unique<Refs>},
     {"export", "Export index", std::make_unique<Export>},
 };
 
 std::unique_ptr<SymbolIndex> openIndex(llvm::StringRef Index) {
-  return loadIndex(Index, /*UseDex=*/true);
+  return Index.startswith("remote:")
+             ? remote::getClient(Index.drop_front(strlen("remote:")),
+                                 ProjectRoot)
+             : loadIndex(Index, /*UseDex=*/true);
 }
 
 bool runCommand(std::string Request, const SymbolIndex &Index) {
@@ -349,7 +358,7 @@ bool runCommand(std::string Request, const SymbolIndex &Index) {
       return Cmd.Implementation()->parseAndRun(FakeArgv, Cmd.Description,
                                                Index);
   }
-  llvm::outs() << "Unknown command. Try 'help'.\n";
+  llvm::errs() << "Unknown command. Try 'help'.\n";
   return false;
 }
 
@@ -365,12 +374,13 @@ int main(int argc, const char *argv[]) {
   llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
 
   std::unique_ptr<SymbolIndex> Index;
-  reportTime("Dex build", [&]() {
-    Index = openIndex(IndexPath);
-  });
+  reportTime(llvm::StringRef(IndexLocation).startswith("remote:")
+                 ? "Remote index client creation"
+                 : "Dex build",
+             [&]() { Index = openIndex(IndexLocation); });
 
   if (!Index) {
-    llvm::outs() << "Failed to open the index.\n";
+    llvm::errs() << "Failed to open the index.\n";
     return -1;
   }
 

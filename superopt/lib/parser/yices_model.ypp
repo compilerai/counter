@@ -1,0 +1,354 @@
+/* use C++ parser */
+%skeleton "lalr1.cc"
+//%define api.parser.class {Yices_Parser}
+%define parser_class_name {Yices_Parser} // parser_class_name is deprecated; use api.parser.class once everyone has moved to ubuntu 20.04
+
+%code requires {
+  #include <fstream>
+  #include <string>
+  #include <map>
+  #include <vector>
+
+  #include "support/bv_const.h"
+  #include "support/dyn_debug.h"
+  #include "parser/parse_tree_yices.h"
+  #include "parser/yices_scanner.h"
+  #include "expr/expr.h"
+  #include "expr/eval.h"
+  #include "expr/context.h"
+
+  class Yices_Scanner;
+  using namespace std;
+}
+
+%code top {
+  #include "parser/yices_scanner.h"
+  /* let bison know of our lexer */
+  #undef yylex
+  #define yylex scanner.yylex
+}
+
+/* args to parser */
+%parse-param { Yices_Scanner& scanner }
+%parse-param { std::string filename }
+%parse-param { eqspace::context* ctx }
+%parse-param { Env& env }
+
+/* turn on location tracking; helpful while debugging */
+%locations
+
+%initial-action
+{
+    // initialize the initial location object
+    @$.begin.filename = @$.end.filename = &filename;
+};
+
+/* use variants to simplify type annotations
+	https://www.gnu.org/software/bison/manual/html_node/C_002b_002b-Variants.html
+*/
+%define api.value.type variant
+
+/* catch runtime errors using assert */
+%define parse.assert true
+
+// more verbose errors
+%define parse.error verbose
+
+/* special EOD token */
+/* %token END 0 "end of file" */
+
+%token DECL L_BRAC R_BRAC EQ
+%token TYPE DEFAULT
+%token BVCONST TRUE FALSE ARRAY BV BOOL NUM
+%token INTERNAL_FUNC_NAME GLOBAL_FUNC_NAME
+
+%type<int> NUM
+%type<pair<size_t,bv_const>> BVCONST
+%type<string> INTERNAL_FUNC_NAME
+%type<string> GLOBAL_FUNC_NAME
+
+%type<sort_ref> Sort
+%type<pair<string,sort_ref>> FnDecl
+%type<string> FnName
+%type<expr_ref> BoolExpr VarExpr BExpr AppExpr Expr BoolScalar BVScalar Function ResolvedFnExpr
+%type<pair<expr_ref,expr_ref>> FnExprPair
+%type<vector<pair<expr_ref,expr_ref>>> FnExprPairList
+%type<vector<expr_ref>> FunctionList
+
+%start Program
+
+//sat, model are ignored as tokens
+%%
+Program
+  : FunctionList
+;
+
+FunctionList
+  :  /* Can be empty */
+  |	FunctionList L_BRAC Function R_BRAC { if ($3->is_undefined()) env.m_undefined_counter++; }
+;
+
+FnName
+  : INTERNAL_FUNC_NAME { $$ = $1; }
+  | GLOBAL_FUNC_NAME   { env.m_global_funcs.insert($1); $$ = $1; }
+  ;
+
+FnDecl
+  : DECL FnName L_BRAC TYPE Sort R_BRAC 
+    {
+      // in function body current function name is used as param
+      env.m_curfuncname = $2;
+      env.m_curfuncsort = $5;
+      $$ = make_pair($2, $5);
+    }
+  | EQ FnName
+    {
+      env.m_curfuncname.clear();
+      env.m_curfuncsort = nullptr;
+      $$ = make_pair($2, nullptr);
+    }
+  ;
+
+/* we maintain a distinction b/w INTERNAL_FUNC_NAME and GLOBAL_FUNC_NAME as only GLOBAL_FUNC_NAME are returned */
+Function
+  : FnDecl ResolvedFnExpr
+    {
+      auto const& fn_name = $1.first;
+      auto const& fn_expr = $2;
+      auto fn_sort = $1.second;
+      auto& funcs = env.m_funcs;
+
+      if (fn_expr->is_undefined()) {
+        /* cout << fn_name << " is still undefined\n"; */
+        $$ = ctx->mk_undefined();
+      } else if (funcs.count(fn_name)) {
+        // have seen it before
+        $$ = funcs[fn_name].first;
+      } else {
+        vector<sort_ref> domain_sort;
+        sort_ref range_sort;
+        vector<expr_ref> params;
+        if (fn_sort) {
+          ASSERT(fn_sort->is_array_kind() || fn_sort->is_function_kind());
+          domain_sort = fn_sort->get_domain_sort();
+          range_sort = fn_sort->get_range_sort();
+          ASSERT(domain_sort.size() == 1); // only one argument support
+          params.push_back(ctx->mk_var(env.m_curfuncname, domain_sort.front()));
+        } else {
+          // domain_sort and params remain empty
+          range_sort = fn_expr->get_sort();
+        }
+        ASSERT(range_sort == fn_expr->get_sort());
+
+        auto resolved_expr = expr_evaluates_to_constant(fn_expr);
+        //cout << "After simplification: " << fn_name << ": " << expr_string(resolved_expr) << ": " << resolved_expr->get_sort()->to_string() << endl << endl;
+        resolved_expr = resolve_params(resolved_expr, domain_sort, range_sort, params);
+        //cout << "After resolve_params: " << fn_name << ": " << expr_string(resolved_expr) << ": " << resolved_expr->get_sort()->to_string() << endl << endl;
+        ASSERT(resolved_expr->is_const());
+        funcs[fn_name] = make_pair(resolved_expr, ctx->mk_function_sort(domain_sort, range_sort));
+        $$ = resolved_expr;
+      }
+
+      /* clear out this func specific stuff */
+      env.m_curfuncparams.clear();
+      env.m_curfuncname.clear();
+      env.m_curfuncsort = nullptr;
+      ASSERT(env.m_letfuncs.size() == 0); /* all let functions should be popped out */
+    }
+  ;
+
+ResolvedFnExpr
+  : Expr           { $$ = $1; }
+  | FnExprPairList
+    {
+      auto const& fnexprlist = $1;
+      if (fnexprlist.size() == 1 && fnexprlist.front().first->is_undefined()) {
+        $$ = ctx->mk_undefined();
+      } else {
+        $$ = fn_expr_pair_list_to_ite(fnexprlist);
+      }
+    }
+  ;
+
+FnExprPairList
+  :	FnExprPair
+	  {
+		  $$ = { $1 };
+	  }
+  | FnExprPairList FnExprPair
+	  {
+	    bool is_undefined = false;
+	    for (auto const& e : $1) {
+	      if (   e.first->is_undefined()
+	          || e.second->is_undefined()) {
+	        is_undefined = true;
+	        break;
+	      }
+	    }
+	    if (is_undefined) {
+	      $$ = { make_pair(ctx->mk_undefined(), ctx->mk_undefined()) };
+	    }
+	    else {
+		    // create ITE ladder
+		    auto ret = $1;
+		    ret.push_back($2);
+		    $$ = ret;
+		  }
+	  }
+  ;
+
+FnExprPair
+  : L_BRAC EQ Expr Expr R_BRAC
+    {
+      $$ = make_pair($3, $4);
+    }
+  | L_BRAC DEFAULT Expr R_BRAC
+    {
+      $$ = make_pair(expr_true(ctx), $3);
+    }
+  ;
+
+Sort
+  : BOOL
+	  {
+		  $$ = ctx->mk_bool_sort();
+	  }
+  |	L_BRAC BV NUM R_BRAC
+	  {
+		  $$ = ctx->mk_bv_sort($3);
+	  }
+  |	L_BRAC ARRAY Sort Sort R_BRAC
+	  {
+		  $$ = ctx->mk_array_sort($3, $4);
+	  }
+  ;
+
+BVScalar
+  : BVCONST
+    {
+      auto const& p = $1;
+      $$ = ctx->mk_bv_const(p.first, p.second);
+    }
+  ;
+
+BoolScalar
+  :	TRUE  { $$ = ctx->mk_bool_const(true); }
+  |	FALSE { $$ = ctx->mk_bool_const(false); }
+  ;
+
+Expr
+  : BVScalar            { $$ = $1; }
+  | BoolScalar          { $$ = $1; }
+  | VarExpr             { $$ = $1; }
+  | L_BRAC BExpr R_BRAC { $$ = $2; }
+  ;
+
+BExpr
+  : BoolExpr   { $$ = $1; }
+  | Expr       { $$ = $1; }
+  | AppExpr    { $$ = $1; }
+  ;
+
+AppExpr
+  : VarExpr Expr
+    {
+      // limited form of application -- for now we only support the special
+      // pattern used for specifying parameter values
+      // function <fn_name> <signature> (= (<fn_name> <param_values>) <expr>) (...)
+      auto const& var = $1;
+      auto const& argv = $2;
+      if (var->get_name()->get_str() == env.m_curfuncname) {
+        // (<fn_name> VAL) => VAL is the parameter value
+        // use <fn_name> as the parameter name
+        $$ = expr_eq(var, argv);
+      } else {
+        NOT_IMPLEMENTED();
+      }
+    }
+  ;
+
+VarExpr
+  : FnName
+    {
+      if ($1 == env.m_curfuncname) {
+        ASSERT(env.m_curfuncsort);
+        $$ = ctx->mk_var($1, env.m_curfuncsort->get_domain_sort().front());
+      }
+      else {
+        $$ = env.m_funcs.count($1) ? env.m_funcs.at($1).first
+                                   : ctx->mk_undefined();
+      }
+    }
+  ;
+
+BoolExpr
+  :	EQ Expr Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $3->is_undefined()) {
+	      $$ = ctx->mk_undefined();
+	    }
+	    else {
+	      $$ = ctx->mk_eq($2, $3);
+	    }
+	  }
+;
+
+%%
+
+map<string_ref,expr_ref> parse_yices_model(eqspace::context* ctx, const char* fname)
+{
+  autostop_timer timer(__func__);
+  map<string_ref, expr_ref> ret;
+  //context nctx(ctx->get_config(), /*no_solver*/true);
+  Env env;
+
+  std::ifstream fin(fname);
+  if (!fin.good()) {
+    cerr << __func__ << ':' << __LINE__ << ": cannot open " << fname << endl;
+    return ret;
+  }
+
+  unsigned last_undefined_counter_value = 0;
+  do {
+    env.m_undefined_counter = 0;
+    fin.seekg(ios_base::beg);
+    Yices_Scanner scanner(&fin);
+    yy::Yices_Parser parser(scanner, string(fname), ctx, env);
+    if (parser.parse()) {
+      cerr << __func__ << ':' << __LINE__ << ": parsing failed for " << fname << endl;
+      ASSERT(0);
+    }
+    if (last_undefined_counter_value != 0) {
+      ASSERTCHECK(last_undefined_counter_value > env.m_undefined_counter, cout << "Number of undefined functions didn't decrease in this iteration.  Looks like we are stuck in a loop" << endl);
+    }
+    last_undefined_counter_value = env.m_undefined_counter;
+    DYN_DEBUG(yices_parser, cout << "Number of undefined functions = " << env.m_undefined_counter << endl);
+  } while (env.m_undefined_counter);
+
+  DYN_DEBUG(yices_parser, for (auto const& fname : env.m_funcs) cout << fname.first << " -> " << expr_string(fname.second.first) << endl;);
+  // prepare the output expr for returning to user
+  for (auto const& fname : env.m_global_funcs) {
+    auto it = env.m_funcs.find(fname);
+    if (it->second.second->get_domain_sort().size()) {
+      // non-zero arity
+      ASSERT (it->second.first->is_array_sort());
+      ret[mk_string_ref(fname)] = ctx->mk_array_const(it->second.first->get_array_constant(), it->second.second); // set the proper sort
+    }
+    else {
+      // zero arity -- we keep everything of array (function) type; let's take out the default value
+      auto range_sort = it->second.second->get_range_sort();
+      auto r = it->second.first->get_array_constant()->get_default_value();
+      ASSERT(r->get_sort() == range_sort);
+      ret[mk_string_ref(fname)] = r;
+    }
+  }
+  return ret;
+}
+
+void
+yy::Yices_Parser::error(const location_type &l, const std::string &err_message)
+{
+  cout << __func__ << ':' << __LINE__ << ": At " << l << ": " << err_message << endl;
+   /* std::cerr << "Error: " << err_message << " at " << l << "\n"; */
+}

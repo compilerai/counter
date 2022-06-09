@@ -20,4 +20,5 @@ add_llvm_library( LLVMLockstep MODULE BUILDTREE_ONLY
   opt
   )
 
-target_link_libraries(LLVMLockstep ${SUPEROPT_LIBS})
+add_superopt_libs(slibs)
+target_link_libraries(LLVMLockstep ${slibs})

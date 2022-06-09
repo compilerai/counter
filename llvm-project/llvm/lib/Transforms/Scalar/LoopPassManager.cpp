@@ -34,9 +34,6 @@ PassManager<Loop, LoopAnalysisManager, LoopStandardAnalysisResults &,
   // instrumenting callbacks for the passes later.
   PassInstrumentation PI = AM.getResult<PassInstrumentationAnalysis>(L, AR);
   for (auto &Pass : Passes) {
-    if (DebugLogging)
-      dbgs() << "Running pass: " << Pass->name() << " on " << L;
-
     // Check the PassInstrumentation's BeforePass callbacks before running the
     // pass, skip its execution completely if asked to (callback returns false).
     if (!PI.runBeforePass<Loop>(*Pass, L))

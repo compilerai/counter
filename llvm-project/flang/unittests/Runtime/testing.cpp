@@ -1,6 +1,5 @@
 #include "testing.h"
 #include "../../runtime/terminator.h"
-#include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 #include <cstdarg>
 #include <cstdio>
@@ -10,10 +9,13 @@
 static int failures{0};
 
 // Override the Fortran runtime's Crash() for testing purposes
-[[noreturn]] static void CatchCrash(const char *message, va_list &ap) {
+[[noreturn]] static void CatchCrash(
+    const char *sourceFile, int sourceLine, const char *message, va_list &ap) {
   char buffer[1000];
   std::vsnprintf(buffer, sizeof buffer, message, ap);
   va_end(ap);
+  llvm::errs() << (sourceFile ? sourceFile : "unknown source file") << '('
+               << sourceLine << "): CRASH: " << buffer << '\n';
   throw std::string{buffer};
 }
 

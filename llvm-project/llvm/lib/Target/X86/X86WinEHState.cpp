@@ -19,6 +19,7 @@
 #include "llvm/Analysis/EHPersonalities.h"
 #include "llvm/CodeGen/MachineModuleInfo.h"
 #include "llvm/CodeGen/WinEHFuncInfo.h"
+#include "llvm/IR/CFG.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
@@ -754,7 +755,7 @@ void WinEHStatePass::addStateStores(Function &F, WinEHFuncInfo &FuncInfo) {
       auto *Call = dyn_cast<CallBase>(&I);
       if (!Call)
         continue;
-      if (Call->getCalledValue()->stripPointerCasts() !=
+      if (Call->getCalledOperand()->stripPointerCasts() !=
           SetJmp3.getCallee()->stripPointerCasts())
         continue;
 

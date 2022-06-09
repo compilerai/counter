@@ -389,6 +389,12 @@ ReachingDefAnalysis::getGlobalUses(MachineInstr *MI, int PhysReg,
   }
 }
 
+void ReachingDefAnalysis::getLiveOuts(MachineBasicBlock *MBB, int PhysReg,
+                                      InstSet &Defs) const {
+  SmallPtrSet<MachineBasicBlock*, 2> VisitedBBs;
+  getLiveOuts(MBB, PhysReg, Defs, VisitedBBs);
+}
+
 void
 ReachingDefAnalysis::getLiveOuts(MachineBasicBlock *MBB, int PhysReg,
                                  InstSet &Defs, BlockSet &VisitedBBs) const {
@@ -538,7 +544,7 @@ bool ReachingDefAnalysis::isSafeToMove(MachineInstr *From,
 
   // Now walk checking that the rest of the instructions will compute the same
   // value and that we're not overwriting anything. Don't move the instruction
-  // past any memory, control-flow or other ambigious instructions.
+  // past any memory, control-flow or other ambiguous instructions.
   for (auto I = ++Iterator(From), E = Iterator(To); I != E; ++I) {
     if (mayHaveSideEffects(*I))
       return false;

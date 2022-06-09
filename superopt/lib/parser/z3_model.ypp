@@ -1,0 +1,682 @@
+/* use C++ parser */
+%skeleton "lalr1.cc"
+//%define api.parser.class {Z3_Parser}
+%define parser_class_name {Z3_Parser} // parser_class_name is deprecated; use api.parser.class once everyone has moved to ubuntu 20.04
+
+%code requires {
+  #include <fstream>
+  #include <string>
+  #include <map>
+  #include <vector>
+
+  #include "support/bv_const.h"
+  #include "support/dyn_debug.h"
+  #include "parser/parse_tree_z3.h"
+  #include "parser/z3_scanner.h"
+  #include "expr/expr.h"
+  #include "expr/expr_utils.h"
+  #include "expr/eval.h"
+  #include "expr/context.h"
+
+  class Z3_Scanner;
+  using namespace std;
+}
+
+%code top {
+  #include "parser/z3_scanner.h"
+  /* let bison know of our lexer */
+  #undef yylex
+  #define yylex scanner.yylex
+}
+
+/* args to parser */
+%parse-param { Z3_Scanner& scanner }
+%parse-param { std::string filename }
+%parse-param { eqspace::context* ctx }
+%parse-param { Env& env }
+
+/* turn on location tracking; helpful while debugging */
+%locations
+
+%initial-action
+{
+    // initialize the initial location object
+    @$.begin.filename = @$.end.filename = &filename;
+};
+
+/* use variants to simplify type annotations
+	https://www.gnu.org/software/bison/manual/html_node/C_002b_002b-Variants.html
+*/
+%define api.value.type variant
+
+/* catch runtime errors using assert */
+%define parse.assert true
+
+// more verbose errors
+%define parse.error verbose
+
+/* special EOD token */
+/* %token END 0 "end of file" */
+
+%token DECL L_BRAC R_BRAC
+%token BVCONST TRUE FALSE ARRAY BV FLOATINGPOINT BOOL NUM FP FP_POSITIVE_ZERO FP_NEGATIVE_ZERO FP_NAN_IDENTIFIER FP_POSITIVE_INFINITY FP_NEGATIVE_INFINITY
+%token LETVAR PARAMVAR INTERNAL_FUNC_NAME GLOBAL_FUNC_NAME
+%token BVNOT BVADD BVMUL BVSLE BVSHL BVSDIV_I BVUDIV_I BVULE AND OR NOT XOR IMPLIES EQ CONCAT BVEXTRACT
+%token ITE ARRAY_INTPR AS_CONST SELECT STORE LET LAMBDA
+
+%type<int> NUM
+%type<pair<size_t,bv_const>> BVCONST
+%type<pair<int,int>> BVEXTRACT
+%type<string> INTERNAL_FUNC_NAME
+%type<string> GLOBAL_FUNC_NAME
+%type<string> LETVAR
+%type<string> PARAMVAR
+
+%type<int> LetDeclList
+%type<sort_ref> Sort FnParam LambdaParam
+%type<string> FnName AppFnName
+%type<expr_ref> ArrayExpr AppExpr LetExpr BVExpr IteExpr BoolExpr VarExpr BExpr Expr BoolScalar BVScalar FloatScalar ScalarExpr Function LambdaExpr
+%type<vector<sort_ref>> FnParamList LambdaParamList
+%type<vector<expr_ref>> ExprList FunctionList
+
+%start Program
+
+//sat, model are ignored as tokens
+%%
+Program
+  : L_BRAC FunctionList R_BRAC
+;
+
+FunctionList
+  :  /* Can be empty */ {}
+  |	FunctionList L_BRAC Function R_BRAC { if ($3->is_undefined()) env.m_undefined_counter++; }
+;
+
+FnName
+  : INTERNAL_FUNC_NAME { $$ = $1; }
+  | GLOBAL_FUNC_NAME   { env.m_global_funcs.insert($1); $$ = $1; }
+  ;
+
+/* we maintain a distinction b/w INTERNAL_FUNC_NAME and GLOBAL_FUNC_NAME as only GLOBAL_FUNC_NAME are returned */
+Function
+  : DECL FnName L_BRAC FnParamList R_BRAC Sort Expr
+	  {
+		  auto const& fnName = $2;
+		  auto& funcs = env.m_funcs;
+		  auto const& domain_sort = $4;
+		  auto const& range_sort = $6;
+		  auto const& body = $7;
+
+		  if ($7->is_undefined()) {
+		    /* cout << fnName << " is still undefined\n"; */
+		    $$ = $7;
+		  }
+		  else if (funcs.count(fnName)) {
+		    // have seen it before
+		    $$ = funcs[fnName].first;
+		  }
+		  else {
+        DYN_DEBUG2(z3_parser, cout << "Before simplification: " << fnName << ": " << expr_string($7) << ": " << $7->get_sort()->to_string() << endl);
+        auto resolved_expr = expr_evaluates_to_constant(body);
+        DYN_DEBUG2(z3_parser, cout << "After simplification: " << fnName << ": " << expr_string(resolved_expr) << ": " << resolved_expr->get_sort()->to_string() << endl);
+        resolved_expr = resolve_params(resolved_expr, domain_sort, range_sort, env.m_curfuncparams);
+        DYN_DEBUG2(z3_parser, cout << "After resolve_params: " << fnName << ": " << expr_string(resolved_expr) << ": " << resolved_expr->get_sort()->to_string() << endl);
+        ASSERT(resolved_expr->is_const());
+		    funcs[fnName] = make_pair(resolved_expr, ctx->mk_function_sort(domain_sort, range_sort));
+		    $$ = resolved_expr;
+		  }
+
+		  /* clear out func params for this function */
+		  env.m_curfuncparams.clear();
+		  /* similarly, all let functions should be popped out */
+		  ASSERT(env.m_letfuncs.size() == 0);
+	  }
+  ;
+
+FnParamList
+  : { $$ = {};  /* can be empty */ }
+  | FnParamList L_BRAC FnParam R_BRAC
+	  {
+		  $1.push_back($3);
+		  $$ = $1;
+	  }
+;
+
+FnParam
+  : PARAMVAR Sort
+	  {
+		  env.m_curfuncparams.push_back(ctx->mk_var($1, $2));
+		  $$ = $2;
+	  }
+  ;
+
+Sort
+  : BOOL
+	  {
+		  $$ = ctx->mk_bool_sort();
+	  }
+  |	L_BRAC BV NUM R_BRAC
+	  {
+		  $$ = ctx->mk_bv_sort($3);
+	  }
+  |	L_BRAC FLOATINGPOINT NUM NUM R_BRAC
+	  {
+		  $$ = ctx->mk_float_sort($3 + $4);
+	  }
+  |	L_BRAC ARRAY Sort Sort R_BRAC
+	  {
+		  $$ = ctx->mk_array_sort($3, $4);
+	  }
+  ;
+
+BVScalar
+  : BVCONST
+    {
+      auto const& p = $1;
+      $$ = ctx->mk_bv_const(p.first, p.second);
+    }
+  ;
+
+FloatScalar
+  : FP BVCONST BVCONST BVCONST
+    {
+      size_t sign_sz = $2.first;
+      ASSERT(sign_sz == 1);
+      bv_const sign = $2.second;
+      size_t exponent_sz = $3.first;
+      bv_const const& exponent = $3.second;
+      size_t significand_sz = $4.first;
+      bv_const const& significand = $4.second;
+      $$ = ctx->mk_float_const(sign, exponent_sz, exponent, significand_sz, significand);
+    }
+  | FP_POSITIVE_ZERO NUM NUM
+    {
+      size_t numbits = $2 + $3;
+      $$ = ctx->mk_float_const(numbits, 0.0);
+    }
+  | FP_NEGATIVE_ZERO NUM NUM
+    {
+      size_t numbits = $2 + $3;
+      $$ = ctx->mk_float_const(numbits, -0.0);
+    }
+  | FP_NAN_IDENTIFIER NUM NUM
+    {
+      size_t numbits = $2 + $3;
+      $$ = ctx->mk_float_nan(numbits);
+    }
+  | FP_POSITIVE_INFINITY NUM NUM
+    {
+      size_t numbits = $2 + $3;
+      $$ = ctx->mk_float_positive_infinity(numbits);
+    }
+  | FP_NEGATIVE_INFINITY NUM NUM
+    {
+      size_t numbits = $2 + $3;
+      $$ = ctx->mk_float_negative_infinity(numbits);
+    }
+  ;
+
+
+BoolScalar
+  :	TRUE  { $$ = ctx->mk_bool_const(true); }
+  |	FALSE { $$ = ctx->mk_bool_const(false); }
+  ;
+
+ScalarExpr
+  : BVScalar            { $$ = $1; }
+  | FloatScalar         { $$ = $1; }
+  | BoolScalar          { $$ = $1; }
+  ;
+
+Expr
+  : ScalarExpr          { $$ = $1; }
+  | VarExpr             { $$ = $1; }
+  | L_BRAC BExpr R_BRAC { $$ = $2; }
+  ;
+
+BExpr
+  : BoolExpr   { $$ = $1; }
+  | BVExpr     { $$ = $1; }
+  | IteExpr    { $$ = $1; }
+  | LetExpr    { $$ = $1; }
+  | LambdaExpr { $$ = $1; }
+  | ArrayExpr  { $$ = $1; }
+  | AppExpr    { $$ = $1; }
+  | Expr       { $$ = $1; }
+  ;
+
+VarExpr
+  : LETVAR
+    {
+      auto r = env.lookup_letfunc($1);
+      ASSERT(r != nullptr); // lookup failed!
+      $$ = r;
+    }
+  | PARAMVAR
+    {
+      bool found = false;
+      // find as lambda param first -- if there is one
+      if (env.m_lambdaparams.size()) {
+        for (auto const& p : env.m_lambdaparams.top()) {
+          if (p->get_name()->get_str() == $1) {
+            $$ = p;
+            found = true;
+          }
+        }
+      }
+      // not found as lambda param -- lookup in func params
+      if (!found) {
+        for (auto const& p : env.m_curfuncparams) {
+          if (p->get_name()->get_str() == $1) {
+            $$ = p;
+            found = true;
+          }
+        }
+      }
+      if (!found)
+        ASSERT(false);
+    }
+  ;
+
+BVExpr
+  : BVNOT Expr
+    {
+      if ($2->is_undefined()) {
+        $$ = $2;
+      }
+      else {
+        ASSERT($2->is_bv_sort());
+        $$ = ctx->mk_bvnot($2);
+      }
+    }
+  | BVADD ExprList
+	  {
+	    if ($2.at(0)->is_undefined()) {
+	      $$ = $2.at(0);
+	    }
+	    else {
+	      $$ = ctx->create_new_expr(expr::OP_BVADD, $2, 0);
+	    }
+	  }
+  | BVMUL ExprList
+	  {
+	    if ($2.at(0)->is_undefined()) {
+	      $$ = $2.at(0);
+	    }
+	    else {
+	      $$ = ctx->create_new_expr(expr::OP_BVMUL, $2, 0);
+	    }
+	  }
+  | BVSLE Expr Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $3->is_undefined()) {
+	      $$ = ctx->mk_undefined();
+	    }
+	    else {
+	      $$ = ctx->mk_bvsle($2, $3);
+	    }
+	  }
+  | BVSHL Expr Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $3->is_undefined()) {
+	      $$ = ctx->mk_undefined();
+	    }
+	    else {
+	      $$ = ctx->mk_bvexshl($2, $3);
+	    }
+	  }
+  | BVSDIV_I Expr Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $3->is_undefined()) {
+	      $$ = ctx->mk_undefined();
+	    }
+	    else {
+	      $$ = ctx->mk_bvsdiv($2, $3);
+        /* From https://github.com/Z3Prover/z3/issues/1133:
+           Z3 performs the rewrite:
+                  (bvsdiv x y)
+           into
+                  (ite (= y 0) (bvsdiv_0 x) (bvsdiv_I x y))
+        */
+	    }
+	  }
+  | BVUDIV_I Expr Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $3->is_undefined()) {
+	      $$ = ctx->mk_undefined();
+	    }
+	    else {
+	      $$ = ctx->mk_bvudiv($2, $3);
+	      /* See also: https://github.com/Z3Prover/z3/issues/1132 */
+	    }
+	  }
+  | BVULE Expr Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $3->is_undefined()) {
+	      $$ = ctx->mk_undefined();
+	    }
+	    else {
+	      $$ = ctx->mk_bvule($2, $3);
+	    }
+	  }
+  | SELECT ArrayExpr Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $3->is_undefined()) {
+	      $$ = ctx->mk_undefined();
+	    }
+	    else {
+        expr_ref mem = $2;
+        expr_ref mem_alloc = get_dummy_mem_alloc_expr(ctx->mk_array_sort(mem->get_sort()->get_domain_sort(), ctx->mk_memlabel_sort()));
+        memlabel_t m = memlabel_t::memlabel_top();
+	      //m.m_type = memlabel_t::MEMLABEL_TOP; /* arbitrarily assign TOP memlabel */
+	      $$ = ctx->mk_select(mem, mem_alloc, m, $3, /*count*/1, /*endianness*/false);
+	    }
+	  }
+	| STORE ArrayExpr Expr Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $3->is_undefined()
+	        || $4->is_undefined()) {
+	      $$ = ctx->mk_undefined();
+	    }
+	    else {
+	      /* ensure type compatibility */
+	      ASSERT($2->get_sort()->get_domain_sort().size() == 1); /* SMT arrays must have unit arity in domain */
+	      auto dom_sort = $2->get_sort()->get_domain_sort().front();
+	      auto range_sort = $2->get_sort()->get_range_sort();
+	      ASSERT($3->get_sort() == dom_sort);
+	      ASSERT($4->get_sort() == range_sort);
+        
+        expr_ref mem = $2;
+        expr_ref mem_alloc = get_dummy_mem_alloc_expr(ctx->mk_array_sort(mem->get_sort()->get_domain_sort(), ctx->mk_memlabel_sort()));
+        memlabel_t m = memlabel_t::memlabel_top();
+	      //m.m_type = memlabel_t::MEMLABEL_TOP; /* arbitrarily assign TOP memlabel */
+	      $$ = ctx->mk_store(mem, mem_alloc, m, $3, $4, /*count*/1, /*endianness*/false);
+	    }
+	  }
+  | CONCAT ExprList
+	  {
+	    if ($2.at(0)->is_undefined()) {
+	      $$ = $2.at(0);
+	    }
+	    else {
+	      $$ = ctx->create_new_expr(expr::OP_BVCONCAT, $2, 0);
+	    }
+	  }
+	| L_BRAC BVEXTRACT R_BRAC Expr
+	  {
+	    if ($4->is_undefined()) {
+	      $$ = $4;
+	    }
+	    else {
+	      ASSERT($4->is_bv_sort());
+	      auto const& p = $2;
+	      $$ = ctx->mk_bvextract($4, p.first, p.second);
+	    }
+	    }
+
+  ;
+
+IteExpr
+  : ITE Expr Expr Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $3->is_undefined()
+	        || $4->is_undefined()) {
+	      $$ = ctx->mk_undefined();
+	    }
+	    else {
+	      $$ = ctx->mk_ite($2, $3, $4);
+	    }
+	  }
+  ;
+
+BoolExpr
+  :	NOT Expr
+	  {
+      if ($2->is_undefined()) {
+        $$ = $2;
+      }
+      else {
+        ASSERT($2->is_bool_sort());
+        $$ = ctx->mk_not($2);
+      }
+	  }
+  | AND ExprList
+	  {
+	    if ($2.at(0)->is_undefined()) {
+	      $$ = $2.at(0);
+	    }
+	    else {
+	      $$ = ctx->create_new_expr(expr::OP_AND, $2, 0);
+	    }
+	  }
+  | OR ExprList
+	  {
+	    if ($2.at(0)->is_undefined()) {
+	      $$ = $2.at(0);
+	    }
+	    else {
+	      $$ = ctx->create_new_expr(expr::OP_OR, $2, 0);
+	    }
+	  }
+  |	EQ Expr Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $3->is_undefined()) {
+	      $$ = ctx->mk_undefined();
+	    }
+	    else {
+	      $$ = ctx->mk_eq($2, $3);
+	    }
+	  }
+;
+
+ExprList
+  :	Expr
+	  {
+		  $$ = { $1 };
+	  }
+  | ExprList Expr
+	  {
+	    if (   $2->is_undefined()
+	        || $1.at(0)->is_undefined()) {
+	      /* short-circuit to a singleton undefined expr_ref */
+	      $$ = { ctx->mk_undefined() };
+	    }
+	    else {
+		    $1.push_back($2);
+		    $$ = $1;
+		  }
+	  }
+  ;
+
+ArrayExpr
+  : ARRAY_INTPR INTERNAL_FUNC_NAME
+    {
+      auto it = env.m_funcs.find($2);
+      if (it == env.m_funcs.end()) {
+        $$ = ctx->mk_undefined();
+      }
+      else {
+        auto& fn_expr = it->second.first;
+
+        ASSERT(fn_expr->is_const()); // already resolved
+        if (fn_expr->is_array_sort()) {
+          $$ = fn_expr;
+        }
+        else {
+          auto& fn_sort = it->second.second;
+          sort_ref arr_sort = ctx->mk_array_sort(fn_sort->get_domain_sort(), fn_sort->get_range_sort());
+          $$ = ctx->mk_array_const_with_def(arr_sort, fn_expr);
+        }
+      }
+    }
+  | L_BRAC AS_CONST Sort R_BRAC Expr
+    {
+      $$ = ctx->mk_array_const_with_def($3, $5);
+    }
+  | Expr
+    {
+      if ($1->is_undefined()) {
+        $$ = ctx->mk_undefined();
+      }
+      else {
+        ASSERT($1->is_array_sort());
+        $$ = $1;
+      }
+    }
+  ;
+
+AppFnName
+  : GLOBAL_FUNC_NAME { $$ = $1; }
+  | INTERNAL_FUNC_NAME { $$ = $1; }
+  ;
+
+AppExpr
+  : AppFnName ExprList
+    {
+      auto it = env.m_funcs.find($1);
+      if (   it == env.m_funcs.end()
+          || $2.front()->is_undefined()) {
+          //|| any($2.begin(), $2.end(), [](expr_ref e) { return e->is_undefined(); })) {
+        $$ = ctx->mk_undefined();
+      }
+      else {
+        auto& fn_expr = it->second.first;
+
+        ASSERT(fn_expr->is_const());
+        ASSERT(fn_expr->is_array_sort());
+
+	      $$ = ctx->mk_apply(fn_expr, {$2});
+      }
+    }
+  ;
+
+/* assumes single declaration -- handle multiple? */
+LetDecl
+  : L_BRAC LETVAR Expr R_BRAC
+    {
+      env.add_letfunc($2, $3);
+    }
+  ;
+
+LetDeclList
+  : LetDecl { $$ = 1; }
+  | LetDeclList LetDecl { $$ = $1 + 1; }
+
+LetExpr
+  : LET L_BRAC LetDeclList R_BRAC Expr
+    {
+      int cnt = $3;
+      while (cnt --> 0) // cnt goes to 0
+        env.pop_letfunc();
+      $$ = $5;
+    }
+  ;
+
+LambdaParamList
+  : { $$ = {};  /* can be empty */ }
+  | LambdaParamList L_BRAC LambdaParam R_BRAC
+	  {
+		  $1.push_back($3);
+		  $$ = $1;
+	  }
+;
+
+LambdaParam
+  : PARAMVAR Sort
+	  {
+		  env.m_lambdaparams.top().push_back(ctx->mk_var($1, $2));
+		  $$ = $2;
+	  }
+  ;
+
+Lambda
+  : LAMBDA { env.m_lambdaparams.push({}); /* new stack element for params */ }
+  ;
+
+LambdaExpr
+  : Lambda L_BRAC LambdaParamList R_BRAC Expr
+	  {
+		  if ($5->is_undefined()) {
+		    $$ = $5;
+		  }
+		  else {
+        /* cout << "Before simplification: lambda: " << expr_string($5) << ": " << $5->get_sort()->to_string() << endl << endl; */
+        auto resolved_expr = ctx->expr_do_simplify($5);
+        /* cout << "After simplification: lambda: " << expr_string(resolved_expr) << ": " << resolved_expr->get_sort()->to_string() << endl << endl; */
+        resolved_expr = resolve_params(resolved_expr, $3, $5->get_sort(), env.m_lambdaparams.top());
+        /* cout << "After resolve_params: lambda: " << expr_string(resolved_expr) << ": " << resolved_expr->get_sort()->to_string() << endl << endl; */
+        ASSERT(resolved_expr->is_const());
+		    $$ = resolved_expr;
+		  }
+
+      /* clear out the params */
+      env.m_lambdaparams.pop();
+	  }
+  ;
+
+%%
+
+map<string_ref,expr_ref> parse_z3_model(eqspace::context* ctx, const char* fname)
+{
+  autostop_timer timer(__func__);
+  map<string_ref, expr_ref> ret;
+  Env env;
+
+  std::ifstream fin(fname);
+  if (!fin.good()) {
+    cerr << __func__ << ':' << __LINE__ << ": cannot open " << fname << endl;
+    return ret;
+  }
+
+  unsigned last_undefined_counter_value = 0;
+  do {
+    env.m_undefined_counter = 0;
+    fin.seekg(ios_base::beg);
+    Z3_Scanner scanner(&fin);
+    yy::Z3_Parser parser(scanner, string(fname), ctx, env);
+    if (parser.parse()) {
+      cerr << __func__ << ':' << __LINE__ << ": parsing failed for " << fname << endl;
+      ASSERT(0);
+    }
+    if (last_undefined_counter_value != 0) {
+      ASSERTCHECK(last_undefined_counter_value > env.m_undefined_counter, cout << "Number of undefined functions didn't decrease in this iteration.  Looks like we are stuck in a loop" << endl);
+    }
+    last_undefined_counter_value = env.m_undefined_counter;
+    DYN_DEBUG(z3_parser, cout << "Number of undefined functions = " << env.m_undefined_counter << endl);
+  } while (env.m_undefined_counter);
+
+  DYN_DEBUG(z3_parser, for (auto const& fname : env.m_funcs) cout << fname.first << " -> " << expr_string(fname.second.first) << endl;);
+  // prepare the output expr for returning to user
+  for (auto const& fname : env.m_global_funcs) {
+    auto it = env.m_funcs.find(fname);
+    if (it->second.second->get_domain_sort().size()) {
+      // non-zero arity
+      ASSERT (it->second.first->is_array_sort());
+      ret[mk_string_ref(fname)] = ctx->mk_array_const(it->second.first->get_array_constant(), it->second.second); // set the proper sort
+    }
+    else {
+      // zero arity -- we keep everything of array (function) type; let's take out the default value
+      auto range_sort = it->second.second->get_range_sort();
+      auto r = it->second.first->get_array_constant()->get_default_value();
+      ASSERT(r->get_sort() == range_sort);
+      ret[mk_string_ref(fname)] = r;
+    }
+  }
+  return ret;
+}
+
+void
+yy::Z3_Parser::error(const location_type &l, const std::string &err_message)
+{
+  cout << __func__ << ':' << __LINE__ << ": At " << l << ": " << err_message << endl;
+   /* std::cerr << "Error: " << err_message << " at " << l << "\n"; */
+}

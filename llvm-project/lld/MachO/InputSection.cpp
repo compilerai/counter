@@ -7,11 +7,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "InputSection.h"
+#include "OutputSegment.h"
 #include "Symbols.h"
 #include "Target.h"
 #include "lld/Common/Memory.h"
 #include "llvm/Support/Endian.h"
 
+using namespace llvm;
 using namespace llvm::MachO;
 using namespace llvm::support;
 using namespace lld;
@@ -19,21 +21,28 @@ using namespace lld::macho;
 
 std::vector<InputSection *> macho::inputSections;
 
+uint64_t InputSection::getFileOffset() const {
+  return parent->fileOff + outSecFileOff;
+}
+
+uint64_t InputSection::getVA() const { return parent->addr + outSecOff; }
+
 void InputSection::writeTo(uint8_t *buf) {
+  if (getFileSize() == 0)
+    return;
+
   memcpy(buf, data.data(), data.size());
 
   for (Reloc &r : relocs) {
     uint64_t va = 0;
     if (auto *s = r.target.dyn_cast<Symbol *>())
-      va = s->getVA();
+      va = target->getSymbolVA(*s, r.type);
     else if (auto *isec = r.target.dyn_cast<InputSection *>())
-      va = isec->addr;
-    else
-      llvm_unreachable("Unknown relocation target");
+      va = isec->getVA();
 
     uint64_t val = va + r.addend;
-    if (1) // TODO: handle non-pcrel relocations
-      val -= addr - ImageBase + r.offset;
-    target->relocateOne(buf + r.offset, r.type, val);
+    if (r.pcrel)
+      val -= getVA() + r.offset;
+    target->relocateOne(buf + r.offset, r, val);
   }
 }

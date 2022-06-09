@@ -84,7 +84,7 @@ struct FixIrreducible : public FunctionPass {
     initializeFixIrreduciblePass(*PassRegistry::getPassRegistry());
   }
 
-  void getAnalysisUsage(AnalysisUsage &AU) const {
+  void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.addRequiredID(LowerSwitchID);
     AU.addRequired<DominatorTreeWrapperPass>();
     AU.addRequired<LoopInfoWrapperPass>();
@@ -93,7 +93,7 @@ struct FixIrreducible : public FunctionPass {
     AU.addPreserved<LoopInfoWrapperPass>();
   }
 
-  bool runOnFunction(Function &F);
+  bool runOnFunction(Function &F) override;
 };
 } // namespace
 
@@ -118,14 +118,17 @@ static void reconnectChildLoops(LoopInfo &LI, Loop *ParentLoop, Loop *NewLoop,
                                 SetVector<BasicBlock *> &Headers) {
   auto &CandidateLoops = ParentLoop ? ParentLoop->getSubLoopsVector()
                                     : LI.getTopLevelLoopsVector();
-  // Partition the candidate loops into two ranges. The first part
-  // contains loops that are not children of the new loop. The second
-  // part contains children that need to be moved to the new loop.
-  auto FirstChild =
-      std::partition(CandidateLoops.begin(), CandidateLoops.end(), [&](Loop *L) {
+  // The new loop cannot be its own child, and any candidate is a
+  // child iff its header is owned by the new loop. Move all the
+  // children to a new vector.
+  auto FirstChild = std::partition(
+      CandidateLoops.begin(), CandidateLoops.end(), [&](Loop *L) {
         return L == NewLoop || Blocks.count(L->getHeader()) == 0;
       });
-  for (auto II = FirstChild, IE = CandidateLoops.end(); II != IE; ++II) {
+  SmallVector<Loop *, 8> ChildLoops(FirstChild, CandidateLoops.end());
+  CandidateLoops.erase(FirstChild, CandidateLoops.end());
+
+  for (auto II = ChildLoops.begin(), IE = ChildLoops.end(); II != IE; ++II) {
     auto Child = *II;
     LLVM_DEBUG(dbgs() << "child loop: " << Child->getHeader()->getName()
                       << "\n");
@@ -143,14 +146,10 @@ static void reconnectChildLoops(LoopInfo &LI, Loop *ParentLoop, Loop *NewLoop,
       continue;
     }
 
-    if (ParentLoop) {
-      LLVM_DEBUG(dbgs() << "removed child loop from parent\n");
-      ParentLoop->removeChildLoop(Child);
-    }
-    LLVM_DEBUG(dbgs() << "added child loop to new loop\n");
+    Child->setParentLoop(nullptr);
     NewLoop->addChildLoop(Child);
+    LLVM_DEBUG(dbgs() << "added child loop to new loop\n");
   }
-  CandidateLoops.erase(FirstChild, CandidateLoops.end());
 }
 
 // Given a set of blocks and headers in an irreducible SCC, convert it into a
@@ -242,8 +241,8 @@ template <> struct GraphTraits<Loop> : LoopBodyTraits {};
 } // namespace llvm
 
 // Overloaded wrappers to go with the function template below.
-BasicBlock *unwrapBlock(BasicBlock *B) { return B; }
-BasicBlock *unwrapBlock(LoopBodyTraits::NodeRef &N) { return N.second; }
+static BasicBlock *unwrapBlock(BasicBlock *B) { return B; }
+static BasicBlock *unwrapBlock(LoopBodyTraits::NodeRef &N) { return N.second; }
 
 static void createNaturalLoop(LoopInfo &LI, DominatorTree &DT, Function *F,
                               SetVector<BasicBlock *> &Blocks,
@@ -282,6 +281,9 @@ static bool makeReducible(LoopInfo &LI, DominatorTree &DT, Graph &&G) {
     LLVM_DEBUG(dbgs() << "Found headers:");
     for (auto BB : reverse(Blocks)) {
       for (const auto P : predecessors(BB)) {
+        // Skip unreachable predecessors.
+        if (!DT.isReachableFromEntry(P))
+          continue;
         if (!Blocks.count(P)) {
           LLVM_DEBUG(dbgs() << " " << BB->getName());
           Headers.insert(BB);

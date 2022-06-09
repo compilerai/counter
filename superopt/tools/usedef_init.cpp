@@ -1,7 +1,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "expr/memlabel.h"
 #include "support/mytimer.h"
@@ -10,10 +10,11 @@
 #include "support/globals.h"
 #include "eq/corr_graph.h"
 #include "support/globals_cpp.h"
-#include "codegen/etfg_insn.h"
+#include "etfg/etfg_insn.h"
 #include "i386/insn.h"
-#include "rewrite/src-insn.h"
-#include "rewrite/dst-insn.h"
+#include "x64/insn.h"
+#include "insn/src-insn.h"
+#include "insn/dst-insn.h"
 
 #include "support/timers.h"
 #include "rewrite/peephole.h"

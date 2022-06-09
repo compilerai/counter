@@ -2,7 +2,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -42,13 +42,15 @@ int main(int argc, char **argv)
 
   ifstream etfg(etfg_file.get_value());
   ASSERT(etfg.is_open());
-  llptfg_t llptfg = llptfg_t::read_from_stream(etfg, ctx);
+  //llptfg_t llptfg = llptfg_t::read_from_stream(etfg, ctx);
+  llptfg_t llptfg(etfg, ctx);
   etfg.close();
 
-  ofstream ll(output_file.get_value());
-  ASSERT(ll.is_open());
-  llptfg.output_llvm_code(ll);
-  ll.close();
+  NOT_IMPLEMENTED();
+  //ofstream ll(output_file.get_value());
+  //ASSERT(ll.is_open());
+  //llptfg.output_llvm_code(ll);
+  //ll.close();
 
   return 0;
 }

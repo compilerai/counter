@@ -962,6 +962,31 @@ define i32 @test_select(i1 %tst, i32 %lhs, i32 %rhs) {
   ret i32 %res
 }
 
+; CHECK-LABEL: name: test_select_flags
+; CHECK:   [[COPY:%[0-9]+]]:_(s32) = COPY $w0
+; CHECK:   [[TRUNC:%[0-9]+]]:_(s1) = G_TRUNC [[COPY]](s32)
+; CHECK:   [[COPY1:%[0-9]+]]:_(s32) = COPY $s0
+; CHECK:   [[COPY2:%[0-9]+]]:_(s32) = COPY $s1
+; CHECK:   [[SELECT:%[0-9]+]]:_(s32) = nnan G_SELECT [[TRUNC]](s1), [[COPY1]], [[COPY2]]
+define float @test_select_flags(i1 %tst, float %lhs, float %rhs) {
+  %res = select nnan i1 %tst, float %lhs, float %rhs
+  ret float %res
+}
+
+; Don't take the flags from the compare condition
+; CHECK-LABEL: name: test_select_cmp_flags
+; CHECK:   [[COPY0:%[0-9]+]]:_(s32) = COPY $s0
+; CHECK:   [[COPY1:%[0-9]+]]:_(s32) = COPY $s1
+; CHECK:   [[COPY2:%[0-9]+]]:_(s32) = COPY $s2
+; CHECK:   [[COPY3:%[0-9]+]]:_(s32) = COPY $s3
+; CHECK:   [[CMP:%[0-9]+]]:_(s1) = nsz G_FCMP floatpred(oeq), [[COPY0]](s32), [[COPY1]]
+; CHECK:   [[SELECT:%[0-9]+]]:_(s32) = G_SELECT [[CMP]](s1), [[COPY2]], [[COPY3]]
+define float @test_select_cmp_flags(float %cmp0, float %cmp1, float %lhs, float %rhs) {
+  %tst = fcmp nsz oeq float %cmp0, %cmp1
+  %res = select i1 %tst, float %lhs, float %rhs
+  ret float %res
+}
+
 ; CHECK-LABEL: name: test_select_ptr
 ; CHECK: [[TST_C:%[0-9]+]]:_(s32) = COPY $w0
 ; CHECK: [[TST:%[0-9]+]]:_(s1) = G_TRUNC [[TST_C]]
@@ -1241,6 +1266,17 @@ define float @test_pow_intrin(float %l, float %r) {
   ret float %res
 }
 
+declare float @llvm.powi.f32(float, i32)
+define float @test_powi_intrin(float %l, i32 %r) {
+; CHECK-LABEL: name: test_powi_intrin
+; CHECK: [[LHS:%[0-9]+]]:_(s32) = COPY $s0
+; CHECK: [[RHS:%[0-9]+]]:_(s32) = COPY $w0
+; CHECK: [[RES:%[0-9]+]]:_(s32) = nnan ninf nsz arcp contract afn reassoc G_FPOWI [[LHS]], [[RHS]]
+; CHECK: $s0 = COPY [[RES]]
+  %res = call nnan ninf nsz arcp contract afn reassoc float @llvm.powi.f32(float %l, i32 %r)
+  ret float %res
+}
+
 declare float @llvm.fma.f32(float, float, float)
 define float @test_fma_intrin(float %a, float %b, float %c) {
 ; CHECK-LABEL: name: test_fma_intrin
@@ -1353,6 +1389,16 @@ define float @test_intrinsic_round(float %a) {
 ; CHECK: $s0 = COPY [[RES]]
   %res = call float @llvm.round.f32(float %a)
   ret float %res
+}
+
+declare i32 @llvm.lrint.i32.f32(float)
+define i32 @test_intrinsic_lrint(float %a) {
+; CHECK-LABEL: name: test_intrinsic_lrint
+; CHECK: [[A:%[0-9]+]]:_(s32) = COPY $s0
+; CHECK: [[RES:%[0-9]+]]:_(s32) = G_INTRINSIC_LRINT [[A]]
+; CHECK: $w0 = COPY [[RES]]
+  %res = call i32 @llvm.lrint.i32.f32(float %a)
+  ret i32 %res
 }
 
 declare i32 @llvm.ctlz.i32(i32, i1)
@@ -1614,7 +1660,9 @@ define i32 @test_constantaggzerovector_v1s32(i32 %arg){
 ; CHECK: [[ARG:%[0-9]+]]:_(s32) = COPY $w0
 ; CHECK: [[C0:%[0-9]+]]:_(s32) = G_CONSTANT i32 0
 ; CHECK-NOT: G_MERGE_VALUES
-; CHECK: G_ADD [[ARG]], [[C0]]
+; CHECK: [[COPY:%[0-9]+]]:_(s32) = COPY [[C0]]
+; CHECK-NOT: G_MERGE_VALUES
+; CHECK: G_ADD [[ARG]], [[COPY]]
   %vec = insertelement <1 x i32> undef, i32 %arg, i32 0
   %add = add <1 x i32> %vec, zeroinitializer
   %res = extractelement <1 x i32> %add, i32 0
@@ -1626,7 +1674,9 @@ define i32 @test_constantdatavector_v1s32(i32 %arg){
 ; CHECK: [[ARG:%[0-9]+]]:_(s32) = COPY $w0
 ; CHECK: [[C1:%[0-9]+]]:_(s32) = G_CONSTANT i32 1
 ; CHECK-NOT: G_MERGE_VALUES
-; CHECK: G_ADD [[ARG]], [[C1]]
+; CHECK: [[COPY:%[0-9]+]]:_(s32) = COPY [[C0]]
+; CHECK-NOT: G_MERGE_VALUES
+; CHECK: G_ADD [[ARG]], [[COPY]]
   %vec = insertelement <1 x i32> undef, i32 %arg, i32 0
   %add = add <1 x i32> %vec, <i32 1>
   %res = extractelement <1 x i32> %add, i32 0
@@ -1932,6 +1982,32 @@ entry:
   br label %repeat
 repeat:
   %val_success = cmpxchg i32* %addr, i32 0, i32 1 monotonic monotonic
+  %value_loaded = extractvalue { i32, i1 } %val_success, 0
+  %success = extractvalue { i32, i1 } %val_success, 1
+  br i1 %success, label %done, label %repeat
+done:
+  ret i32 %value_loaded
+}
+
+; Try one cmpxchg
+define i32 @test_weak_atomic_cmpxchg_1(i32* %addr) {
+; CHECK-LABEL: name: test_weak_atomic_cmpxchg_1
+; CHECK:       bb.1.entry:
+; CHECK-NEXT:  successors: %bb.{{[^)]+}}
+; CHECK-NEXT:  liveins: $x0
+; CHECK:         [[ADDR:%[0-9]+]]:_(p0) = COPY $x0
+; CHECK-NEXT:    [[OLDVAL:%[0-9]+]]:_(s32) = G_CONSTANT i32 0
+; CHECK-NEXT:    [[NEWVAL:%[0-9]+]]:_(s32) = G_CONSTANT i32 1
+; CHECK:       bb.2.repeat:
+; CHECK-NEXT:    successors: %bb.3({{[^)]+}}), %bb.2({{[^)]+}})
+; CHECK:         [[OLDVALRES:%[0-9]+]]:_(s32), [[SUCCESS:%[0-9]+]]:_(s1) = G_ATOMIC_CMPXCHG_WITH_SUCCESS [[ADDR]](p0), [[OLDVAL]], [[NEWVAL]] :: (load store monotonic monotonic 4 on %ir.addr)
+; CHECK-NEXT:    G_BRCOND [[SUCCESS]](s1), %bb.3
+; CHECK-NEXT:    G_BR %bb.2
+; CHECK:       bb.3.done:
+entry:
+  br label %repeat
+repeat:
+  %val_success = cmpxchg weak i32* %addr, i32 0, i32 1 monotonic monotonic
   %value_loaded = extractvalue { i32, i1 } %val_success, 0
   %success = extractvalue { i32, i1 } %val_success, 1
   br i1 %success, label %done, label %repeat

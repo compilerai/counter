@@ -9,7 +9,7 @@
 #include <cassert>
 #include "support/cl.h"
 #include "support/debug.h"
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 
 using namespace std;
 static char as1[4096000];

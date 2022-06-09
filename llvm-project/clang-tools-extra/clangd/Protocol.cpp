@@ -11,8 +11,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "Protocol.h"
-#include "Logger.h"
 #include "URI.h"
+#include "support/Logger.h"
 #include "clang/Basic/LLVM.h"
 #include "clang/Index/IndexSymbol.h"
 #include "llvm/ADT/Hashing.h"
@@ -311,6 +311,12 @@ bool fromJSON(const llvm::json::Value &Params, ClientCapabilities &R) {
       if (auto *Item = Completion->getObject("completionItem")) {
         if (auto SnippetSupport = Item->getBoolean("snippetSupport"))
           R.CompletionSnippets = *SnippetSupport;
+        if (auto DocumentationFormat = Item->getArray("documentationFormat")) {
+          for (const auto &Format : *DocumentationFormat) {
+            if (fromJSON(Format, R.CompletionDocumentationFormat))
+              break;
+          }
+        }
       }
       if (auto *ItemKind = Completion->getObject("completionItemKind")) {
         if (auto *ValueSet = ItemKind->get("valueSet")) {
@@ -334,11 +340,8 @@ bool fromJSON(const llvm::json::Value &Params, ClientCapabilities &R) {
     if (auto *Hover = TextDocument->getObject("hover")) {
       if (auto *ContentFormat = Hover->getArray("contentFormat")) {
         for (const auto &Format : *ContentFormat) {
-          MarkupKind K = MarkupKind::PlainText;
-          if (fromJSON(Format, K)) {
-            R.HoverContentFormat = K;
+          if (fromJSON(Format, R.HoverContentFormat))
             break;
-          }
         }
       }
     }
@@ -557,11 +560,13 @@ bool fromJSON(const llvm::json::Value &Params, Diagnostic &R) {
 }
 
 llvm::json::Value toJSON(const PublishDiagnosticsParams &PDP) {
-  return llvm::json::Object{
+  llvm::json::Object Result{
       {"uri", PDP.uri},
       {"diagnostics", PDP.diagnostics},
-      {"version", PDP.version},
   };
+  if (PDP.version)
+    Result["version"] = PDP.version;
+  return std::move(Result);
 }
 
 bool fromJSON(const llvm::json::Value &Params, CodeActionContext &R) {
@@ -891,7 +896,7 @@ llvm::json::Value toJSON(const CompletionItem &CI) {
     Result["kind"] = static_cast<int>(CI.kind);
   if (!CI.detail.empty())
     Result["detail"] = CI.detail;
-  if (!CI.documentation.empty())
+  if (CI.documentation)
     Result["documentation"] = CI.documentation;
   if (!CI.sortText.empty())
     Result["sortText"] = CI.sortText;
@@ -1002,7 +1007,7 @@ static llvm::json::Value encodeTokens(llvm::ArrayRef<SemanticToken> Toks) {
     Result.push_back(Tok.tokenModifiers);
   }
   assert(Result.size() == SemanticTokenEncodingSize * Toks.size());
-  return Result;
+  return std::move(Result);
 }
 
 bool operator==(const SemanticToken &L, const SemanticToken &R) {
@@ -1024,13 +1029,13 @@ llvm::json::Value toJSON(const SemanticTokensEdit &Edit) {
       {"data", encodeTokens(Edit.tokens)}};
 }
 
-llvm::json::Value toJSON(const SemanticTokensOrEdits &TE) {
+llvm::json::Value toJSON(const SemanticTokensOrDelta &TE) {
   llvm::json::Object Result{{"resultId", TE.resultId}};
   if (TE.edits)
     Result["edits"] = *TE.edits;
   if (TE.tokens)
     Result["data"] = encodeTokens(*TE.tokens);
-  return Result;
+  return std::move(Result);
 }
 
 bool fromJSON(const llvm::json::Value &Params, SemanticTokensParams &R) {
@@ -1038,7 +1043,7 @@ bool fromJSON(const llvm::json::Value &Params, SemanticTokensParams &R) {
   return O && O.map("textDocument", R.textDocument);
 }
 
-bool fromJSON(const llvm::json::Value &Params, SemanticTokensEditsParams &R) {
+bool fromJSON(const llvm::json::Value &Params, SemanticTokensDeltaParams &R) {
   llvm::json::ObjectMapper O(Params);
   return O && O.map("textDocument", R.textDocument) &&
          O.map("previousResultId", R.previousResultId);
@@ -1234,6 +1239,25 @@ llvm::json::Value toJSON(const DocumentLink &DocumentLink) {
       {"range", DocumentLink.range},
       {"target", DocumentLink.target},
   };
+}
+
+bool fromJSON(const llvm::json::Value &Params, FoldingRangeParams &R) {
+  llvm::json::ObjectMapper O(Params);
+  return O && O.map("textDocument", R.textDocument);
+}
+
+llvm::json::Value toJSON(const FoldingRange &Range) {
+  llvm::json::Object Result{
+      {"startLine", Range.startLine},
+      {"endLine", Range.endLine},
+  };
+  if (Range.startCharacter)
+    Result["startCharacter"] = Range.startCharacter;
+  if (Range.endCharacter)
+    Result["endCharacter"] = Range.endCharacter;
+  if (Range.kind)
+    Result["kind"] = *Range.kind;
+  return Result;
 }
 
 } // namespace clangd

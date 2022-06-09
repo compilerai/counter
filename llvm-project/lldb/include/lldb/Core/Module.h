@@ -512,7 +512,6 @@ public:
 
   /// This callback will be called by SymbolFile implementations when
   /// parsing a compile unit that contains SDK information.
-  /// \param sdk will be merged with \p m_sdk.
   /// \param sysroot will be added to the path remapping dictionary.
   void RegisterXcodeSDK(llvm::StringRef sdk, llvm::StringRef sysroot);
 
@@ -959,6 +958,12 @@ protected:
                              ///by \a m_file.
   uint64_t m_object_offset;
   llvm::sys::TimePoint<> m_object_mod_time;
+
+  /// DataBuffer containing the module image, if it was provided at
+  /// construction time. Otherwise the data will be retrieved by mapping
+  /// one of the FileSpec members above.
+  lldb::DataBufferSP m_data_sp;
+
   lldb::ObjectFileSP m_objfile_sp; ///< A shared pointer to the object file
                                    ///parser for this module as it may or may
                                    ///not be shared with the SymbolFile
@@ -979,9 +984,6 @@ protected:
   PathMappingList m_source_mappings =
       ModuleList::GetGlobalModuleListProperties().GetSymlinkMappings();
 
-  /// The (Xcode) SDK this module was compiled with.
-  XcodeSDK m_xcode_sdk;
-  
   lldb::SectionListUP m_sections_up; ///< Unified section list for module that
                                      /// is used by the ObjectFile and and
                                      /// ObjectFile instances for the debug info
@@ -1053,7 +1055,8 @@ private:
       llvm::DenseSet<lldb_private::SymbolFile *> &searched_symbol_files,
       TypeMap &types);
 
-  DISALLOW_COPY_AND_ASSIGN(Module);
+  Module(const Module &) = delete;
+  const Module &operator=(const Module &) = delete;
 };
 
 } // namespace lldb_private

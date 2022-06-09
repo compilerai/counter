@@ -2,7 +2,7 @@
 
 #include "expr/expr.h"
 #include "gsupport/rodata_map.h"
-#include "expr/graph_symbol.h"
+#include "gsupport/graph_symbol.h"
 
 //extern expr_ref g_esp;
 
@@ -44,6 +44,20 @@ private:
 };
 */
 
+class expr_find_bv_non_linear_op : public expr_visitor
+{
+public:
+  expr_find_bv_non_linear_op(expr_ref const &e);
+  expr_vector get_matched_expr();
+
+  virtual ~expr_find_bv_non_linear_op() = default;
+
+private:
+  void visit(expr_ref const &e) override;
+  bool is_bv_non_linear_op(expr::operation_kind k);
+  expr_vector m_result;
+};
+
 class expr_find_op : public expr_visitor
 {
 public:
@@ -53,7 +67,7 @@ public:
   virtual ~expr_find_op() = default;
 
 private:
-  virtual void visit(expr_ref const &e);
+  void visit(expr_ref const &e) override;
   expr::operation_kind m_kind;
   expr_vector m_result;
 };
@@ -67,7 +81,7 @@ public:
   virtual ~expr_count_ops_visitor() = default;
 
 private:
-  virtual void visit(expr_ref const &e);
+  void visit(expr_ref const &e) override;
   long m_result;
 };
 
@@ -96,7 +110,7 @@ public:
   virtual ~expr_contains_elem() = default;
 
 private:
-  virtual void visit(expr_ref const &e);
+  void visit(expr_ref const &e) override;
   expr_ref const &m_expr;
   //expr_ref m_esp;
   bool (*m_contains_elem)(expr_ref const &, const void *);
@@ -115,7 +129,7 @@ public:
   expr_ref get_out2();
 
 private:
-  virtual void visit(expr_ref const &e);
+  void visit(expr_ref const &e) override;
   expr_ref const &m_expr;
   expr_ref m_cond_ite, m_out1, m_out2;
 };
@@ -167,6 +181,7 @@ private:
   map<expr_id_t, expr_id_t> m_id2printid_map;
 };
 
+
 //expr_ref expr_remove_selects(expr_ref e);
 vector<pair<expr_ref, expr_ref> > remove_if_then_else(expr_ref e);
 list<pair<expr_ref, pair<unsigned, bool> > > find_addrs_operating_on_array(expr_ref e, expr_ref iarray, consts_struct_t const &cs);
@@ -191,27 +206,40 @@ bool expr_lists_are_satisfiable(list<expr_list> const &lists, context *ctx);
 expr_vector expr_get_function_calls(expr_ref e);
 size_t expr_num_op_occurrences(expr_ref e, expr::operation_kind op);
 size_t expr_count_ops(expr_ref e);
-bool expr_constant_value_in_range(expr_ref a, pair<expr_ref,expr_ref> const &range);
 void expr_debug_check(expr_ref e, consts_struct_t const *cs);
-void expr_get_relevant_memlabels(expr_ref e, vector<memlabel_ref> &relevant_memlabels);
+//set<memlabel_ref> expr_get_relevant_memlabels(expr_ref const& e);
 //void expr_vector_union(vector<expr_ref> &dst, vector<expr_ref> const &src, query_comment const &qc, bool timeout_res, consts_struct_t const &cs);
 //
 expr_ref expr_replace_fcall_with_const(expr_ref e);
 bool expr_contains_input_stack_pointer_const(expr_ref e);
 
-bool varname_is_memlabel_bound(string const& var_name);
-bool varname_is_memlabel_lb(string const& var_name);
-bool varname_is_memlabel_ub(string const& var_name);
-string memlabel_string_from_bound_varname(string const& varname);
-string_ref get_lb_varname_for_memlabel(memlabel_t const& ml);
-string_ref get_ub_varname_for_memlabel(memlabel_t const& ml);
-expr_ref get_lb_expr_for_memlabel(context* ctx, sort_ref s, memlabel_t const& ml);
-expr_ref get_ub_expr_for_memlabel(context* ctx, sort_ref s, memlabel_t const& ml);
-bool expr_is_local_memlabel_bound(expr_ref const& e);
+bool is_mem_data_sort(expr_ref const& e);
 bool is_dst_expr(expr_ref const& e);
 expr_ref expr_rename_symbols_to_dst_symbol_addrs(expr_ref const& e);
 unordered_set<expr_ref> unordered_set_visit_exprs(unordered_set<expr_ref> const& in_set, function<expr_ref (string const&, expr_ref)>);
 void unordered_set_visit_exprs_const(unordered_set<expr_ref> const& in_set, function<void (string const&, expr_ref)>);
 bool expr_has_mem_ops(expr_ref const& e);
 bool expr_is_local_size(expr_ref const& e);
+
+bool expr_all_callee_readable_memlabels_are_subset_of_ml(expr_ref const& e, memlabel_t const& haystack, memlabel_t& needle);
+expr_ref expr_replace_fcall_input_memvars_with_new_memvar(expr_ref const &e, map<expr_id_t, expr_ref> const &input_memvars, expr_ref const &new_memvar);
+
+map<expr_id_t,expr_ref> expr_get_expr_map(expr_ref const& e);
+
+expr_ref get_dummy_mem_alloc_expr(sort_ref const& s);
+//expr_ref get_corresponding_mem_alloc_from_mem_expr(expr_ref const& e);
+
+expr_ref expr_convert_constant_function_to_array_sort(expr_ref const &e);
+expr_ref expr_convert_function_to_apply_on_memlabel_sort(expr_ref const &e, sort_ref const &s);
+expr_ref expr_convert_alloca_ptr_function_to_apply_on_count_and_memlabel_sorts(expr_ref const& e, sort_ref const& s);
+
+expr_ref expr_convert_memlabel_id_in_solver_to_memlabel_expr_using_map(expr_ref const& constant_expr, map<expr_ref,memlabel_ref> const& id_in_solver_to_memlabel);
+
+expr_ref expr_replace_readonly_memlabels_with_rodata_memlabel(expr_ref const& e);
+
+vector<sort_ref> expr_vector_to_sort_vector(expr_vector const& ev);
+
+bool expr_is_simple_select(expr_ref const& e);
+expr_set expr_get_simple_selects(expr_ref const& e);
+
 }

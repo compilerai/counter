@@ -11,6 +11,8 @@
 #include "lockstep/Common.h"
 using namespace std;
 
+#if ARCH_SRC == ARCH_ETFG && ARCH_DST == ARCH_I386
+
 class frequency_histogram_t
 {
 private:
@@ -232,3 +234,5 @@ void lockstep_clear_fun(int64_t is_main, int64_t is_small_function)
   //  }
   //}
 }
+
+#endif

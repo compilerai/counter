@@ -284,7 +284,7 @@ private:
 // Utility to generate a function to register a symbol alias.
 static bool canRegisterAlias(StringRef name, llvm::StringSet<> &usedAliases) {
   assert(!name.empty() && "expected alias name to be non-empty");
-  // TODO(riverriddle) Assert that the provided alias name can be lexed as
+  // TODO: Assert that the provided alias name can be lexed as
   // an identifier.
 
   // Check that the alias doesn't contain a '.' character and the name is not
@@ -431,7 +431,7 @@ void AliasState::recordAttributeReference(Attribute attr) {
 /// Record a reference to the given type.
 void AliasState::recordTypeReference(Type ty) { usedTypes.insert(ty); }
 
-// TODO Support visiting other types/operations when implemented.
+// TODO: Support visiting other types/operations when implemented.
 void AliasState::visitType(Type type) {
   recordTypeReference(type);
 
@@ -619,7 +619,7 @@ unsigned SSANameState::getBlockID(Block *block) {
 
 void SSANameState::shadowRegionArgs(Region &region, ValueRange namesToUse) {
   assert(!region.empty() && "cannot shadow arguments of an empty region");
-  assert(region.front().getNumArguments() == namesToUse.size() &&
+  assert(region.getNumArguments() == namesToUse.size() &&
          "incorrect number of names passed in");
   assert(region.getParentOp()->isKnownIsolatedFromAbove() &&
          "only KnownIsolatedFromAbove ops can shadow names");
@@ -629,7 +629,7 @@ void SSANameState::shadowRegionArgs(Region &region, ValueRange namesToUse) {
     auto nameToUse = namesToUse[i];
     if (nameToUse == nullptr)
       continue;
-    auto nameToReplace = region.front().getArgument(i);
+    auto nameToReplace = region.getArgument(i);
 
     nameStr.clear();
     llvm::raw_svector_ostream nameStream(nameStr);
@@ -973,6 +973,14 @@ protected:
   /// used instead of individual elements when the elements attr is large.
   void printDenseElementsAttr(DenseElementsAttr attr, bool allowHex);
 
+  /// Print a dense string elements attribute.
+  void printDenseStringElementsAttr(DenseStringElementsAttr attr);
+
+  /// Print a dense elements attribute. If 'allowHex' is true, a hex string is
+  /// used instead of individual elements when the elements attr is large.
+  void printDenseIntOrFPElementsAttr(DenseIntOrFPElementsAttr attr,
+                                     bool allowHex);
+
   void printDialectAttribute(Attribute attr);
   void printDialectType(Type type);
 
@@ -1310,11 +1318,6 @@ void ModulePrinter::printAttribute(Attribute attr,
   case StandardAttributes::Unit:
     os << "unit";
     break;
-  case StandardAttributes::Bool:
-    os << (attr.cast<BoolAttr>().getValue() ? "true" : "false");
-
-    // BoolAttr always elides the type.
-    return;
   case StandardAttributes::Dictionary:
     os << '{';
     interleaveComma(attr.cast<DictionaryAttr>().getValue(),
@@ -1323,6 +1326,13 @@ void ModulePrinter::printAttribute(Attribute attr,
     break;
   case StandardAttributes::Integer: {
     auto intAttr = attr.cast<IntegerAttr>();
+    if (attrType.isSignlessInteger(1)) {
+      os << (intAttr.getValue().getBoolValue() ? "true" : "false");
+
+      // Boolean integer attributes always elides the type.
+      return;
+    }
+
     // Only print attributes as unsigned if they are explicitly unsigned or are
     // signless 1-bit values.  Indexes, signed values, and multi-bit signless
     // values print as signed.
@@ -1392,14 +1402,25 @@ void ModulePrinter::printAttribute(Attribute attr,
     os << '"' << "0x" << llvm::toHex(eltsAttr.getValue()) << "\">";
     break;
   }
-  case StandardAttributes::DenseElements: {
-    auto eltsAttr = attr.cast<DenseElementsAttr>();
+  case StandardAttributes::DenseIntOrFPElements: {
+    auto eltsAttr = attr.cast<DenseIntOrFPElementsAttr>();
     if (printerFlags.shouldElideElementsAttr(eltsAttr)) {
       printElidedElementsAttr(os);
       break;
     }
     os << "dense<";
-    printDenseElementsAttr(eltsAttr, /*allowHex=*/true);
+    printDenseIntOrFPElementsAttr(eltsAttr, /*allowHex=*/true);
+    os << '>';
+    break;
+  }
+  case StandardAttributes::DenseStringElements: {
+    auto eltsAttr = attr.cast<DenseStringElementsAttr>();
+    if (printerFlags.shouldElideElementsAttr(eltsAttr)) {
+      printElidedElementsAttr(os);
+      break;
+    }
+    os << "dense<";
+    printDenseStringElementsAttr(eltsAttr);
     os << '>';
     break;
   }
@@ -1411,9 +1432,12 @@ void ModulePrinter::printAttribute(Attribute attr,
       break;
     }
     os << "sparse<";
-    printDenseElementsAttr(elementsAttr.getIndices(), /*allowHex=*/false);
-    os << ", ";
-    printDenseElementsAttr(elementsAttr.getValues(), /*allowHex=*/true);
+    DenseIntElementsAttr indices = elementsAttr.getIndices();
+    if (indices.getNumElements() != 0) {
+      printDenseIntOrFPElementsAttr(indices, /*allowHex=*/false);
+      os << ", ";
+      printDenseElementsAttr(elementsAttr.getValues(), /*allowHex=*/true);
+    }
     os << '>';
     break;
   }
@@ -1436,70 +1460,39 @@ void ModulePrinter::printAttribute(Attribute attr,
   }
 }
 
-/// Print the integer element of the given DenseElementsAttr at 'index'.
-static void printDenseIntElement(DenseElementsAttr attr, raw_ostream &os,
-                                 unsigned index, bool isSigned) {
-  APInt value = *std::next(attr.int_value_begin(), index);
+/// Print the integer element of a DenseElementsAttr.
+static void printDenseIntElement(const APInt &value, raw_ostream &os,
+                                 bool isSigned) {
   if (value.getBitWidth() == 1)
     os << (value.getBoolValue() ? "true" : "false");
   else
     value.print(os, isSigned);
 }
 
-/// Print the float element of the given DenseElementsAttr at 'index'.
-static void printDenseFloatElement(DenseElementsAttr attr, raw_ostream &os,
-                                   unsigned index, bool isSigned) {
-  assert(isSigned && "floating point values are always signed");
-  APFloat value = *std::next(attr.float_value_begin(), index);
-  printFloatValue(value, os);
-}
-
-void ModulePrinter::printDenseElementsAttr(DenseElementsAttr attr,
-                                           bool allowHex) {
-  auto type = attr.getType();
-  auto shape = type.getShape();
-  auto rank = type.getRank();
-  bool isSigned = !type.getElementType().isUnsignedInteger();
-
-  // The function used to print elements of this attribute.
-  auto printEltFn = type.getElementType().isa<IntegerType>()
-                        ? printDenseIntElement
-                        : printDenseFloatElement;
-
+static void
+printDenseElementsAttrImpl(bool isSplat, ShapedType type, raw_ostream &os,
+                           function_ref<void(unsigned)> printEltFn) {
   // Special case for 0-d and splat tensors.
-  if (attr.isSplat()) {
-    printEltFn(attr, os, 0, isSigned);
-    return;
-  }
+  if (isSplat)
+    return printEltFn(0);
 
   // Special case for degenerate tensors.
   auto numElements = type.getNumElements();
-  if (numElements == 0) {
-    for (int i = 0; i < rank; ++i)
-      os << '[';
-    for (int i = 0; i < rank; ++i)
-      os << ']';
+  if (numElements == 0)
     return;
-  }
-
-  // Check to see if we should format this attribute as a hex string.
-  if (allowHex && shouldPrintElementsAttrWithHex(numElements)) {
-    ArrayRef<char> rawData = attr.getRawData();
-    os << '"' << "0x" << llvm::toHex(StringRef(rawData.data(), rawData.size()))
-       << "\"";
-    return;
-  }
 
   // We use a mixed-radix counter to iterate through the shape. When we bump a
   // non-least-significant digit, we emit a close bracket. When we next emit an
   // element we re-open all closed brackets.
 
   // The mixed-radix counter, with radices in 'shape'.
+  int64_t rank = type.getRank();
   SmallVector<unsigned, 4> counter(rank, 0);
   // The number of brackets that have been opened and not closed.
   unsigned openBrackets = 0;
 
-  auto bumpCounter = [&]() {
+  auto shape = type.getShape();
+  auto bumpCounter = [&] {
     // Bump the least significant digit.
     ++counter[rank - 1];
     // Iterate backwards bubbling back the increment.
@@ -1519,11 +1512,85 @@ void ModulePrinter::printDenseElementsAttr(DenseElementsAttr attr,
     while (openBrackets++ < rank)
       os << '[';
     openBrackets = rank;
-    printEltFn(attr, os, idx, isSigned);
+    printEltFn(idx);
     bumpCounter();
   }
   while (openBrackets-- > 0)
     os << ']';
+}
+
+void ModulePrinter::printDenseElementsAttr(DenseElementsAttr attr,
+                                           bool allowHex) {
+  if (auto stringAttr = attr.dyn_cast<DenseStringElementsAttr>())
+    return printDenseStringElementsAttr(stringAttr);
+
+  printDenseIntOrFPElementsAttr(attr.cast<DenseIntOrFPElementsAttr>(),
+                                allowHex);
+}
+
+void ModulePrinter::printDenseIntOrFPElementsAttr(DenseIntOrFPElementsAttr attr,
+                                                  bool allowHex) {
+  auto type = attr.getType();
+  auto elementType = type.getElementType();
+
+  // Check to see if we should format this attribute as a hex string.
+  auto numElements = type.getNumElements();
+  if (!attr.isSplat() && allowHex &&
+      shouldPrintElementsAttrWithHex(numElements)) {
+    ArrayRef<char> rawData = attr.getRawData();
+    os << '"' << "0x" << llvm::toHex(StringRef(rawData.data(), rawData.size()))
+       << "\"";
+    return;
+  }
+
+  if (ComplexType complexTy = elementType.dyn_cast<ComplexType>()) {
+    Type complexElementType = complexTy.getElementType();
+    // Note: The if and else below had a common lambda function which invoked
+    // printDenseElementsAttrImpl. This lambda was hitting a bug in gcc 9.1,9.2
+    // and hence was replaced.
+    if (complexElementType.isa<IntegerType>()) {
+      bool isSigned = !complexElementType.isUnsignedInteger();
+      printDenseElementsAttrImpl(attr.isSplat(), type, os, [&](unsigned index) {
+        auto complexValue = *(attr.getComplexIntValues().begin() + index);
+        os << "(";
+        printDenseIntElement(complexValue.real(), os, isSigned);
+        os << ",";
+        printDenseIntElement(complexValue.imag(), os, isSigned);
+        os << ")";
+      });
+    } else {
+      printDenseElementsAttrImpl(attr.isSplat(), type, os, [&](unsigned index) {
+        auto complexValue = *(attr.getComplexFloatValues().begin() + index);
+        os << "(";
+        printFloatValue(complexValue.real(), os);
+        os << ",";
+        printFloatValue(complexValue.imag(), os);
+        os << ")";
+      });
+    }
+  } else if (elementType.isIntOrIndex()) {
+    bool isSigned = !elementType.isUnsignedInteger();
+    auto intValues = attr.getIntValues();
+    printDenseElementsAttrImpl(attr.isSplat(), type, os, [&](unsigned index) {
+      printDenseIntElement(*(intValues.begin() + index), os, isSigned);
+    });
+  } else {
+    assert(elementType.isa<FloatType>() && "unexpected element type");
+    auto floatValues = attr.getFloatValues();
+    printDenseElementsAttrImpl(attr.isSplat(), type, os, [&](unsigned index) {
+      printFloatValue(*(floatValues.begin() + index), os);
+    });
+  }
+}
+
+void ModulePrinter::printDenseStringElementsAttr(DenseStringElementsAttr attr) {
+  ArrayRef<StringRef> data = attr.getRawStringData();
+  auto printFn = [&](unsigned index) {
+    os << "\"";
+    printEscapedString(data[index], os);
+    os << "\"";
+  };
+  printDenseElementsAttrImpl(attr.isSplat(), attr.getType(), os, printFn);
 }
 
 void ModulePrinter::printType(Type type) {
@@ -2207,11 +2274,11 @@ void OperationPrinter::print(Block *block, bool printBlockArgs,
 
     // Print out some context information about the predecessors of this block.
     if (!block->getParent()) {
-      os << "\t// block is not in a region!";
+      os << "  // block is not in a region!";
     } else if (block->hasNoPredecessors()) {
-      os << "\t// no predecessors";
+      os << "  // no predecessors";
     } else if (auto *pred = block->getSinglePredecessor()) {
-      os << "\t// pred: ";
+      os << "  // pred: ";
       printBlockName(pred);
     } else {
       // We want to print the predecessors in increasing numeric order, not in
@@ -2221,7 +2288,7 @@ void OperationPrinter::print(Block *block, bool printBlockArgs,
         predIDs.push_back({state->getSSANameState().getBlockID(pred), pred});
       llvm::array_pod_sort(predIDs.begin(), predIDs.end());
 
-      os << "\t// " << predIDs.size() << " preds: ";
+      os << "  // " << predIDs.size() << " preds: ";
 
       interleaveComma(predIDs, [&](std::pair<unsigned, Block *> pred) {
         printBlockName(pred.second);
@@ -2372,7 +2439,7 @@ void Value::dump() {
 }
 
 void Value::printAsOperand(raw_ostream &os, AsmState &state) {
-  // TODO(riverriddle) This doesn't necessarily capture all potential cases.
+  // TODO: This doesn't necessarily capture all potential cases.
   // Currently, region arguments can be shadowed when printing the main
   // operation. If the IR hasn't been printed, this will produce the old SSA
   // name and not the shadowed name.

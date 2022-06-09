@@ -44,6 +44,8 @@ const char *Action::getClassName(ActionClass AC) {
     return "clang-offload-unbundler";
   case OffloadWrapperJobClass:
     return "clang-offload-wrapper";
+  case StaticLibJobClass:
+    return "static-lib-linker";
   }
 
   llvm_unreachable("invalid class");
@@ -427,3 +429,8 @@ QCCCodegenAction::getBackendAction() const {
 
 QCCCodegenAction::QCCCodegenAction(Action *Input, types::ID OutputType)
     : JobAction(QCCCodegenClass, Input, OutputType), mInput(Input), mOutputType(OutputType) {}
+
+void StaticLibJobAction::anchor() {}
+
+StaticLibJobAction::StaticLibJobAction(ActionList &Inputs, types::ID Type)
+    : JobAction(StaticLibJobClass, Inputs, Type) {}

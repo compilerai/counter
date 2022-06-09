@@ -114,9 +114,9 @@ define i16 @v16i32(<16 x i32> %a, <16 x i32> %b) {
 ; AVX2-NEXT:    vpcmpgtd %ymm3, %ymm1, %ymm1
 ; AVX2-NEXT:    vpcmpgtd %ymm2, %ymm0, %ymm0
 ; AVX2-NEXT:    vpackssdw %ymm1, %ymm0, %ymm0
-; AVX2-NEXT:    vpermq {{.*#+}} ymm0 = ymm0[0,2,1,3]
 ; AVX2-NEXT:    vextracti128 $1, %ymm0, %xmm1
 ; AVX2-NEXT:    vpacksswb %xmm1, %xmm0, %xmm0
+; AVX2-NEXT:    vpshufd {{.*#+}} xmm0 = xmm0[0,2,1,3]
 ; AVX2-NEXT:    vpmovmskb %xmm0, %eax
 ; AVX2-NEXT:    # kill: def $ax killed $ax killed $eax
 ; AVX2-NEXT:    vzeroupper
@@ -175,9 +175,9 @@ define i16 @v16f32(<16 x float> %a, <16 x float> %b) {
 ; AVX2-NEXT:    vcmpltps %ymm1, %ymm3, %ymm1
 ; AVX2-NEXT:    vcmpltps %ymm0, %ymm2, %ymm0
 ; AVX2-NEXT:    vpackssdw %ymm1, %ymm0, %ymm0
-; AVX2-NEXT:    vpermq {{.*#+}} ymm0 = ymm0[0,2,1,3]
 ; AVX2-NEXT:    vextracti128 $1, %ymm0, %xmm1
 ; AVX2-NEXT:    vpacksswb %xmm1, %xmm0, %xmm0
+; AVX2-NEXT:    vpshufd {{.*#+}} xmm0 = xmm0[0,2,1,3]
 ; AVX2-NEXT:    vpmovmskb %xmm0, %eax
 ; AVX2-NEXT:    # kill: def $ax killed $ax killed $eax
 ; AVX2-NEXT:    vzeroupper
@@ -354,7 +354,7 @@ define i8 @v8f64(<8 x double> %a, <8 x double> %b) {
 ; SSE-NEXT:    cmpltpd %xmm0, %xmm4
 ; SSE-NEXT:    packssdw %xmm5, %xmm4
 ; SSE-NEXT:    packssdw %xmm6, %xmm4
-; SSE-NEXT:    packsswb %xmm0, %xmm4
+; SSE-NEXT:    packsswb %xmm4, %xmm4
 ; SSE-NEXT:    pmovmskb %xmm4, %eax
 ; SSE-NEXT:    # kill: def $al killed $al killed $eax
 ; SSE-NEXT:    retq
@@ -573,9 +573,9 @@ define void @bitcast_16i32_store(i16* %p, <16 x i32> %a0) {
 ; AVX2-NEXT:    vpcmpgtd %ymm1, %ymm2, %ymm1
 ; AVX2-NEXT:    vpcmpgtd %ymm0, %ymm2, %ymm0
 ; AVX2-NEXT:    vpackssdw %ymm1, %ymm0, %ymm0
-; AVX2-NEXT:    vpermq {{.*#+}} ymm0 = ymm0[0,2,1,3]
 ; AVX2-NEXT:    vextracti128 $1, %ymm0, %xmm1
 ; AVX2-NEXT:    vpacksswb %xmm1, %xmm0, %xmm0
+; AVX2-NEXT:    vpshufd {{.*#+}} xmm0 = xmm0[0,2,1,3]
 ; AVX2-NEXT:    vpmovmskb %xmm0, %eax
 ; AVX2-NEXT:    movw %ax, (%rdi)
 ; AVX2-NEXT:    vzeroupper
@@ -608,7 +608,7 @@ define void @bitcast_8i64_store(i8* %p, <8 x i64> %a0) {
 ; SSE-NEXT:    pcmpgtq %xmm0, %xmm4
 ; SSE-NEXT:    packssdw %xmm2, %xmm4
 ; SSE-NEXT:    packssdw %xmm3, %xmm4
-; SSE-NEXT:    packsswb %xmm0, %xmm4
+; SSE-NEXT:    packsswb %xmm4, %xmm4
 ; SSE-NEXT:    pmovmskb %xmm4, %eax
 ; SSE-NEXT:    movb %al, (%rdi)
 ; SSE-NEXT:    retq

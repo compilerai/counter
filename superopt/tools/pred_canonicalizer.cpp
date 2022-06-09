@@ -1,5 +1,5 @@
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -52,7 +52,7 @@ int main(int argc, char **argv)
   ASSERT(is_line(line, "=rhs"));
   line = read_expr(in, rhs, &ctx);
 
-  predicate_ref p = predicate::mk_predicate_ref(precond_t(&ctx), lhs, rhs, "predicate");
+  predicate_ref p = predicate::mk_predicate_ref(precond_t(/*&ctx*/), lhs, rhs, "predicate");
 
   //vector<memlabel_ref> relevant_memlabels;
   //expr_get_relevant_memlabels(lhs, relevant_memlabels);

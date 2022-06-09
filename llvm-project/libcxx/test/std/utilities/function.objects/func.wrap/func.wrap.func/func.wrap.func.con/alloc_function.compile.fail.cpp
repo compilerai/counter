@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 // <functional>
-// XFAIL: c++98, c++03, c++11, c++14
+// XFAIL: c++03, c++11, c++14
 
 // class function<R(ArgTypes...)>
 
@@ -15,6 +15,8 @@
 //
 // This signature was removed in C++17
 
+// This test runs in C++03, but we have deprecated using std::function in C++03.
+// ADDITIONAL_COMPILE_FLAGS: -D_LIBCPP_DISABLE_DEPRECATION_WARNINGS
 
 #include <functional>
 #include <cassert>

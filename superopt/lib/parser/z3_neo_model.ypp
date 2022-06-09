@@ -1,0 +1,443 @@
+/* use C++ parser */
+%skeleton "lalr1.cc"
+%define api.parser.class {Z3_Neo_Parser}
+//%define parser_class_name {Z3_Neo_Parser} // parser_class_name is deprecated; use api.parser.class once everyone has moved to ubuntu 20.04
+
+%code requires {
+  #include <fstream>
+  #include <string>
+  #include <map>
+  #include <vector>
+
+  #include "support/bv_const.h"
+  #include "support/dyn_debug.h"
+  #include "parser/parse_tree_z3.h"
+  #include "parser/z3_neo_scanner.h"
+  #include "expr/expr.h"
+  #include "expr/expr_utils.h"
+  #include "expr/eval.h"
+  #include "expr/context.h"
+
+  class Z3_Neo_Scanner;
+  using namespace std;
+}
+
+%code top {
+  #include "parser/z3_neo_scanner.h"
+  /* let bison know of our lexer */
+  #undef yylex
+  #define yylex scanner.yylex
+}
+
+/* args to parser */
+%parse-param { Z3_Neo_Scanner& scanner }
+%parse-param { std::string filename }
+%parse-param { context* ctx }
+%parse-param { ParsingEnv& env }
+
+/* turn on location tracking; helpful while debugging */
+%locations
+
+%initial-action
+{
+    // initialize the initial location object
+    @$.begin.filename = @$.end.filename = &filename;
+};
+
+/* use variants to simplify type annotations
+	https://www.gnu.org/software/bison/manual/html_node/C_002b_002b-Variants.html
+*/
+%define api.value.type variant
+
+/* catch runtime errors using assert */
+%define parse.assert true
+
+// more verbose errors
+%define parse.error verbose
+
+/* special EOD token */
+/* %token END 0 "end of file" */
+
+%token DECL L_BRAC R_BRAC
+%token BVCONST TRUE FALSE ARRAY BV FLOATINGPOINT BOOL NUM FP FP_POSITIVE_ZERO FP_NEGATIVE_ZERO FP_NAN_IDENTIFIER FP_POSITIVE_INFINITY FP_NEGATIVE_INFINITY
+%token INTERNAL_NAME GLOBAL_FUNC_NAME
+%token BVNOT BVADD BVMUL BVSLE BVSHL BVSDIV_I BVUDIV_I BVULE AND OR NOT XOR IMPLIES EQ CONCAT BVEXTRACT
+%token ITE ARRAY_INTPR AS_CONST SELECT STORE LET LAMBDA FORALL
+
+%type<int> NUM
+%type<pair<size_t,bv_const>> BVCONST
+%type<pair<int,int>> BVEXTRACT
+%type<string> INTERNAL_NAME
+%type<string> GLOBAL_FUNC_NAME
+
+%type<sort_ref> Sort
+%type<expr_ref> FnParam
+%type<AstNodeRef> AstParam
+%type<string> FnName AppFnName VarName
+%type<AstNodeRef> ArrayExpr AppExpr LetExpr BVExpr IteExpr BoolExpr BExpr Expr Function LambdaExpr ForallExpr
+%type<expr_ref> ScalarExpr BoolScalar BVScalar FloatScalar
+%type<vector<expr_ref>> FnParamList
+%type<vector<AstNodeRef>> AstParamList
+%type<vector<AstNodeRef>> ExprList FunctionList
+%type<vector<pair<string,AstNodeRef>>> LetDeclList
+%type<pair<string,AstNodeRef>> LetDecl
+
+%start Program
+
+//sat, model are ignored as tokens
+%%
+Program
+  : L_BRAC FunctionList R_BRAC
+  ;
+
+FunctionList
+  :  /* Can be empty */ {}
+  |	FunctionList L_BRAC Function R_BRAC {}
+  ;
+
+/* we maintain a distinction b/w INTERNAL_NAME and GLOBAL_FUNC_NAME as only GLOBAL_FUNC_NAME are returned */
+FnName
+  : INTERNAL_NAME      {                          $$ = $1; }
+  | GLOBAL_FUNC_NAME   { env.add_global_func($1); $$ = $1; }
+  ;
+
+FnParamList
+  : { $$ = {}; /* can be empty */ }
+  | FnParamList L_BRAC FnParam R_BRAC { $1.push_back($3); $$ = $1; }
+  ;
+
+FnParam
+  : INTERNAL_NAME Sort { $$ = ctx->mk_var($1, $2); }
+  ;
+
+Function
+  : DECL FnName L_BRAC FnParamList R_BRAC Sort Expr
+	  {
+		  $$ = env.add_func($FnName, $Expr, $FnParamList, $Sort);
+	  }
+  ;
+
+Sort
+  : BOOL                                { $$ = ctx->mk_bool_sort(); }
+  |	L_BRAC BV NUM R_BRAC                { $$ = ctx->mk_bv_sort($3); }
+  |	L_BRAC FLOATINGPOINT NUM NUM R_BRAC { $$ = ctx->mk_float_sort($3 + $4); }
+  |	L_BRAC ARRAY Sort Sort R_BRAC       { $$ = ctx->mk_array_sort($3, $4); }
+  ;
+
+BVScalar
+  : BVCONST { $$ = ctx->mk_bv_const($1.first, $1.second); }
+  ;
+
+FloatScalar
+  : FP BVCONST BVCONST BVCONST
+    {
+      size_t sign_sz = $2.first;
+      ASSERT(sign_sz == 1);
+      bv_const sign = $2.second;
+      size_t exponent_sz = $3.first;
+      bv_const const& exponent = $3.second;
+      size_t significand_sz = $4.first;
+      bv_const const& significand = $4.second;
+      $$ = ctx->mk_float_const(sign, exponent_sz, exponent, significand_sz, significand);
+    }
+  | FP_POSITIVE_ZERO NUM NUM
+    {
+      size_t numbits = $2 + $3;
+      $$ = ctx->mk_float_const(numbits, 0.0);
+    }
+  | FP_NEGATIVE_ZERO NUM NUM
+    {
+      size_t numbits = $2 + $3;
+      $$ = ctx->mk_float_const(numbits, -0.0);
+    }
+  | FP_NAN_IDENTIFIER NUM NUM
+    {
+      size_t numbits = $2 + $3;
+      $$ = ctx->mk_float_nan(numbits);
+    }
+  | FP_POSITIVE_INFINITY NUM NUM
+    {
+      size_t numbits = $2 + $3;
+      $$ = ctx->mk_float_positive_infinity(numbits);
+    }
+  | FP_NEGATIVE_INFINITY NUM NUM
+    {
+      size_t numbits = $2 + $3;
+      $$ = ctx->mk_float_negative_infinity(numbits);
+    }
+  ;
+
+
+BoolScalar
+  :	TRUE  { $$ = ctx->mk_bool_const(true); }
+  |	FALSE { $$ = ctx->mk_bool_const(false); }
+  ;
+
+ScalarExpr
+  : BVScalar            { $$ = $1; }
+  | FloatScalar         { $$ = $1; }
+  | BoolScalar          { $$ = $1; }
+  ;
+
+Expr
+  : ScalarExpr          { $$ = AstNode::mk_Atom($1); }
+  | VarName             { $$ = AstNode::mk_Var($1); }
+  | L_BRAC BExpr R_BRAC { $$ = $2; }
+  ;
+
+BExpr
+  : BoolExpr   { $$ = $1; }
+  | BVExpr     { $$ = $1; }
+  | IteExpr    { $$ = $1; }
+  | LetExpr    { $$ = $1; }
+  | LambdaExpr { $$ = $1; }
+  | ForallExpr { $$ = $1; }
+  | ArrayExpr  { $$ = $1; }
+  | AppExpr    { $$ = $1; }
+  | Expr       { $$ = $1; }
+  ;
+
+VarName
+  : INTERNAL_NAME
+    {
+      $$ = $1;
+    }
+  ;
+
+BVExpr
+  : BVNOT Expr
+    {
+      $$ = AstNode::mk_Composite(expr::OP_BVNOT, { $2 });
+    }
+  | BVADD ExprList
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_BVADD, $2);
+	  }
+  | BVMUL ExprList
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_BVMUL, $2);
+	  }
+  | BVSLE Expr Expr
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_BVSLE, { $2, $3 });
+	  }
+  | BVSHL Expr Expr
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_BVEXSHL, { $2, $3 });
+	  }
+  | BVSDIV_I Expr Expr
+	  {
+      /* From https://github.com/Z3Prover/z3/issues/1133:
+         Z3 performs the rewrite:
+                (bvsdiv x y)
+         into
+                (ite (= y 0) (bvsdiv_0 x) (bvsdiv_I x y))
+      */
+	    $$ = AstNode::mk_Composite(expr::OP_BVSDIV, { $2, $3 });
+	  }
+  | BVUDIV_I Expr Expr
+	  {
+	    /* See: https://github.com/Z3Prover/z3/issues/1132 */
+	    $$ = AstNode::mk_Composite(expr::OP_BVUDIV, { $2, $3 });
+	  }
+  | BVULE Expr Expr
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_BVULE, { $2, $3 });
+	  }
+  | SELECT ArrayExpr Expr
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_SELECT, { $2, $3 });
+	  }
+	| STORE ArrayExpr Expr Expr
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_STORE, { $2, $3, $4 });
+	  }
+  | CONCAT ExprList
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_BVCONCAT, $2);
+	  }
+	| L_BRAC BVEXTRACT R_BRAC Expr
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_BVEXTRACT, { $4, AstNode::mk_Atom(ctx->mk_bv_const(DWORD_LEN,$2.first)), AstNode::mk_Atom(ctx->mk_bv_const(DWORD_LEN,$2.second)) });
+	  }
+  ;
+
+IteExpr
+  : ITE Expr Expr Expr
+	  {
+	    $$ = AstNode::mk_Ite($2, $3, $4);
+	  }
+  ;
+
+BoolExpr
+  :	NOT Expr
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_NOT, { $2 });
+	  }
+  | AND ExprList
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_AND, $2);
+	  }
+  | OR ExprList
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_OR, $2);
+	  }
+  |	EQ Expr Expr
+	  {
+	    $$ = AstNode::mk_Composite(expr::OP_EQ, { $2, $3 });
+	  }
+  ;
+
+ExprList
+  :	Expr
+	  {
+		  $$ = { $1 };
+	  }
+  | ExprList Expr
+	  {
+		  $1.push_back($2);
+		  $$ = $1;
+	  }
+  ;
+
+ArrayExpr
+  : ARRAY_INTPR INTERNAL_NAME
+    {
+      $$ = AstNode::mk_Array_Interp($2);
+    }
+  | L_BRAC AS_CONST Sort R_BRAC Expr
+    {
+      $$ = AstNode::mk_As_Const($3, $5);
+    }
+  | Expr
+    {
+      $$ = $1;
+    }
+  ;
+
+AppFnName
+  : GLOBAL_FUNC_NAME   { $$ = $1; }
+  | INTERNAL_NAME      { $$ = $1; }
+  ;
+
+AppExpr
+  : AppFnName ExprList
+    {
+      $$ = AstNode::mk_Apply($1, $2);
+    }
+  ;
+
+LetDecl
+  : L_BRAC INTERNAL_NAME Expr R_BRAC
+    {
+      $$ = make_pair($2, $3);
+    }
+  ;
+
+LetDeclList
+  : LetDecl { $$ = { $1 }; }
+  | LetDeclList LetDecl { $1.push_back($2); $$ = $1; }
+
+LetExpr
+  : LET L_BRAC LetDeclList R_BRAC Expr
+    {
+      /* create LET nest */
+      AstNodeRef ret = $Expr;
+      for (auto itr = $LetDeclList.crbegin(); itr != $LetDeclList.crend(); ++itr) {
+        ret = AstNode::mk_Let(itr->first, itr->second, ret);
+      }
+      $$ = ret;
+    }
+  ;
+
+AstParamList
+  : { $$ = {};  /* can be empty */ }
+  | AstParamList L_BRAC AstParam R_BRAC
+	  {
+		  $1.push_back($3);
+		  $$ = $1;
+	  }
+  ;
+
+AstParam
+  : INTERNAL_NAME Sort { $$ = AstNode::mk_Atom(ctx->mk_var($1, $2)); }
+  ;
+
+LambdaExpr
+  : LAMBDA L_BRAC AstParamList R_BRAC Expr
+	  {
+      $$ = AstNode::mk_Lambda($AstParamList, $Expr);
+	  }
+  ;
+
+ForallExpr
+  : FORALL L_BRAC AstParamList R_BRAC Expr
+	  {
+      $$ = AstNode::mk_Forall($AstParamList, $Expr);
+	  }
+  ;
+
+%%
+
+map<string_ref,expr_ref> parse_z3_model_neo(eqspace::context* ctx, string const& fname, bool debug)
+{
+  autostop_timer timer(__func__);
+  ParsingEnv env(ctx);
+
+  std::ifstream fin(fname);
+  if (!fin.good()) {
+    cerr << __func__ << ':' << __LINE__ << ": cannot open " << fname << endl;
+    return map<string_ref,expr_ref>();
+  }
+
+  Z3_Neo_Scanner scanner(&fin);
+  yy::Z3_Neo_Parser parser(scanner, fname, ctx, env);
+  if (parser.parse()) {
+      cerr << __func__ << ':' << __LINE__ << ": parsing failed for " << fname << endl;
+      NOT_IMPLEMENTED();
+  }
+
+  if (debug) {
+    for (auto const& [name,p] : env.get_funcs()) {
+      auto const& [ast,sort] = p;
+      cout << name->get_str() << "::" << sort->to_string() << " " << *ast << endl;
+      auto e = env.linearize_func_to_expr(name);
+      if (e.has_linear_form()) {
+        cout << "\t\t" << expr_string(e.linear_form()) << endl;
+      } else {
+        cout << "WARNING: linear form not available!" << endl;
+      }
+      cout << "\t\t" << expr_string(e.normal_form()) << endl << endl;
+    }
+  }
+
+  map<string_ref, expr_ref> ret;
+  for (auto const& name : env.get_global_funcs()) {
+    auto fn_sort = env.get_func_sort(name);
+    auto ed = env.linearize_func_to_expr(name);
+    expr_ref e = ed.has_linear_form() ? ed.linear_form() : ed.normal_form();
+    if (!ed.has_linear_form()) {
+      cout << "WARNING: could not linearize function " << name->get_str() << " in file " << fname << endl;
+      cout << "function " << name->get_str() << ":\n" << ctx->expr_to_string_table(e) << endl;
+    }
+    if (fn_sort->get_domain_sort().size()) {
+      if (e->get_sort() != fn_sort) {
+        ASSERTCHECK(e->is_array_sort(), cout << "e sort = " << e->get_sort()->to_string() << "; fn_sort = " << fn_sort->to_string() << endl);
+        // adjust sort -- array sort to function sort
+        e = ctx->mk_array_const(e->get_array_constant(), fn_sort);
+      }
+    } else {
+      ASSERTCHECK((e->get_sort() == fn_sort->get_range_sort()), cout << "e sort = " << e->get_sort()->to_string() << "; fn_sort = " << fn_sort->to_string() << endl);
+    }
+    ret.insert(make_pair(name,e));
+  }
+
+  return ret;
+}
+
+void
+yy::Z3_Neo_Parser::error(const location_type &l, const std::string &err_message)
+{
+  cout << __func__ << ':' << __LINE__ << ": At " << l << ": " << err_message << endl;
+   /* std::cerr << "Error: " << err_message << " at " << l << "\n"; */
+}

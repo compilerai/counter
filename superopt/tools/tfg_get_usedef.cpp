@@ -1,5 +1,5 @@
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -8,9 +8,10 @@
 #include "expr/expr.h"
 #include "support/src-defs.h"
 #include "i386/insn.h"
+#include "x64/insn.h"
 #include "ppc/insn.h"
-#include "codegen/etfg_insn.h"
-#include "rewrite/src-insn.h"
+#include "etfg/etfg_insn.h"
+#include "insn/src-insn.h"
 #include "sym_exec/sym_exec.h"
 
 #include <fstream>
@@ -63,9 +64,9 @@ int main(int argc, char **argv)
   base_state.populate_reg_counts(/*NULL*/);
   ASSERT(is_line(line, "=tfg"));
   tfg *t = new tfg(mk_string_ref("tfg_get_usedef"), ctx, base_state);
-  shared_ptr<tfg_node> n = make_shared<tfg_node>(pc::start());
+  dshared_ptr<tfg_node> n = make_dshared<tfg_node>(pc::start());
   t->add_node(n);
-  line = t->read_from_ifstream(in, ctx, base_state);
+  t->read_from_ifstream(in, ctx, base_state);
 
   //pair<bool, string> p = read_tfg(in, &t, "src_tfg", ctx, cs);
   regset_t use, def;

@@ -32,7 +32,7 @@ DebugTranslation::DebugTranslation(Operation *module, llvm::Module &llvmModule)
   if (!module->walk(interruptIfValidLocation).wasInterrupted())
     return;
 
-  // TODO(riverriddle) Several parts of this are incorrect. Different source
+  // TODO: Several parts of this are incorrect. Different source
   // languages may interpret different parts of the debug information
   // differently. Frontends will also want to pipe in various information, like
   // flags. This is fine for now as we only emit line-table information and not
@@ -75,7 +75,7 @@ void DebugTranslation::translate(LLVMFuncOp func, llvm::Function &llvmFunc) {
   auto *file = translateFile(fileLoc ? fileLoc.getFilename() : "<unknown>");
   unsigned line = fileLoc ? fileLoc.getLine() : 0;
 
-  // TODO(riverriddle) This is the bare essentials for now. We will likely end
+  // TODO: This is the bare essentials for now. We will likely end
   // up with wrapper metadata around LLVMs metadata in the future, so this
   // doesn't need to be smart until then.
   llvm::DISubroutineType *type =
@@ -110,10 +110,11 @@ DebugTranslation::translateLoc(Location loc, llvm::DILocalScope *scope,
     return nullptr;
 
   // Check for a cached instance.
-  const auto *&llvmLoc = locationToLoc[std::make_pair(loc, scope)];
-  if (llvmLoc)
-    return llvmLoc;
+  auto existingIt = locationToLoc.find(std::make_pair(loc, scope));
+  if (existingIt != locationToLoc.end())
+    return existingIt->second;
 
+  const llvm::DILocation *llvmLoc = nullptr;
   switch (loc->getKind()) {
   case StandardAttributes::CallSiteLocation: {
     auto callLoc = loc.dyn_cast<CallSiteLoc>();
@@ -154,6 +155,7 @@ DebugTranslation::translateLoc(Location loc, llvm::DILocalScope *scope,
   default:
     llvm_unreachable("unknown location kind");
   }
+  locationToLoc.try_emplace(std::make_pair(loc, scope), llvmLoc);
   return llvmLoc;
 }
 

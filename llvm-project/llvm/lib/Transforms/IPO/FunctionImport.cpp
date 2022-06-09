@@ -884,6 +884,7 @@ void llvm::computeDeadSymbols(
   while (!Worklist.empty()) {
     auto VI = Worklist.pop_back_val();
     for (auto &Summary : VI.getSummaryList()) {
+      Summary->setLive(true);
       if (auto *AS = dyn_cast<AliasSummary>(Summary.get())) {
         // If this is an alias, visit the aliasee VI to ensure that all copies
         // are marked live and it is added to the worklist for further
@@ -891,8 +892,6 @@ void llvm::computeDeadSymbols(
         visit(AS->getAliaseeVI(), true);
         continue;
       }
-
-      Summary->setLive(true);
       for (auto Ref : Summary->refs())
         visit(Ref, false);
       if (auto *FS = dyn_cast<FunctionSummary>(Summary.get()))
@@ -1232,6 +1231,12 @@ Expected<bool> FunctionImporter::importFunctions(
     // have loaded all the required metadata!
     UpgradeDebugInfo(*SrcModule);
 
+    // Set the partial sample profile ratio in the profile summary module flag
+    // of the imported source module, if applicable, so that the profile summary
+    // module flag will match with that of the destination module when it's
+    // imported.
+    SrcModule->setPartialSampleProfileRatio(Index);
+
     // Link in the specified functions.
     if (renameModuleForThinLTO(*SrcModule, Index, ClearDSOLocalOnDeclarations,
                                &GlobalsToImport))
@@ -1243,10 +1248,12 @@ Expected<bool> FunctionImporter::importFunctions(
                << " from " << SrcModule->getSourceFileName() << "\n";
     }
 
-    if (Mover.move(std::move(SrcModule), GlobalsToImport.getArrayRef(),
-                   [](GlobalValue &, IRMover::ValueAdder) {},
-                   /*IsPerformingImport=*/true))
-      report_fatal_error("Function Import: link error");
+    if (Error Err = Mover.move(
+            std::move(SrcModule), GlobalsToImport.getArrayRef(),
+            [](GlobalValue &, IRMover::ValueAdder) {},
+            /*IsPerformingImport=*/true))
+      report_fatal_error("Function Import: link error: " +
+                         toString(std::move(Err)));
 
     ImportedCount += GlobalsToImport.size();
     NumImportedModules++;

@@ -14,17 +14,17 @@
 #include "support/debug.h"
 #include "superopt/harvest.h"
 #include "config-host.h"
-#include "rewrite/jumptable.h"
-#include "rewrite/dst-insn.h"
+#include "insn/jumptable.h"
+#include "insn/dst-insn.h"
 #include "valtag/symbol_set.h"
 #include "valtag/nextpc_map.h"
-#include "rewrite/insn_line_map.h"
+#include "insn/insn_line_map.h"
 #include "rewrite/symbol_map.h"
 #include "support/cl.h"
 //#include "strtab.h"
 //#include "disas.h"
 
-#include "cmn/cmn.h"
+//#include "cmn/cmn.h"
 #include "valtag/elf/elf.h"
 
 #include "rewrite/static_translate.h"
@@ -35,21 +35,22 @@
 #include "valtag/regset.h"
 //#include "temporaries.h"
 #include "support/c_utils.h"
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 #include "rewrite/peephole.h"
 
 #include "i386/insn.h"
-#include "codegen/etfg_insn.h"
+#include "x64/insn.h"
+#include "etfg/etfg_insn.h"
 #include "ppc/insn.h"
-#include "rewrite/src-insn.h"
+#include "insn/src-insn.h"
 
 //#include "live_ranges.h"
 #include "ppc/regs.h"
-#include "rewrite/rdefs.h"
+#include "insn/rdefs.h"
 #include "valtag/memset.h"
 #include "ppc/insn.h"
 
-#include "rewrite/edge_table.h"
+#include "insn/edge_table.h"
 
 #include "valtag/elf/elftypes.h"
 #include "rewrite/translation_instance.h"
@@ -289,7 +290,8 @@ main(int argc, char **argv)
   cl::arg<string> output_filename(cl::explicit_prefix, "o", "out.tfg", "output filename");
   cl::arg<string> exec_filename(cl::explicit_prefix, "e", "", "exec filename");
   cl::arg<string> etfg_filename(cl::explicit_prefix, "tfg_llvm", "", "etfg filename containing LLVM tfg");
-  cl::arg<string> debug(cl::explicit_prefix, "debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --debug=correlate=2,smt_query=1");
+  cl::arg<string> debug(cl::explicit_prefix, "dyn-debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --debug=correlate=2,smt_query=1");
+  cl::arg<unsigned long> max_stack_push_delta(cl::explicit_prefix, "max-stack-push-delta", (1<<31), "Max stack difference to be considered a push");
 
 
   cl::cl cmd("eqgen: generates TFGs from the harvest file");
@@ -300,6 +302,10 @@ main(int argc, char **argv)
   cmd.add_arg(&exec_filename);
   cmd.add_arg(&etfg_filename);
   cmd.add_arg(&debug);
+  cmd.add_arg(&max_stack_push_delta);
+
+  cl::arg<string> xml_output_file(cl::explicit_prefix, "xml-output", "", "Dump XML output to this file");
+  cmd.add_arg(&xml_output_file);
 
   CPP_DBG_EXEC(ARGV_PRINT,
       for (int i = 0; i < argc; i++) {
@@ -309,8 +315,13 @@ main(int argc, char **argv)
   );
   cmd.parse(argc, argv);
 
-  eqspace::init_dyn_debug_from_string(debug.get_value());
-  CPP_DBG_EXEC(DYN_DEBUG, eqspace::print_debug_class_levels());
+  if (xml_output_file.get_value() != "") {
+    g_xml_output_stream.open(xml_output_file.get_value(), ios_base::app | ios_base::ate);
+    ASSERT(g_xml_output_stream.is_open());
+  }
+
+  init_dyn_debug_from_string(debug.get_value());
+  CPP_DBG_EXEC(DYN_DEBUG, print_debug_class_levels());
   //char const *tfg_llvm = "tfg.llvm.default";
   //char const *function_name = NULL;
   //char const *logfile = NULL;
@@ -328,6 +339,7 @@ main(int argc, char **argv)
   g_ctx_init(); //this should be first, as it involves a fork which can be expensive if done after usedef_init()
 
   context *ctx = g_ctx;
+  g_query_dir_init();
   src_init();
   dst_init();
   //types_init();
@@ -335,7 +347,7 @@ main(int argc, char **argv)
   g_se_init();
   //yices_initialize();
 
-  printf("%s %d: harvest_filename = %s, tfg_llvm = %s, function_name = %s.\n", __func__, __LINE__, harvest_filename.get_value().c_str(), etfg_filename.get_value().c_str(), function_name.get_value().c_str());
+  //printf("%s %d: harvest_filename = %s, tfg_llvm = %s, function_name = %s.\n", __func__, __LINE__, harvest_filename.get_value().c_str(), etfg_filename.get_value().c_str(), function_name.get_value().c_str());
   //printf("pid %d: Using random seed %d\n", getpid(), random_seed);
   //srand_random(random_seed);
 
@@ -347,6 +359,12 @@ main(int argc, char **argv)
   //if (ignore_insn_line_map) {
   //  peeptab_free_insn_line_maps(&ti.peep_table);
   //}
+  if (max_stack_push_delta.get_value()) {// non-zero
+    context::config cfg = ctx->get_config();
+    cfg.max_stack_push_delta = max_stack_push_delta.get_value();
+    cout << "Setting max_stack_push_delta = " << cfg.max_stack_push_delta << endl;
+    ctx->set_config(cfg);
+  }
 
   FILE *harvest_fp = fopen(harvest_filename.get_value().c_str(), "r");
   if (!harvest_fp) {
@@ -380,6 +398,9 @@ main(int argc, char **argv)
   //nextpc_map_t *nextpc_map = new nextpc_map_t;
 
   unlink(output_filename.get_value().c_str());
+  ofstream ofs(output_filename.get_value());
+  ofs.close(); //create an empty file
+
   regmap_t regmap;
 
   symbol_set_init(symbol_set);
@@ -409,7 +430,7 @@ main(int argc, char **argv)
       cout << __func__ << " " << __LINE__ << ": Ignoring: " << cur_function_name << "\n";
       continue;
     }
-    cout << __func__ << " " << __LINE__ << ": Doing: " << cur_function_name << "\n";
+    CPP_DBG_EXEC(EQGEN, cout << __func__ << " " << __LINE__ << ": Doing: " << cur_function_name << "\n");
     cmn_iseq_canonicalize_symbols(dst_iseq, dst_iseq_len, dst_symbols_map);
     //char const *nextpcs_start = strchr(endline, '#');
     //ASSERT(nextpcs_start);
@@ -431,7 +452,7 @@ main(int argc, char **argv)
     //ASSERT(execfile);
     tfg::gen_tfg_for_dst_iseq(output_filename.get_value().c_str(), exec_filename.get_value().c_str(), dst_iseq, dst_iseq_len, regmap, etfg_filename.get_value().c_str(), cur_function_name.c_str(), &symbol_map, nextpc_function_name_map, num_live_out, insn_pcs, ctx);
     //cout << __func__ << " " << __LINE__ << ": done " << cur_function_name << "\n";
-    cout << __func__ << " " << __LINE__ << ": Done: " << cur_function_name << "\n";
+    CPP_DBG_EXEC(EQGEN, cout << __func__ << " " << __LINE__ << ": Done: " << cur_function_name << "\n");
   }
 
   fclose(harvest_fp);
@@ -442,6 +463,14 @@ main(int argc, char **argv)
   delete[] live_out;
   delete[] dst_iseq;
   solver_kill();
+
+  DYN_DEBUG(stats,
+    cout << __func__ << " " << __LINE__ << ":Printing stats:\n";
+    print_all_timers();
+    cout << stats::get();
+    cout << ctx->stats() << endl;
+  );
+
   call_on_exit_function();
   return 0;
 }

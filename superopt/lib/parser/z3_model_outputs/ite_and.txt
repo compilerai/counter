@@ -1,0 +1,16 @@
+sat
+(model 
+  (define-fun k!1 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00020000) #x01
+    (ite (= x!1 #x00000000) #x08
+    (ite (= x!1 #x00000020) #x00
+    (ite (= x!1 #x10000000) #x80
+    (ite (= x!1 #x00040000) #x02
+      #x04))))))
+
+  (define-fun memmask_uif ((x!1 (_ BitVec 8))(x!2 (_ BitVec 4)))  (_ BitVec 8)
+    (ite (and (= x!1 #x00) (= x!2 #x0)) #x01
+    (ite (and (= x!1 #x02)  (= x!2 #x0)) #x03
+    (ite (and (= x!1 #x01)  (= x!2 #x2)) #x05
+      #x04))))
+)

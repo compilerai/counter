@@ -3,6 +3,7 @@
 #include "support/globals.h"
 #include "tfg/tfg_llvm.h"
 #include "expr/consts_struct.h"
+#include "ptfg/ftmap.h"
 
 #include <fstream>
 #include <iostream>
@@ -15,7 +16,7 @@ int main(int argc, char **argv)
   // command line args processing
   cl::arg<string> function_name(cl::implicit_prefix, "", "function name");
   cl::arg<string> etfg_file(cl::implicit_prefix, "", "path to .etfg file");
-  cl::arg<string> debug(cl::explicit_prefix, "debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --debug=correlate=2,smt_query=1,dumptfg,decide_hoare_triple,update_invariant_state_over_edge");
+  cl::arg<string> debug(cl::explicit_prefix, "dyn-debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --debug=correlate=2,smt_query=1,dumptfg,decide_hoare_triple,update_invariant_state_over_edge");
   cl::cl cmd("etfg_split_memory_and_propagate_sprels");
 
   cmd.add_arg(&function_name);
@@ -23,7 +24,7 @@ int main(int argc, char **argv)
   cmd.add_arg(&debug);
   cmd.parse(argc, argv);
 
-  eqspace::init_dyn_debug_from_string(debug.get_value());
+  init_dyn_debug_from_string(debug.get_value());
 
   context::config cfg(3600, 3600);
   context ctx(cfg);
@@ -49,21 +50,22 @@ int main(int argc, char **argv)
       return 2;
     }
   }
-  if(!is_next_line(in_llvm, "=TFG")) {
+  if(!is_next_line(in_llvm, TFG_IDENTIFIER)) {
     cout << __func__ << " " << __LINE__ << ": parsing failed\n";
     return 3;
   }
-  auto tfg_llvm = make_shared<tfg_llvm_t>(in_llvm, function_name.get_value(), &ctx);
+  auto tfg_llvm = tfg_llvm_t::tfg_llvm_from_stream(in_llvm, function_name.get_value(), &ctx);
   ASSERT(tfg_llvm);
   tfg_llvm->rename_llvm_symbols_to_keywords(&ctx);
 
   DBG_SET(SPLIT_MEM, 2);
-  DBG_SET(TFG_LOCS, 2);
+  DYN_DBG_SET(tfg_locs, 2);
   DYN_DBG_SET(linear_relations, 2);
   set_debug_class_level("alias_analysis", 2);
 
-  tfg_llvm->collapse_tfg(true);
-  tfg_llvm->split_memory_in_graph_and_propagate_sprels_until_fixpoint(false);
+  tfg_llvm->collapse_tfg();
+  NOT_IMPLEMENTED();
+  //ftmap_t::tfg_run_pointsto_analysis(tfg_llvm/*, callee_rw_memlabels_t::callee_rw_memlabels_nop()*/, false, dshared_ptr<tfg_llvm_t const>::dshared_nullptr());
   cout << "t =\n" << tfg_llvm->graph_to_string() << endl;
   return 0;
 }

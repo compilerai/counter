@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.9.2 )
+cmake_minimum_required(VERSION 3.13.4)
 
 project( libclc VERSION 0.2.0 LANGUAGES CXX )
 include( GNUInstallDirs )
@@ -125,8 +125,8 @@ link_directories( ${LLVM_LIBDIR} )
 add_executable( prepare_builtins utils/prepare-builtins.cpp )
 target_compile_options( prepare_builtins PRIVATE ${LLVM_CXX_FLAGS} )
 target_compile_definitions( prepare_builtins PRIVATE ${LLVM_VERSION_DEFINE} )
-target_link_libraries( prepare_builtins PRIVATE ${LLVM_SYSTEM_LIBS} )
 target_link_libraries( prepare_builtins PRIVATE ${LLVM_LIBS} )
+target_link_libraries( prepare_builtins PRIVATE ${LLVM_SYSTEM_LIBS} )
 
 # Setup arch devices
 set( r600--_devices cedar cypress barts cayman )
@@ -262,7 +262,7 @@ foreach( t ${LIBCLC_TARGETS_TO_BUILD} )
 		target_compile_definitions( builtins.link.${arch_suffix} PRIVATE
 			"__CLC_INTERNAL" )
 		target_compile_options( builtins.link.${arch_suffix} PRIVATE  -target
-			${t} ${mcpu} -fno-builtin )
+			${t} ${mcpu} -fno-builtin -nostdlib )
 		set_target_properties( builtins.link.${arch_suffix} PROPERTIES
 			LINKER_LANGUAGE CLC )
 

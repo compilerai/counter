@@ -8,6 +8,7 @@
 
 #include "llvm/Support/FileCollector.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Process.h"
@@ -34,7 +35,6 @@ static bool isCaseSensitivePath(StringRef Path) {
 
 FileCollector::FileCollector(std::string Root, std::string OverlayRoot)
     : Root(std::move(Root)), OverlayRoot(std::move(OverlayRoot)) {
-  sys::fs::create_directories(this->Root, true);
 }
 
 bool FileCollector::getRealPath(StringRef SrcPath,
@@ -150,6 +150,13 @@ copyAccessAndModificationTime(StringRef Filename,
 }
 
 std::error_code FileCollector::copyFiles(bool StopOnError) {
+  auto Err = sys::fs::create_directories(Root, /*IgnoreExisting=*/true);
+  if (Err) {
+    return Err;
+  }
+
+  std::lock_guard<std::mutex> lock(Mutex);
+
   for (auto &entry : VFSWriter.getMappings()) {
     // Create directory tree.
     if (std::error_code EC =

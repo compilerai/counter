@@ -14,7 +14,7 @@
 
 // Don't allow binding to a temp
 
-// XFAIL: c++98, c++03
+// XFAIL: c++03
 
 #include <functional>
 
@@ -25,6 +25,7 @@ const A source() {return A();}
 int main(int, char**)
 {
     std::reference_wrapper<const A> r = std::ref(source());
+    (void)r;
 
-  return 0;
+    return 0;
 }

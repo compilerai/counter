@@ -6,8 +6,9 @@
 //#include "temporaries.h"
 #include "valtag/regset.h"
 #include "i386/regs.h"
+#include "x64/regs.h"
 #include "ppc/regs.h"
-#include "codegen/etfg_regs.h"
+#include "etfg/etfg_regs.h"
 #include "valtag/reg_identifier.h"
 
 struct regset_t;
@@ -52,7 +53,9 @@ size_t dst_regmap_from_string(regmap_t *regmap, char const *buf);
 void dst_regmap_from_file(regmap_t *regmap, char const *filename);
 void regmap_init(regmap_t *regmap);
 regmap_t const *i386_identity_regmap();
+regmap_t const *x64_identity_regmap();
 void regmap_identity_for_i386(regmap_t *regmap, fixed_reg_mapping_t const &fixed_reg_mapping);
+void regmap_identity_for_x64(regmap_t *regmap, fixed_reg_mapping_t const &fixed_reg_mapping);
 void regmap_identity_for_ppc(regmap_t *regmap, fixed_reg_mapping_t const &fixed_reg_mapping);
 regmap_t const *src_exec_regmap(void);
 //long regmap_count_gprs(regmap_t const *regmap);

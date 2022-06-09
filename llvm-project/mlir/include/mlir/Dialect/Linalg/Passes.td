@@ -11,6 +11,17 @@
 
 include "mlir/Pass/PassBase.td"
 
+def LinalgFoldUnitExtentDims : FunctionPass<"linalg-fold-unit-extent-dims"> {
+  let summary = "Remove unit-extent dimension in Linalg ops on tensors";
+  let constructor = "mlir::createLinalgFoldUnitExtentDimsPass()";
+  let options = [
+    Option<"foldOneTripLoopsOnly", "fold-one-trip-loops-only", "bool",
+            /*default=*/"false",
+	    "Only folds the one-trip loops from Linalg ops on tensors "
+	    "(for testing purposes only)">
+  ];
+}
+
 def LinalgFusion : FunctionPass<"linalg-fusion"> {
   let summary = "Fuse operations in the linalg dialect";
   let constructor = "mlir::createLinalgFusionPass()";
@@ -32,6 +43,12 @@ def LinalgLowerToLoops : FunctionPass<"convert-linalg-to-loops"> {
   let constructor = "mlir::createConvertLinalgToLoopsPass()";
 }
 
+def LinalgOnTensorsToBuffers : Pass<"convert-linalg-on-tensors-to-buffers", "ModuleOp"> {
+  let summary = "Convert the Linalg operations which work on tensor-type "
+                "operands or results to use buffers instead";
+  let constructor = "mlir::createConvertLinalgOnTensorsToBuffersPass()";
+}
+
 def LinalgLowerToParallelLoops
     : FunctionPass<"convert-linalg-to-parallel-loops"> {
   let summary = "Lower the operations from the linalg dialect into parallel "
@@ -44,7 +61,9 @@ def LinalgPromotion : FunctionPass<"linalg-promote-subviews"> {
   let constructor = "mlir::createLinalgPromotionPass()";
   let options = [
     Option<"dynamicBuffers", "test-promote-dynamic", "bool",
-           /*default=*/"false", "Test generation of dynamic promoted buffers">
+           /*default=*/"false", "Test generation of dynamic promoted buffers">,
+    Option<"useAlloca", "test-use-alloca", "bool",
+           /*default=*/"false", "Test generation of alloca'ed buffers.">
   ];
 }
 

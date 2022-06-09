@@ -11,11 +11,11 @@
 
 #include "Compiler.h"
 #include "Diagnostics.h"
-#include "Function.h"
 #include "GlobalCompilationDatabase.h"
-#include "Path.h"
-#include "Threading.h"
 #include "index/CanonicalIncludes.h"
+#include "support/Function.h"
+#include "support/Path.h"
+#include "support/Threading.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringMap.h"
@@ -191,6 +191,15 @@ public:
 
     /// Determines when to keep idle ASTs in memory for future use.
     ASTRetentionPolicy RetentionPolicy;
+
+    /// Whether to run PreamblePeer asynchronously.
+    /// No-op if AsyncThreadsCount is 0.
+    bool AsyncPreambleBuilds = true;
+
+    /// Used to create a context that wraps each single operation.
+    /// Typically to inject per-file configuration.
+    /// If the path is empty, context sholud be "generic".
+    std::function<Context(PathRef)> ContextProvider;
   };
 
   TUScheduler(const GlobalCompilationDatabase &CDB, const Options &Opts,
@@ -229,7 +238,9 @@ public:
   llvm::StringMap<std::string> getAllFileContents() const;
 
   /// Schedule an async task with no dependencies.
-  void run(llvm::StringRef Name, llvm::unique_function<void()> Action);
+  /// Path may be empty (it is used only to set the Context).
+  void run(llvm::StringRef Name, llvm::StringRef Path,
+           llvm::unique_function<void()> Action);
 
   /// Defines how a runWithAST action is implicitly cancelled by other actions.
   enum ASTActionInvalidation {
@@ -256,11 +267,6 @@ public:
 
   /// Controls whether preamble reads wait for the preamble to be up-to-date.
   enum PreambleConsistency {
-    /// The preamble is generated from the current version of the file.
-    /// If the content was recently updated, we will wait until we have a
-    /// preamble that reflects that update.
-    /// This is the slowest option, and may be delayed by other tasks.
-    Consistent,
     /// The preamble may be generated from an older version of the file.
     /// Reading from locations in the preamble may cause files to be re-read.
     /// This gives callers two options:
@@ -302,11 +308,12 @@ public:
   // this inside clangd.
   // FIXME: remove this when there is proper index support via build system
   // integration.
+  // FIXME: move to ClangdServer via createProcessingContext.
   static llvm::Optional<llvm::StringRef> getFileBeingProcessedInContext();
 
 private:
   const GlobalCompilationDatabase &CDB;
-  const bool StorePreamblesInMemory;
+  Options Opts;
   std::unique_ptr<ParsingCallbacks> Callbacks; // not nullptr
   Semaphore Barrier;
   llvm::StringMap<std::unique_ptr<FileData>> Files;
@@ -315,7 +322,6 @@ private:
   // asynchronously.
   llvm::Optional<AsyncTaskRunner> PreambleTasks;
   llvm::Optional<AsyncTaskRunner> WorkerThreads;
-  DebouncePolicy UpdateDebounce;
 };
 
 } // namespace clangd

@@ -12,14 +12,14 @@
 #include "support/src-defs.h"
 #include "support/debug.h"
 //#include "rewrite/harvest.h"
-#include "codegen/etfg_insn.h"
+#include "etfg/etfg_insn.h"
 #include "i386/insntypes.h"
-#include "rewrite/dst-insn.h"
-#include "rewrite/insn_list.h"
+#include "insn/dst-insn.h"
+#include "insn/insn_list.h"
 //#include "config.h"
 //#include "cpu.h"
 //#include "exec-all.h"
-#include "rewrite/jumptable.h"
+#include "insn/jumptable.h"
 //#include "strtab.h"
 //#include "disas.h"
 #include "expr/z3_solver.h"
@@ -34,20 +34,21 @@
 #include "valtag/regset.h"
 //#include "temporaries.h"
 #include "support/utils.h"
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 #include "rewrite/peephole.h"
 
 #include "i386/insn.h"
+#include "x64/insn.h"
 #include "ppc/insn.h"
-#include "rewrite/src-insn.h"
+#include "insn/src-insn.h"
 
 //#include "live_ranges.h"
 #include "ppc/regs.h"
-#include "rewrite/rdefs.h"
+#include "insn/rdefs.h"
 #include "valtag/memset.h"
 #include "ppc/insn.h"
 
-#include "rewrite/edge_table.h"
+#include "insn/edge_table.h"
 #include "rewrite/peep_entry_list.h"
 
 #include "valtag/elf/elftypes.h"
@@ -72,8 +73,6 @@
 //#include <caml/callback.h>
 //#include <caml/custom.h>
 //#include <caml/intext.h>
-
-static char as1[40960000], as2[40960], as3[40960];
 
 #define SRC_ISEQ_MAX_ALLOC 2048
 #define ITABLES_MAX_ALLOC (4096 * 1024)

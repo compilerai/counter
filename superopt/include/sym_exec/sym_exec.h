@@ -1,23 +1,29 @@
 #pragma once
 
 #include <list>
-#include "i386/insn.h"
-#include "ppc/insn.h"
-#include "codegen/etfg_insn.h"
+
+#include "support/src-defs.h"
+#include "support/dshared_ptr.h"
+
 #include "valtag/regmap.h"
 #include "valtag/imm_vt_map.h"
-#include "rewrite/src-insn.h"
-#include "rewrite/dst-insn.h"
-#include "i386/regs.h"
 #include "valtag/nextpc_map.h"
-#include "rewrite/src_iseq_match_renamings.h"
-#include "support/src-defs.h"
-#include "rewrite/insn_db.h"
 
-//class machine_state;
-//class trans_fun_graph;
-#include "gsupport/pc.h"
 #include "expr/state.h"
+#include "expr/pc.h"
+
+#include "insn/src-insn.h"
+#include "insn/dst-insn.h"
+#include "i386/regs.h"
+#include "x64/regs.h"
+#include "i386/insn.h"
+#include "x64/insn.h"
+#include "ppc/insn.h"
+#include "etfg/etfg_insn.h"
+
+
+#include "rewrite/src_iseq_match_renamings.h"
+#include "rewrite/insn_db.h"
 
 using namespace std;
 class pc_pred_state;
@@ -112,7 +118,7 @@ public:
   sym_exec(bool cache_tfgs = true);
   ~sym_exec();
 
-  static string get_keyword_from_regtype_indices(reg_type rt, int i, int j);
+  //static string get_keyword_from_regtype_indices(reg_type rt, int i, int j);
   void src_parse_sym_exec_db(context* ctx);
   void dst_parse_sym_exec_db(context* ctx);
   //void set_consts_struct(consts_struct_t &cs) { m_consts_struct = &cs; }
@@ -132,8 +138,8 @@ public:
 
   void clear();
 
-  shared_ptr<tfg> src_get_tfg(src_insn_t const iseq[], long iseq_len, context *ctx/*, bool src, bool all_insns_are_labels, bool use_memaccess_comments*/);
-  shared_ptr<tfg> dst_get_tfg(dst_insn_t const iseq[], long iseq_len, context *ctx/*, bool src, bool all_insns_are_labels, bool use_memaccess_comments*/);
+  dshared_ptr<tfg> src_get_tfg(src_insn_t const iseq[], long iseq_len, context *ctx, string const& name, string const& fname);
+  dshared_ptr<tfg> dst_get_tfg(dst_insn_t const iseq[], long iseq_len, context *ctx, string const& name, string const& fname);
 
   void src_get_next_pc_pred_states(src_insn_t const iseq[], long iseq_len,
                              context *ctx, pc p, stack<expr_ref> pred,
@@ -143,15 +149,15 @@ public:
                              context *ctx, pc p, stack<expr_ref> pred,
                              int nextpc_indir, list<pc_pred_state>& next, bool add_memaccess_comments);
 
-  shared_ptr<tfg> src_insn_get_tfg(src_insn_t const *insn, long cur_index, context *ctx/*, bool src, bool use_memaccess_comments*/);
-  shared_ptr<tfg> dst_insn_get_tfg(dst_insn_t const *insn, long cur_index, context *ctx/*, bool src, bool use_memaccess_comments*/);
+  dshared_ptr<tfg> src_insn_get_tfg(src_insn_t const *insn, long cur_index, context *ctx/*, bool src, bool use_memaccess_comments*/);
+  dshared_ptr<tfg> dst_insn_get_tfg(dst_insn_t const *insn, long cur_index, context *ctx/*, bool src, bool use_memaccess_comments*/);
 
   void src_get_usedef_using_transfer_function(src_insn_t const *insn,
     regset_t *use, regset_t *def, memset_t *memuse,
     memset_t *memdef);
 
-  shared_ptr<tfg> src_insn_get_tfg_from_insn_db_match(src_insn_t const &insn, insn_db_match_t<src_insn_t, pair<streampos, shared_ptr<tfg const>>> const &m,  long cur_index, context *ctx);
-  shared_ptr<tfg> dst_insn_get_tfg_from_insn_db_match(dst_insn_t const &insn, insn_db_match_t<dst_insn_t, pair<streampos, shared_ptr<tfg const>>> const &m,  long cur_index, context *ctx);
+  dshared_ptr<tfg> src_insn_get_tfg_from_insn_db_match(src_insn_t const &insn, insn_db_match_t<src_insn_t, pair<streampos, dshared_ptr<tfg const>>> const &m,  long cur_index, context *ctx);
+  dshared_ptr<tfg> dst_insn_get_tfg_from_insn_db_match(dst_insn_t const &insn, insn_db_match_t<dst_insn_t, pair<streampos, dshared_ptr<tfg const>>> const &m,  long cur_index, context *ctx);
 
 
   void dst_get_usedef_using_transfer_function(dst_insn_t const *insn,
@@ -160,26 +166,26 @@ public:
 
 
 private:
-  shared_ptr<tfg const> src_get_tfg_from_insn_db_list_elem(insn_db_list_elem_t<src_insn_t, pair<streampos, shared_ptr<tfg const>>> &e, string const &db_file, state const &base_state);
-  shared_ptr<tfg const> dst_get_tfg_from_insn_db_list_elem(insn_db_list_elem_t<dst_insn_t, pair<streampos, shared_ptr<tfg const>>> &e, string const &db_file, state const &base_state);
+  dshared_ptr<tfg const> src_get_tfg_from_insn_db_list_elem(insn_db_list_elem_t<src_insn_t, pair<streampos, dshared_ptr<tfg const>>> &e, string const &db_file, state const &base_state);
+  dshared_ptr<tfg const> dst_get_tfg_from_insn_db_list_elem(insn_db_list_elem_t<dst_insn_t, pair<streampos, dshared_ptr<tfg const>>> &e, string const &db_file, state const &base_state);
 
-  shared_ptr<tfg> src_insn_get_tfg_matching_at_iter(src_insn_t const *insn, long cur_index, context *ctx, std::list<pair<src_insn_t *, pair<streampos, shared_ptr<tfg const>>>>::iterator iter);
-  shared_ptr<tfg> dst_insn_get_tfg_matching_at_iter(dst_insn_t const *insn, long cur_index, context *ctx, std::list<pair<dst_insn_t *, pair<streampos, shared_ptr<tfg const>>>>::iterator iter);
+  dshared_ptr<tfg> src_insn_get_tfg_matching_at_iter(src_insn_t const *insn, long cur_index, context *ctx, std::list<pair<src_insn_t *, pair<streampos, dshared_ptr<tfg const>>>>::iterator iter);
+  dshared_ptr<tfg> dst_insn_get_tfg_matching_at_iter(dst_insn_t const *insn, long cur_index, context *ctx, std::list<pair<dst_insn_t *, pair<streampos, dshared_ptr<tfg const>>>>::iterator iter);
 
   //std::list<pair<src_insn_t *, pair<streampos, shared_ptr<tfg const>>>>::iterator src_insn_get_next_matching_iterator(src_insn_t const *insn, long cur_index, context *ctx, std::list<pair<src_insn_t *, pair<streampos, shared_ptr<tfg const>>>>::iterator iter);
   //std::list<pair<dst_insn_t *, pair<streampos, tfg const *>>>::iterator dst_insn_get_next_matching_iterator(dst_insn_t const *insn, long cur_index, context *ctx, std::list<pair<dst_insn_t *, pair<streampos, tfg const *>>>::iterator iter);
 
-  shared_ptr<tfg> src_get_tfg_full(src_insn_t const iseq[], long iseq_len, context *ctx/*, bool src, bool use_memaccess_comments*/);
-  shared_ptr<tfg> dst_get_tfg_full(dst_insn_t const iseq[], long iseq_len, context *ctx/*, bool src, bool use_memaccess_comments*/);
-  void src_add(src_insn_t* iseq, streampos off, shared_ptr<tfg const> const &tfg);
-  void dst_add(dst_insn_t* iseq, streampos off, shared_ptr<tfg const> const &tfg);
+  dshared_ptr<tfg> src_get_tfg_full(src_insn_t const iseq[], long iseq_len, context *ctx, string const& name, string const& fname);
+  dshared_ptr<tfg> dst_get_tfg_full(dst_insn_t const iseq[], long iseq_len, context *ctx, string const& name, string const& fname);
+  void src_add(src_insn_t* iseq, streampos off, dshared_ptr<tfg const> const &tfg);
+  void dst_add(dst_insn_t* iseq, streampos off, dshared_ptr<tfg const> const &tfg);
 
   bool m_cache_tfgs;
   string src_m_db_file, dst_m_db_file;
   //std::list<pair<src_insn_t*, pair<streampos, tfg const *> > > src_m_db;
   //std::list<pair<dst_insn_t*, pair<streampos, tfg const *> > > dst_m_db;
-  insn_db_t<src_insn_t, pair<streampos, shared_ptr<tfg const>>> src_m_db;
-  insn_db_t<dst_insn_t, pair<streampos, shared_ptr<tfg const>>> dst_m_db;
+  insn_db_t<src_insn_t, pair<streampos, dshared_ptr<tfg const>>> src_m_db;
+  insn_db_t<dst_insn_t, pair<streampos, dshared_ptr<tfg const>>> dst_m_db;
   state src_m_base_state;
   state dst_m_base_state;
   //consts_struct_t *m_consts_struct;
@@ -199,6 +205,6 @@ void state_elem_desc_parse_mem(state_elem_desc_t *se, expr_ref addr, int nbytes,
 
 void g_se_init(void);
 #if ARCH_SRC == ARCH_ETFG
-map<string, shared_ptr<tfg>>
+map<string, dshared_ptr<tfg>>
 etfg_iseq_get_function_tfg_map(etfg_insn_t const *src_iseq, long src_iseq_len, long num_live_out);
 #endif

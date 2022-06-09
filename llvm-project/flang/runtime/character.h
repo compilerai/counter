@@ -11,43 +11,102 @@
 
 #ifndef FORTRAN_RUNTIME_CHARACTER_H_
 #define FORTRAN_RUNTIME_CHARACTER_H_
-#include "descriptor.h"
 #include "entry-names.h"
 #include <cstddef>
 
 namespace Fortran::runtime {
+
+class Descriptor;
+
 extern "C" {
 
 // Appends the corresponding (or expanded) characters of 'operand'
-// to the (elements of) a (re)allocation of 'temp', which must be an
+// to the (elements of) a (re)allocation of 'accumulator', which must be an
 // initialized CHARACTER allocatable scalar or array descriptor -- use
 // AllocatableInitCharacter() to set one up.  Crashes when not
 // conforming.  Assumes independence of data.
-void RTNAME(CharacterConcatenate)(Descriptor &temp, const Descriptor &operand,
-    const char *sourceFile = nullptr, int sourceLine = 0);
+void RTNAME(CharacterConcatenate)(Descriptor &accumulator,
+    const Descriptor &from, const char *sourceFile = nullptr,
+    int sourceLine = 0);
 
-// Convenience specialization for character scalars.
-void RTNAME(CharacterConcatenateScalar)(
-    Descriptor &temp, const char *, std::size_t byteLength);
+// Convenience specialization for ASCII scalars concatenation.
+void RTNAME(CharacterConcatenateScalar1)(
+    Descriptor &accumulator, const char *from, std::size_t chars);
 
-// Assigns the value(s) of 'rhs' to 'lhs'.  Handles reallocation,
-// truncation, or padding ss necessary.  Crashes when not conforming.
-// Assumes independence of data.
+// Copies the value(s) of 'rhs' to 'lhs'.  Handles reallocation,
+// truncation, or padding ss necessary.  Crashes when not conforming and
+// the LHS is not allocatable.  Assumes independence of data.
+// The LHS and RHS need not have the same kind of character;
+// so when the LHS is a deallocated allocatable temporary result, this
+// function can be used as a simple conversion routine.
 // Call MoveAlloc() instead as an optimization when a temporary value is
 // being assigned to a deferred-length allocatable.
 void RTNAME(CharacterAssign)(Descriptor &lhs, const Descriptor &rhs,
     const char *sourceFile = nullptr, int sourceLine = 0);
 
-// Special-case support for optimized scalar CHARACTER concatenation
-// expressions.
+// CHARACTER comparisons.  The kinds must match.  Like std::memcmp(),
+// the result is less than zero, zero, or greater than zero if the first
+// argument is less than the second, equal to the second, or greater than
+// the second, respectively.  The shorter argument is treated as if it were
+// padded on the right with blanks.
+// N.B.: Calls to the restricted specific intrinsic functions LGE, LGT, LLE,
+// & LLT are converted into calls to these during lowering; they don't have
+// to be able to be passed as actual procedure arguments.
+int RTNAME(CharacterCompareScalar)(const Descriptor &, const Descriptor &);
+int RTNAME(CharacterCompareScalar1)(
+    const char *x, const char *y, std::size_t xChars, std::size_t yChars);
+int RTNAME(CharacterCompareScalar2)(const char16_t *x, const char16_t *y,
+    std::size_t xChars, std::size_t yChars);
+int RTNAME(CharacterCompareScalar4)(const char32_t *x, const char32_t *y,
+    std::size_t xChars, std::size_t yChars);
+
+// General CHARACTER comparison; the result is a LOGICAL(KIND=1) array that
+// is established and populated.
+void RTNAME(CharacterCompare)(
+    Descriptor &result, const Descriptor &, const Descriptor &);
+
+// Special-case support for optimized ASCII scalar expressions.
 
 // Copies data from 'rhs' to the remaining space (lhsLength - offset)
 // in 'lhs', if any.  Returns the new offset.  Assumes independence.
-std::size_t RTNAME(CharacterAppend)(char *lhs, std::size_t lhsLength,
-    std::size_t offset, const char *rhs, std::size_t rhsLength);
+std::size_t RTNAME(CharacterAppend1)(char *lhs, std::size_t lhsBytes,
+    std::size_t offset, const char *rhs, std::size_t rhsBytes);
 
 // Appends any necessary spaces to a CHARACTER(KIND=1) scalar.
-void RTNAME(CharacterPad)(char *lhs, std::size_t length, std::size_t offset);
+void RTNAME(CharacterPad1)(char *lhs, std::size_t bytes, std::size_t offset);
+
+// Intrinsic functions
+// The result descriptors below are all established by the runtime.
+void RTNAME(Adjustl)(Descriptor &result, const Descriptor &,
+    const char *sourceFile = nullptr, int sourceLine = 0);
+void RTNAME(Adjustr)(Descriptor &result, const Descriptor &,
+    const char *sourceFile = nullptr, int sourceLine = 0);
+std::size_t RTNAME(LenTrim1)(const char *, std::size_t);
+std::size_t RTNAME(LenTrim2)(const char16_t *, std::size_t);
+std::size_t RTNAME(LenTrim4)(const char32_t *, std::size_t);
+void RTNAME(LenTrim)(Descriptor &result, const Descriptor &, int kind,
+    const char *sourceFile = nullptr, int sourceLine = 0);
+void RTNAME(Repeat)(Descriptor &result, const Descriptor &string,
+    std::size_t ncopies, const char *sourceFile = nullptr, int sourceLine = 0);
+void RTNAME(Trim)(Descriptor &result, const Descriptor &string,
+    const char *sourceFile = nullptr, int sourceLine = 0);
+
+void RTNAME(CharacterMax)(Descriptor &accumulator, const Descriptor &x,
+    const char *sourceFile = nullptr, int sourceLine = 0);
+void RTNAME(CharacterMin)(Descriptor &accumulator, const Descriptor &x,
+    const char *sourceFile = nullptr, int sourceLine = 0);
+void RTNAME(CharacterMaxVal)(Descriptor &result, const Descriptor &x,
+    int dim = 0, const Descriptor *mask = nullptr,
+    const char *sourceFile = nullptr, int sourceLine = 0);
+void RTNAME(CharacterMinVal)(Descriptor &result, const Descriptor &x,
+    int dim = 0, const Descriptor *mask = nullptr,
+    const char *sourceFile = nullptr, int sourceLine = 0);
+void RTNAME(CharacterMaxLoc)(Descriptor &result, const Descriptor &x,
+    int dim = 0, const Descriptor *mask = nullptr, int kind = sizeof(int),
+    bool back = false, const char *sourceFile = nullptr, int sourceLine = 0);
+void RTNAME(CharacterMinLoc)(Descriptor &result, const Descriptor &x,
+    int dim = 0, const Descriptor *mask = nullptr, int kind = sizeof(int),
+    bool back = false, const char *sourceFile = nullptr, int sourceLine = 0);
 }
 } // namespace Fortran::runtime
 #endif // FORTRAN_RUNTIME_CHARACTER_H_

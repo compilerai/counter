@@ -1862,7 +1862,7 @@ const char *Lexer::LexUDSuffix(Token &Result, const char *CurPtr,
         char Next = getCharAndSizeNoWarn(CurPtr + Consumed, NextSize,
                                          getLangOpts());
         if (!isIdentifierBody(Next)) {
-          // End of suffix. Check whether this is on the whitelist.
+          // End of suffix. Check whether this is on the allowed list.
           const StringRef CompleteSuffix(Buffer, Chars);
           IsUDSuffix = StringLiteralParser::isValidUDSuffix(getLangOpts(),
                                                             CompleteSuffix);
@@ -3700,7 +3700,7 @@ LexNextToken:
     } else if (Char == '=') {
       char After = getCharAndSize(CurPtr+SizeTmp, SizeTmp2);
       if (After == '>') {
-        if (getLangOpts().CPlusPlus2a) {
+        if (getLangOpts().CPlusPlus20) {
           if (!isLexingRawMode())
             Diag(BufferPtr, diag::warn_cxx17_compat_spaceship);
           CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
@@ -3711,7 +3711,7 @@ LexNextToken:
         // Suggest adding a space between the '<=' and the '>' to avoid a
         // change in semantics if this turns up in C++ <=17 mode.
         if (getLangOpts().CPlusPlus && !isLexingRawMode()) {
-          Diag(BufferPtr, diag::warn_cxx2a_compat_spaceship)
+          Diag(BufferPtr, diag::warn_cxx20_compat_spaceship)
             << FixItHint::CreateInsertion(
                    getSourceLocation(CurPtr + SizeTmp, SizeTmp2), " ");
         }

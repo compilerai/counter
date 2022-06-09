@@ -3,6 +3,7 @@
 
 #include "support/src-defs.h"
 #include "i386/regs.h"
+#include "x64/regs.h"
 #include "ppc/regs.h"
 
 struct regset_t;

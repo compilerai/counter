@@ -68,5 +68,13 @@ int main(int argc, char **argv)
   assertcheck(bv_round_down_to_power_of_two(0), 0);
   assertcheck(bv_round_up_to_power_of_two(0), 0);
 
+  assertcheck(mybitset::mybitset_int_min(32), mybitset(INT_MIN,32));
+
+  mybitset align_mask(~(0xff),32);
+  assertcheck(*align_mask.mybitset_represents_alignment_mask(), 8);
+
+  auto rmb = mybitset::mybitset_rand(32);
+  assertcheck(mybitset::mybitset_from_string(rmb.mybitset_to_string()), rmb);
+
   return 0;
 }

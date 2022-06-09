@@ -26,11 +26,11 @@ public:
   //bool writes_heap_or_symbols() const { return m_writes_heap_or_symbols; }
   //memlabel_t get_read_memlabel() const;
   //memlabel_t get_write_memlabel() const;
-  pair<memlabel_t, memlabel_t> get_readable_writeable_memlabels(vector<memlabel_t> const &farg_memlabels, memlabel_t const &ml_fcall_bottom) const;
+  pair<memlabel_t, memlabel_t> get_readable_writeable_memlabels(vector<memlabel_t> const &farg_memlabels/*, memlabel_t const &ml_fcall_bottom*/) const;
   //void rename_symbol_ids(map<symbol_id_t, tuple<string, size_t, variable_constness_t>> const &from, map<symbol_id_t, tuple<string, size_t, variable_constness_t>> const &to);
 
-  static memlabel_t memlabel_fcall_bottom(consts_struct_t const &cs, set<cs_addr_ref_id_t> const &relevant_addr_refs, graph_symbol_map_t const &symbol_map, graph_locals_map_t const &locals_map);
-  static callee_summary_t callee_summary_bottom(consts_struct_t const &cs, set<cs_addr_ref_id_t> const &relevant_addr_refs, graph_symbol_map_t const &symbol_map, graph_locals_map_t const &locals_map, size_t num_fargs);
+  static memlabel_t memlabel_fcall_bottom(consts_struct_t const &cs, set<memlabel_ref> const &relevant_addr_refs, graph_symbol_map_t const &symbol_map, graph_locals_map_t const &locals_map);
+  static callee_summary_t callee_summary_bottom(consts_struct_t const &cs, set<memlabel_ref> const &relevant_addr_refs, graph_symbol_map_t const &symbol_map, graph_locals_map_t const &locals_map, size_t num_fargs);
 
   string callee_summary_to_string_for_eq() const
   {

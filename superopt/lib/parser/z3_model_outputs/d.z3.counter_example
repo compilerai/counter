@@ -1,0 +1,330 @@
+sat
+(model 
+  (define-fun local.1 () (_ BitVec 32)
+    #x00000003)
+  (define-fun symbol.2 () (_ BitVec 32)
+    #x00000000)
+  (define-fun symbol.1 () (_ BitVec 32)
+    #x00000000)
+  (define-fun input.llvm-mem () (Array (_ BitVec 32) (_ BitVec 8))
+    (_ as-array k!4))
+  (define-fun nextpc_const.1 () (_ BitVec 32)
+    #x00000000)
+  (define-fun local.5 () (_ BitVec 32)
+    #x00000000)
+  (define-fun local.2 () (_ BitVec 32)
+    #x00000006)
+  (define-fun local.4 () (_ BitVec 32)
+    #x00000002)
+  (define-fun input.mem () (Array (_ BitVec 32) (_ BitVec 8))
+    (_ as-array k!6))
+  (define-fun local.3 () (_ BitVec 32)
+    #x00000004)
+  (define-fun memzero_memvar () (Array (_ BitVec 32) (_ BitVec 8))
+    (_ as-array k!9))
+  (define-fun input.llvm-%29 () (_ BitVec 32)
+    (let ((a!1 (ite (= ((as const (Array (_ BitVec 32) (_ BitVec 8))) #x00)
+                   (_ as-array k!6))
+                (_ as-array k!5)
+                (ite (= ((as const (Array (_ BitVec 32) (_ BitVec 8))) #x00)
+                        (_ as-array k!4))
+                     (_ as-array k!5)
+                     (_ as-array k!7)))))
+  (bvnot (bvmul #x00000008
+                (concat (select a!1 #x00000003)
+                        (select a!1 #x00000002)
+                        (select a!1 #x00000001)
+                        (select a!1 #x00000000))))))
+  (define-fun input_stack_pointer_const () (_ BitVec 32)
+    #x00000021)
+  (define-fun input.llvm-%tree () (_ BitVec 32)
+    #x00000000)
+  (define-fun input.llvm-%player () (_ BitVec 32)
+    #x00000006)
+  (define-fun input.llvm-%temp () (_ BitVec 32)
+    #x00000002)
+  (define-fun input.llvm-%row () (_ BitVec 32)
+    #x00000001)
+  (define-fun input.llvm-%current () (_ BitVec 32)
+    #x00000004)
+  (define-fun input.llvm-%col () (_ BitVec 32)
+    #x00000003)
+  (define-fun local.0 () (_ BitVec 32)
+    #x00000001)
+  (define-fun k!16 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x80000000) #x00
+    (ite (= x!1 #x00000000) #x08
+    (ite (= x!1 #x00000002) #x00
+    (ite (= x!1 #x00000400) #x00
+    (ite (= x!1 #x00001000) #x00
+    (ite (= x!1 #x00004000) #x00
+    (ite (= x!1 #x00000003) #x00
+    (ite (= x!1 #x00040000) #x00
+    (ite (= x!1 #x00000200) #x00
+    (ite (= x!1 #x00002000) #x00
+    (ite (= x!1 #x00000010) #x00
+    (ite (= x!1 #x00020000) #x00
+    (ite (= x!1 #x00000001) #x00
+      #x07))))))))))))))
+  (define-fun memlabels_uif ((x!1 (_ BitVec 32))) (_ BitVec 5)
+    (ite (= x!1 #x00000006) #b01011
+    (ite (= x!1 #x00000004) #b01100
+    (ite (= x!1 #x00000003) #b01010
+    (ite (= x!1 #x00000002) #b01101
+    (ite (= x!1 #x00000001) #b01001
+    (ite (= x!1 #x00000000) #b10000
+      #b01011)))))))
+  (define-fun k!5 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000003) #x00
+    (ite (= x!1 #x00000000) #x08
+    (ite (= x!1 #x00000002) #x00
+    (ite (= x!1 #x00000400) #x00
+    (ite (= x!1 #x80000000) #x00
+    (ite (= x!1 #x00004000) #x00
+    (ite (= x!1 #x00001000) #x00
+    (ite (= x!1 #x00040000) #x00
+    (ite (= x!1 #x00000200) #x00
+    (ite (= x!1 #x00002000) #x00
+    (ite (= x!1 #x00000010) #x00
+    (ite (= x!1 #x00020000) #x00
+    (ite (= x!1 #x00000001) #x00
+      #x07))))))))))))))
+  (define-fun k!21 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x08000000) #x40
+    (ite (= x!1 #x00000200) #x10
+    (ite (= x!1 #x00000000) #x00
+    (ite (= x!1 #x80000000) #x00
+    (ite (= x!1 #x00080000) #x02
+    (ite (= x!1 #x00000800) #x00
+    (ite (= x!1 #x00400000) #x80
+      #x07))))))))
+  (define-fun k!10 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    #x07)
+  (define-fun memjoin_uif.arity6 ((x!1 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!2 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!3 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!4 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!5 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!6 (Array (_ BitVec 32) (_ BitVec 8)))) (Array (_ BitVec 32) (_ BitVec 8))
+    (ite (and (= x!1 (_ as-array k!5))
+              (= x!2 (_ as-array k!13))
+              (= x!3 (_ as-array k!21))
+              (= x!4 (_ as-array k!20))
+              (= x!5 (_ as-array k!11))
+              (= x!6 (_ as-array k!24)))
+      (_ as-array k!8)
+      (_ as-array k!8)))
+  (define-fun k!15 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x80000000) #x00
+    (ite (= x!1 #x00000000) #x08
+    (ite (= x!1 #x00000400) #x00
+    (ite (= x!1 #x00001000) #x00
+    (ite (= x!1 #x00000003) #x00
+    (ite (= x!1 #x00004000) #x00
+    (ite (= x!1 #x00000002) #x00
+    (ite (= x!1 #x00040000) #x00
+    (ite (= x!1 #x00000200) #x00
+    (ite (= x!1 #x00002000) #x00
+    (ite (= x!1 #x00000010) #x00
+    (ite (= x!1 #x00020000) #x00
+    (ite (= x!1 #x00000001) #x00
+      #x07))))))))))))))
+  (define-fun k!4 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000000) #x02
+    (ite (= x!1 #x00000100) #x08
+    (ite (= x!1 #x00080000) #x01
+    (ite (= x!1 #x00004000) #x20
+    (ite (= x!1 #x00040000) #x08
+    (ite (= x!1 #x00002000) #x01
+    (ite (= x!1 #x00200000) #x04
+    (ite (= x!1 #x84000000) #x01
+      #x07)))))))))
+  (define-fun k!20 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x08000000) #x00
+    (ite (= x!1 #x00000008) #x80
+    (ite (= x!1 #x00000000) #x10
+    (ite (= x!1 #x00080000) #x00
+    (ite (= x!1 #x10000000) #x02
+    (ite (= x!1 #x00000080) #x04
+    (ite (= x!1 #x00002000) #x10
+    (ite (= x!1 #x00800000) #x08
+      #x07)))))))))
+  (define-fun k!9 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x08000000) #x40
+    (ite (= x!1 #x00000000) #x20
+    (ite (= x!1 #x00000400) #x10
+    (ite (= x!1 #x00000008) #x00
+    (ite (= x!1 #x20000000) #x00
+    (ite (= x!1 #x00002000) #x00
+    (ite (= x!1 #x00000800) #x80
+    (ite (= x!1 #x00400000) #x40
+      #x07)))))))))
+  (define-fun call.1.reg ((x!1 (_ BitVec 5))
+   (x!2 (_ BitVec 5))
+   (x!3 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!4 (_ BitVec 32))
+   (x!5 (_ BitVec 32))
+   (x!6 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!7 (_ BitVec 32))) (_ BitVec 32)
+    (ite (and (= x!1 #b00001)
+              (= x!2 #b00001)
+              (= x!3 (_ as-array k!8))
+              (= x!4 #x00000000)
+              (= x!5 #x00000001)
+              (= x!6 (_ as-array k!9))
+              (= x!7 #x00000001))
+      #x00000000
+      #x00000000))
+  (define-fun k!14 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x80000000) #x00
+    (ite (= x!1 #x00000000) #x08
+    (ite (= x!1 #x00000400) #x00
+    (ite (= x!1 #x00000003) #x00
+    (ite (= x!1 #x00000002) #x00
+    (ite (= x!1 #x00004000) #x00
+    (ite (= x!1 #x00000001) #x00
+    (ite (= x!1 #x00040000) #x00
+    (ite (= x!1 #x00000200) #x00
+    (ite (= x!1 #x00002000) #x00
+    (ite (= x!1 #x00000010) #x00
+    (ite (= x!1 #x00020000) #x00
+    (ite (= x!1 #x00001000) #x00
+      #x07))))))))))))))
+  (define-fun k!19 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000008) #x00
+    (ite (= x!1 #x00000000) #x07
+    (ite (= x!1 #x00000002) #x00
+    (ite (= x!1 #x08000000) #x00
+    (ite (= x!1 #x00000100) #x00
+    (ite (= x!1 #x00400000) #x00
+    (ite (= x!1 #x00000003) #x00
+    (ite (= x!1 #x00040000) #x01
+    (ite (= x!1 #x04000000) #x00
+    (ite (= x!1 #x02000000) #x00
+    (ite (= x!1 #x00000001) #x00
+      #x07))))))))))))
+  (define-fun k!8 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000008) #x10
+    (ite (= x!1 #x00000000) #x00
+    (ite (= x!1 #x08000000) #x02
+    (ite (= x!1 #x00040000) #x00
+    (ite (= x!1 #x00000200) #x01
+    (ite (= x!1 #x01000000) #x80
+    (ite (= x!1 #x00000800) #x20
+    (ite (= x!1 #x00000010) #x02
+    (ite (= x!1 #x00000020) #x00
+      #x07))))))))))
+  (define-fun k!24 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x80000000) #x80
+    (ite (= x!1 #x00000000) #x01
+    (ite (= x!1 #x00000002) #x02
+    (ite (= x!1 #x20000000) #x20
+    (ite (= x!1 #x00000080) #x00
+    (ite (= x!1 #x00040000) #x00
+    (ite (= x!1 #x04000000) #x80
+    (ite (= x!1 #x01000000) #x00
+    (ite (= x!1 #x84000000) #x00
+      #x07))))))))))
+  (define-fun k!13 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000003) #x00
+    (ite (= x!1 #x00000000) #x07
+    (ite (= x!1 #x00000002) #x00
+    (ite (= x!1 #x00000008) #x00
+    (ite (= x!1 #x08000000) #x00
+    (ite (= x!1 #x00000100) #x00
+    (ite (= x!1 #x00400000) #x00
+    (ite (= x!1 #x00040000) #x01
+    (ite (= x!1 #x04000000) #x00
+    (ite (= x!1 #x02000000) #x00
+    (ite (= x!1 #x00000001) #x00
+      #x07))))))))))))
+  (define-fun k!18 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000008) #x00
+    (ite (= x!1 #x00000000) #x07
+    (ite (= x!1 #x08000000) #x00
+    (ite (= x!1 #x00000100) #x00
+    (ite (= x!1 #x00400000) #x00
+    (ite (= x!1 #x00000002) #x00
+    (ite (= x!1 #x00000003) #x00
+    (ite (= x!1 #x00040000) #x01
+    (ite (= x!1 #x04000000) #x00
+    (ite (= x!1 #x02000000) #x00
+    (ite (= x!1 #x00000001) #x00
+      #x07))))))))))))
+  (define-fun k!7 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    #x07)
+  (define-fun k!23 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000000) #x10
+      #x07))
+  (define-fun k!12 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    #x07)
+  (define-fun k!17 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000008) #x00
+    (ite (= x!1 #x00000000) #x07
+    (ite (= x!1 #x08000000) #x00
+    (ite (= x!1 #x00000100) #x00
+    (ite (= x!1 #x00000001) #x00
+    (ite (= x!1 #x00000002) #x00
+    (ite (= x!1 #x00000003) #x00
+    (ite (= x!1 #x00040000) #x01
+    (ite (= x!1 #x04000000) #x00
+    (ite (= x!1 #x02000000) #x00
+    (ite (= x!1 #x00400000) #x00
+      #x07))))))))))))
+  (define-fun memmask_uif ((x!1 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!2 (_ BitVec 5))) (Array (_ BitVec 32) (_ BitVec 8))
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #b00011)) (_ as-array k!13)
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #b00010)) (_ as-array k!5)
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #b01001)) (_ as-array k!7)
+    (ite (and (= x!1 (_ as-array k!6)) (= x!2 #b01001)) (_ as-array k!7)
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #b00100)) (_ as-array k!21)
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #b00101)) (_ as-array k!20)
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #b01000)) (_ as-array k!11)
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #b00000)) (_ as-array k!24)
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #b00111)) (_ as-array k!10)
+    (ite (and (= x!1 (_ as-array k!6)) (= x!2 #b00111)) (_ as-array k!10)
+    (ite (and (= x!1 (_ as-array k!6)) (= x!2 #b01000)) (_ as-array k!11)
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #b00110)) (_ as-array k!12)
+    (ite (and (= x!1 (_ as-array k!6)) (= x!2 #b00110)) (_ as-array k!12)
+    (ite (and (= x!1 (_ as-array k!6)) (= x!2 #b00011)) (_ as-array k!13)
+    (ite (and (= x!1 (_ as-array k!6)) (= x!2 #b00101)) (_ as-array k!20)
+    (ite (and (= x!1 (_ as-array k!6)) (= x!2 #b00010)) (_ as-array k!5)
+    (ite (and (= x!1 (_ as-array k!6)) (= x!2 #b00100)) (_ as-array k!21)
+    (ite (and (= x!1 (_ as-array k!4)) (= x!2 #b01010)) (_ as-array k!22)
+    (ite (and (= x!1 (_ as-array k!6)) (= x!2 #b01010)) (_ as-array k!23)
+    (ite (and (= x!1 (_ as-array k!6)) (= x!2 #b00000)) (_ as-array k!24)
+      (_ as-array k!7))))))))))))))))))))))
+  (define-fun k!6 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x80000000) #x10
+    (ite (= x!1 #x20000000) #x80
+    (ite (= x!1 #x00000000) #x00
+    (ite (= x!1 #x00000002) #x00
+    (ite (= x!1 #x10000000) #x00
+    (ite (= x!1 #x00000200) #x00
+    (ite (= x!1 #x00020000) #x20
+    (ite (= x!1 #x02000000) #x02
+    (ite (= x!1 #x00000001) #x40
+      #x07))))))))))
+  (define-fun k!22 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000000) #x00
+      #x07))
+  (define-fun k!11 ((x!1 (_ BitVec 32))) (_ BitVec 8)
+    (ite (= x!1 #x00000008) #x08
+    (ite (= x!1 #x00000001) #x00
+    (ite (= x!1 #x00000000) #x00
+    (ite (= x!1 #x00400000) #x00
+    (ite (= x!1 #x00040000) #x08
+    (ite (= x!1 #x00200000) #x00
+    (ite (= x!1 #x00800000) #x00
+    (ite (= x!1 #x00000020) #x10
+    (ite (= x!1 #x00001000) #x01
+      #x07))))))))))
+  (define-fun call.1.mem ((x!1 (_ BitVec 5))
+   (x!2 (_ BitVec 5))
+   (x!3 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!4 (_ BitVec 32))
+   (x!5 (_ BitVec 32))
+   (x!6 (Array (_ BitVec 32) (_ BitVec 8)))
+   (x!7 (_ BitVec 32))) (Array (_ BitVec 32) (_ BitVec 8))
+    ((as const (Array (_ BitVec 32) (_ BitVec 8))) #x00))
+)

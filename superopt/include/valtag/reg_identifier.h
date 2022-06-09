@@ -134,7 +134,7 @@ struct hash<reg_identifier_string_t>
   }
 };
 
-};
+}
 
 
 
@@ -257,8 +257,8 @@ public:
     } else {
       std::string this_str = this_str_obj->reg_identifier_obj_to_string();
       std::string other_str = other_str_obj->reg_identifier_obj_to_string();
-      if (   (this_str.find(other_str) == 0 && this_str.substr(other_str.size()) == PHI_NODE_TMPVAR_SUFFIX)
-          || (other_str.find(this_str) == 0 && other_str.substr(this_str.size()) == PHI_NODE_TMPVAR_SUFFIX)) {
+      if (   (this_str.find(other_str) == 0 && string_has_prefix(this_str.substr(other_str.size()), PHI_NODE_TMPVAR_SUFFIX "."))
+          || (other_str.find(this_str) == 0 && string_has_prefix(other_str.substr(this_str.size()), PHI_NODE_TMPVAR_SUFFIX "."))) {
         return true;
       } else {
         return this_str == other_str;

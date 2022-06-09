@@ -257,7 +257,6 @@ class VariadicEnumArgument<string name, string type, list<string> values,
 class Spelling<string name, string variety> {
   string Name = name;
   string Variety = variety;
-  bit KnownToGCC;
 }
 
 class GNU<string name> : Spelling<name, "GNU">;
@@ -277,11 +276,11 @@ class Pragma<string namespace, string name> : Spelling<name, "Pragma"> {
   string Namespace = namespace;
 }
 
-// The GCC spelling implies GNU<name> and CXX11<"gnu", name> and also sets
-// KnownToGCC to 1. This spelling should be used for any GCC-compatible
+// The GCC spelling implies GNU<name>, CXX11<"gnu", name>, and optionally,
+// C2x<"gnu", name>. This spelling should be used for any GCC-compatible
 // attributes.
-class GCC<string name> : Spelling<name, "GCC"> {
-  let KnownToGCC = 1;
+class GCC<string name, bit allowInC = 1> : Spelling<name, "GCC"> {
+  bit AllowInC = allowInC;
 }
 
 // The Clang spelling implies GNU<name>, CXX11<"clang", name>, and optionally,
@@ -441,6 +440,7 @@ def SubjectMatcherForEnumConstant : AttrSubjectMatcherRule<"enum_constant",
 def SubjectMatcherForVar : AttrSubjectMatcherRule<"variable", [Var], [
   AttrSubjectMatcherSubRule<"is_thread_local", [TLSVar]>,
   AttrSubjectMatcherSubRule<"is_global", [GlobalVar]>,
+  AttrSubjectMatcherSubRule<"is_local", [LocalVar]>,
   AttrSubjectMatcherSubRule<"is_parameter", [ParmVar]>,
   // unless(is_parameter)
   AttrSubjectMatcherSubRule<"is_parameter", [NonParmVar], 1>
@@ -604,7 +604,7 @@ class IgnoredAttr : Attr {
 //
 
 def AbiTag : Attr {
-  let Spellings = [GCC<"abi_tag">];
+  let Spellings = [GCC<"abi_tag", /*AllowInC*/0>];
   let Args = [VariadicStringArgument<"Tags">];
   let Subjects = SubjectList<[Struct, Var, Function, Namespace], ErrorDiag>;
   let MeaningfulToClassTemplateDefinition = 1;
@@ -710,7 +710,7 @@ def XRayLogArgs : InheritableAttr {
 
 def PatchableFunctionEntry
     : InheritableAttr,
-      TargetSpecificAttr<TargetArch<["aarch64", "x86", "x86_64"]>> {
+      TargetSpecificAttr<TargetArch<["aarch64", "aarch64_be", "x86", "x86_64"]>> {
   let Spellings = [GCC<"patchable_function_entry">];
   let Subjects = SubjectList<[Function, ObjCMethod]>;
   let Args = [UnsignedArgument<"Count">, DefaultIntArgument<"Offset", 0>];
@@ -1178,6 +1178,16 @@ def OpenCLGlobalAddressSpace : TypeAttr {
   let Documentation = [OpenCLAddressSpaceGlobalDocs];
 }
 
+def OpenCLGlobalDeviceAddressSpace : TypeAttr {
+  let Spellings = [Clang<"opencl_global_device">];
+  let Documentation = [OpenCLAddressSpaceGlobalExtDocs];
+}
+
+def OpenCLGlobalHostAddressSpace : TypeAttr {
+  let Spellings = [Clang<"opencl_global_host">];
+  let Documentation = [OpenCLAddressSpaceGlobalExtDocs];
+}
+
 def OpenCLLocalAddressSpace : TypeAttr {
   let Spellings = [Keyword<"__local">, Keyword<"local">, Clang<"opencl_local">];
   let Documentation = [OpenCLAddressSpaceLocalDocs];
@@ -1272,6 +1282,11 @@ def FallThrough : StmtAttr {
                    CXX11<"clang", "fallthrough">, GCC<"fallthrough">];
 //  let Subjects = [NullStmt];
   let Documentation = [FallthroughDocs];
+}
+
+def NoMerge : StmtAttr {
+  let Spellings = [Clang<"nomerge">];
+  let Documentation = [NoMergeDocs];
 }
 
 def FastCall : DeclOrTypeAttr {
@@ -1525,6 +1540,14 @@ def NeonVectorType : TypeAttr {
   let Documentation = [Undocumented];
   // Represented as VectorType instead.
   let ASTNode = 0;
+}
+
+def ArmSveVectorBits : TypeAttr {
+  let Spellings = [GNU<"arm_sve_vector_bits">];
+  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
+  let Args = [UnsignedArgument<"NumBits">];
+  let Documentation = [ArmSveVectorBitsDocs];
+  let PragmaAttributeSupport = 0;
 }
 
 def ArmMveStrictPolymorphism : TypeAttr, TargetSpecificAttr<TargetARM> {
@@ -2107,7 +2130,7 @@ def WorkGroupSizeHint :  InheritableAttr {
 }
 
 def InitPriority : InheritableAttr {
-  let Spellings = [GCC<"init_priority">];
+  let Spellings = [GCC<"init_priority", /*AllowInC*/0>];
   let Args = [UnsignedArgument<"Priority">];
   let Subjects = SubjectList<[Var], ErrorDiag>;
   let Documentation = [Undocumented];
@@ -2457,6 +2480,15 @@ def VecTypeHint : InheritableAttr {
   let Args = [TypeArgument<"TypeHint">];
   let Subjects = SubjectList<[Function], ErrorDiag>;
   let Documentation = [Undocumented];
+}
+
+def MatrixType : TypeAttr {
+  let Spellings = [Clang<"matrix_type">];
+  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
+  let Args = [ExprArgument<"NumRows">, ExprArgument<"NumColumns">];
+  let Documentation = [Undocumented];
+  let ASTNode = 0;
+  let PragmaAttributeSupport = 0;
 }
 
 def Visibility : InheritableAttr {
@@ -3299,14 +3331,16 @@ def OMPAllocateDecl : InheritableAttr {
   let Args = [
     EnumArgument<"AllocatorType", "AllocatorTypeTy",
                  [
-                   "omp_default_mem_alloc", "omp_large_cap_mem_alloc",
-                   "omp_const_mem_alloc", "omp_high_bw_mem_alloc",
-                   "omp_low_lat_mem_alloc", "omp_cgroup_mem_alloc",
-                   "omp_pteam_mem_alloc", "omp_thread_mem_alloc", ""
+                   "omp_null_allocator", "omp_default_mem_alloc",
+                   "omp_large_cap_mem_alloc", "omp_const_mem_alloc",
+                   "omp_high_bw_mem_alloc", "omp_low_lat_mem_alloc",
+                   "omp_cgroup_mem_alloc", "omp_pteam_mem_alloc",
+                   "omp_thread_mem_alloc", ""
                  ],
                  [
-                   "OMPDefaultMemAlloc", "OMPLargeCapMemAlloc",
-                   "OMPConstMemAlloc", "OMPHighBWMemAlloc", "OMPLowLatMemAlloc",
+                   "OMPNullMemAlloc", "OMPDefaultMemAlloc",
+                   "OMPLargeCapMemAlloc", "OMPConstMemAlloc",
+                   "OMPHighBWMemAlloc", "OMPLowLatMemAlloc",
                    "OMPCGroupMemAlloc", "OMPPTeamMemAlloc", "OMPThreadMemAlloc",
                    "OMPUserDefinedMemAlloc"
                  ]>,
@@ -3381,6 +3415,7 @@ def NoSpeculativeLoadHardening : InheritableAttr {
 def Uninitialized : InheritableAttr {
   let Spellings = [Clang<"uninitialized", 0>];
   let Subjects = SubjectList<[LocalVar]>;
+  let PragmaAttributeSupport = 1;
   let Documentation = [UninitializedDocs];
 }
 

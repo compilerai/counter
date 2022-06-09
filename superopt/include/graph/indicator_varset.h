@@ -50,6 +50,11 @@ public:
     }
     return false;
   }
+  bool indicator_varset_strict_implies(indicator_varset_t const& other) const
+  {
+    return    this->indicator_varset_implies(other)
+           && !this->equals(other);
+  }
   bool indicator_varset_implies(indicator_varset_t const& other) const
   {
     for (auto const& other_var : other.m_vars) {

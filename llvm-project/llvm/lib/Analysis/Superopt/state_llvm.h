@@ -1,7 +1,7 @@
 #ifndef EQCHECKSTATE_LLVM_H
 #define EQCHECKSTATE_LLVM_H
 
-#include "gsupport/pc.h"
+#include "expr/pc.h"
 #include "expr/expr.h"
 
 #include <unordered_set>
@@ -36,5 +36,12 @@ private:
   expr_ref m_target;
   std::unordered_set<expr_ref> m_assumes;
 };
+
+inline ostream& operator<<(ostream& os, control_flow_transfer const& cft)
+{
+    os << "CFT[from=" << cft.get_from_pc() << ", to=" << cft.get_to_pc() << ", cond=" << expr_string(cft.get_condition()) << ", tgt=" << (cft.get_target() == nullptr ? "(null)" : expr_string(cft.get_target())) << "]";
+    return os;
+}
+
 
 #endif

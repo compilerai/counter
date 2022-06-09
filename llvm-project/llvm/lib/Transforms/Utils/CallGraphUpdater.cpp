@@ -92,7 +92,7 @@ void CallGraphUpdater::reanalyzeFunction(Function &Fn) {
   } else if (LCG) {
     LazyCallGraph::Node &N = LCG->get(Fn);
     LazyCallGraph::SCC *C = LCG->lookupSCC(N);
-    updateCGAndAnalysisManagerForCGSCCPass(*LCG, *C, N, *AM, *UR);
+    updateCGAndAnalysisManagerForCGSCCPass(*LCG, *C, N, *AM, *UR, *FAM);
   }
 }
 
@@ -112,8 +112,11 @@ void CallGraphUpdater::removeFunction(Function &DeadFn) {
     DeadFunctions.push_back(&DeadFn);
 
   // For the old call graph we remove the function from the SCC right away.
-  if (CG && !ReplacedFunctions.count(&DeadFn))
-    CGSCC->DeleteNode((*CG)[&DeadFn]);
+  if (CG && !ReplacedFunctions.count(&DeadFn)) {
+    CallGraphNode *DeadCGN = (*CG)[&DeadFn];
+    DeadCGN->removeAllCalledFunctions();
+    CGSCC->DeleteNode(DeadCGN);
+  }
 }
 
 void CallGraphUpdater::replaceFunctionWith(Function &OldFn, Function &NewFn) {
@@ -146,7 +149,7 @@ bool CallGraphUpdater::replaceCallSite(CallBase &OldCS, CallBase &NewCS) {
       CG->getOrInsertFunction(NewCS.getCalledFunction());
   CallGraphNode *CallerNode = (*CG)[Caller];
   if (llvm::none_of(*CallerNode, [&OldCS](const CallGraphNode::CallRecord &CR) {
-        return CR.first == &OldCS;
+        return CR.first && *CR.first == &OldCS;
       }))
     return false;
   CallerNode->replaceCallEdge(OldCS, NewCS, NewCalleeNode);

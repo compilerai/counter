@@ -2,8 +2,8 @@
 #include "support/cl.h"
 #include "support/globals_cpp.h"
 #include "support/cl.h"
-#include "tfg/predicate.h"
-#include "graph/memlabel_assertions.h"
+#include "gsupport/predicate.h"
+#include "gsupport/memlabel_assertions.h"
 #include "graph/prove.h"
 
 #include <vector>
@@ -12,7 +12,6 @@
 #include <fstream>
 
 #define DEBUG_TYPE "main"
-static char as1[40960];
 
 using namespace std;
 using namespace eqspace;
@@ -46,7 +45,12 @@ int main(int argc, char **argv)
   cmd.add_arg(&matrix_file);
   cmd.add_arg(&cols);
   cmd.add_arg(&use_sage);
+  cl::arg<string> debug(cl::explicit_prefix, "dyn-debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --debug=correlate=2,smt_query=1");
+  cmd.add_arg(&debug);
   cmd.parse(argc, argv);
+
+  init_dyn_debug_from_string(debug.get_value());
+  CPP_DBG_EXEC(DYN_DEBUG, print_debug_class_levels());
 
   g_query_dir_init();
   g_ctx_init();
@@ -55,53 +59,46 @@ int main(int argc, char **argv)
     cfg.use_sage = true;
   g_ctx->set_config(cfg);
 
-  unsigned m, n, d;
-  vector<vector<bv_const>> input_points, input_points_select;
+  unsigned d;
+  vector<map<bv_solve_var_idx_t, bv_const>> input_points, input_points_select;
   ifstream matrix_ifs(matrix_file.get_value());
 
-  matrix_ifs >> m >> n >> d;
-  //cout << __func__ << " " << __LINE__ << ": m = " << m << endl;
-  //cout << __func__ << " " << __LINE__ << ": n = " << n << endl;
-  //cout << __func__ << " " << __LINE__ << ": d = " << d << endl;
-  input_points.reserve(m);
-  for (size_t i = 0; i < m; ++i) {
-    vector<bv_const> ip;
-    ip.reserve(n);
-    for (size_t j = 0; j < n; ++j) {
-      bv_const c;
-      matrix_ifs >> c;
-      //cout << __func__ << " " << __LINE__ << ": input_points[" << i << "][" << j << "] = " << c << endl;
-      ip.push_back(c);
-    }
-    input_points.push_back(ip);
-  }
+  input_points = bv_matrix_map2_from_stream(matrix_ifs, d);
 
   cout << "Input points:\n";
   for (auto const& pt : input_points) {
-    cout << "[ " << bv_const_vector2str(pt) << "]\n";
+    cout << "[ " << bv_const_map2str(pt) << "]\n";
   }
 
   if (cols.get_value() != "") {
     vector<int> v = cl::parse_int_list(cols.get_value());
     size_t i = 0;
     for (auto const& row : input_points) {
-      auto select_row = select_elems<bv_const>(row, v);
-      input_points_select.push_back(select_row);
+      NOT_IMPLEMENTED();
+      //auto select_row = select_elems<bv_const>(row, v);
+      //input_points_select.push_back(select_row);
     }
     cout << "Input points select:\n";
     for (auto const& pt : input_points_select) {
-      cout << "[ " << bv_const_vector2str(pt) << "]\n";
+      cout << "[ " << bv_const_map2str(pt) << "]\n";
     }
   } else {
     input_points_select = input_points;
   }
 
   DBG_SET(BV_SOLVE, 3);
-  map<bv_solve_var_idx_t, vector<bv_const>> soln = bv_solve(input_points_select, d);
+  DYN_DBG_ELEVATE(bv_solve_debug, 3);
+
+
+  bvsolve_retval_t bvsolve_retval = bv_solve_returning_intermediate_structures(input_points_select, d);
+
+  cout << "bvsolve_retval =\n"; bvsolve_retval.bvsolve_retval_to_stream(cout);
+
+  map<bv_solve_var_idx_t, map<bv_solve_var_idx_t, bv_const>> soln = bvsolve_retval.get_solution();
 
   cout << "Solution:\n";
   for (auto const& soln_row : soln) {
-    cout << soln_row.first << '\t' << "[ " << bv_const_vector2str(soln_row.second) << " ]\n";
+    cout << soln_row.first << '\t' << "[ " << bv_const_map2str(soln_row.second) << " ]\n";
   }
 
   return 0;

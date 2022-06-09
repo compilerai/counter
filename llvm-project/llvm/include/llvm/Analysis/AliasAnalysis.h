@@ -57,6 +57,7 @@ namespace llvm {
 
 class AnalysisUsage;
 class BasicAAResult;
+class SemanticAAResult;
 class BasicBlock;
 class DominatorTree;
 class Value;
@@ -732,6 +733,8 @@ public:
   }
 
 private:
+  void performSemanticAACheck(const MemoryLocation &LocA, const MemoryLocation &LocB, AAQueryInfo &AAQI);
+
   AliasResult alias(const MemoryLocation &LocA, const MemoryLocation &LocB,
                     AAQueryInfo &AAQI);
   bool pointsToConstantMemory(const MemoryLocation &Loc, AAQueryInfo &AAQI,
@@ -866,6 +869,8 @@ class AAResults::Concept {
 public:
   virtual ~Concept() = 0;
 
+  virtual bool isSemanticAA() const { return false; }
+
   /// An update API used internally by the AAResults to provide
   /// a handle back to the top level aggregation.
   virtual void setAAResults(AAResults *NewAAR) = 0;
@@ -934,6 +939,15 @@ public:
     Result.setAAResults(&AAR);
   }
   ~Model() override = default;
+
+  virtual bool isSemanticAA() const
+  {
+    if (std::is_same<AAResultT, SemanticAAResult>::value) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   void setAAResults(AAResults *NewAAR) override { Result.setAAResults(NewAAR); }
 
@@ -1185,8 +1199,8 @@ private:
   static void getModuleAAResultImpl(Function &F, FunctionAnalysisManager &AM,
                                     AAResults &AAResults) {
     auto &MAMProxy = AM.getResult<ModuleAnalysisManagerFunctionProxy>(F);
-    auto &MAM = MAMProxy.getManager();
-    if (auto *R = MAM.template getCachedResult<AnalysisT>(*F.getParent())) {
+    if (auto *R =
+            MAMProxy.template getCachedResult<AnalysisT>(*F.getParent())) {
       AAResults.addAAResult(*R);
       MAMProxy
           .template registerOuterAnalysisInvalidation<AnalysisT, AAManager>();

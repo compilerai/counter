@@ -160,6 +160,7 @@ public:
   void mangleDynamicInitializer(const VarDecl *D, raw_ostream &Out) override;
   void mangleDynamicAtExitDestructor(const VarDecl *D,
                                      raw_ostream &Out) override;
+  void mangleDynamicStermFinalizer(const VarDecl *D, raw_ostream &Out) override;
   void mangleSEHFilterExpression(const NamedDecl *EnclosingDecl,
                                  raw_ostream &Out) override;
   void mangleSEHFinallyBlock(const NamedDecl *EnclosingDecl,
@@ -2079,6 +2080,8 @@ bool CXXNameMangler::mangleUnresolvedTypeOrSimpleId(QualType Ty,
   case Type::DependentSizedExtVector:
   case Type::Vector:
   case Type::ExtVector:
+  case Type::ConstantMatrix:
+  case Type::DependentSizedMatrix:
   case Type::FunctionProto:
   case Type::FunctionNoProto:
   case Type::Paren:
@@ -2385,16 +2388,39 @@ void CXXNameMangler::mangleQualifiers(Qualifiers Quals, const DependentAddressSp
       switch (AS) {
       default: llvm_unreachable("Not a language specific address space");
       //  <OpenCL-addrspace> ::= "CL" [ "global" | "local" | "constant" |
-      //                                "private"| "generic" ]
-      case LangAS::opencl_global:   ASString = "CLglobal";   break;
-      case LangAS::opencl_local:    ASString = "CLlocal";    break;
-      case LangAS::opencl_constant: ASString = "CLconstant"; break;
-      case LangAS::opencl_private:  ASString = "CLprivate";  break;
-      case LangAS::opencl_generic:  ASString = "CLgeneric";  break;
+      //                                "private"| "generic" | "device" |
+      //                                "host" ]
+      case LangAS::opencl_global:
+        ASString = "CLglobal";
+        break;
+      case LangAS::opencl_global_device:
+        ASString = "CLdevice";
+        break;
+      case LangAS::opencl_global_host:
+        ASString = "CLhost";
+        break;
+      case LangAS::opencl_local:
+        ASString = "CLlocal";
+        break;
+      case LangAS::opencl_constant:
+        ASString = "CLconstant";
+        break;
+      case LangAS::opencl_private:
+        ASString = "CLprivate";
+        break;
+      case LangAS::opencl_generic:
+        ASString = "CLgeneric";
+        break;
       //  <CUDA-addrspace> ::= "CU" [ "device" | "constant" | "shared" ]
-      case LangAS::cuda_device:     ASString = "CUdevice";   break;
-      case LangAS::cuda_constant:   ASString = "CUconstant"; break;
-      case LangAS::cuda_shared:     ASString = "CUshared";   break;
+      case LangAS::cuda_device:
+        ASString = "CUdevice";
+        break;
+      case LangAS::cuda_constant:
+        ASString = "CUconstant";
+        break;
+      case LangAS::cuda_shared:
+        ASString = "CUshared";
+        break;
       //  <ptrsize-addrspace> ::= [ "ptr32_sptr" | "ptr32_uptr" | "ptr64" ]
       case LangAS::ptr32_sptr:
         ASString = "ptr32_sptr";
@@ -2762,6 +2788,11 @@ void CXXNameMangler::mangleType(const BuiltinType *T) {
     Out << TI->getFloat128Mangling();
     break;
   }
+  case BuiltinType::BFloat16: {
+    const TargetInfo *TI = &getASTContext().getTargetInfo();
+    Out << TI->getBFloat16Mangling();
+    break;
+  }
   case BuiltinType::NullPtr:
     Out << "Dn";
     break;
@@ -2813,10 +2844,18 @@ void CXXNameMangler::mangleType(const BuiltinType *T) {
   // The SVE types are effectively target-specific.  The mangling scheme
   // is defined in the appendices to the Procedure Call Standard for the
   // Arm Architecture.
-#define SVE_TYPE(Name, Id, SingletonId) \
-  case BuiltinType::Id: \
-    type_name = Name; \
-    Out << 'u' << type_name.size() << type_name; \
+#define SVE_VECTOR_TYPE(InternalName, MangledName, Id, SingletonId, NumEls,    \
+                        ElBits, IsSigned, IsFP, IsBF)                          \
+  case BuiltinType::Id:                                                        \
+    type_name = MangledName;                                                   \
+    Out << (type_name == InternalName ? "u" : "") << type_name.size()          \
+        << type_name;                                                          \
+    break;
+#define SVE_PREDICATE_TYPE(InternalName, MangledName, Id, SingletonId, NumEls) \
+  case BuiltinType::Id:                                                        \
+    type_name = MangledName;                                                   \
+    Out << (type_name == InternalName ? "u" : "") << type_name.size()          \
+        << type_name;                                                          \
     break;
 #include "clang/Basic/AArch64SVEACLETypes.def"
   }
@@ -3160,6 +3199,7 @@ void CXXNameMangler::mangleNeonVectorType(const VectorType *T) {
     case BuiltinType::UShort:
       EltName = "poly16_t";
       break;
+    case BuiltinType::LongLong:
     case BuiltinType::ULongLong:
       EltName = "poly64_t";
       break;
@@ -3177,7 +3217,8 @@ void CXXNameMangler::mangleNeonVectorType(const VectorType *T) {
     case BuiltinType::ULongLong: EltName = "uint64_t"; break;
     case BuiltinType::Double:    EltName = "float64_t"; break;
     case BuiltinType::Float:     EltName = "float32_t"; break;
-    case BuiltinType::Half:      EltName = "float16_t";break;
+    case BuiltinType::Half:      EltName = "float16_t"; break;
+    case BuiltinType::BFloat16:  EltName = "bfloat16_t"; break;
     default:
       llvm_unreachable("unexpected Neon vector element type");
     }
@@ -3229,6 +3270,8 @@ static StringRef mangleAArch64VectorBase(const BuiltinType *EltType) {
     return "Float32";
   case BuiltinType::Double:
     return "Float64";
+  case BuiltinType::BFloat16:
+    return "BFloat16";
   default:
     llvm_unreachable("Unexpected vector element base type");
   }
@@ -3340,6 +3383,31 @@ void CXXNameMangler::mangleType(const DependentSizedExtVectorType *T) {
   Out << "Dv";
   mangleExpression(T->getSizeExpr());
   Out << '_';
+  mangleType(T->getElementType());
+}
+
+void CXXNameMangler::mangleType(const ConstantMatrixType *T) {
+  // Mangle matrix types using a vendor extended type qualifier:
+  // U<Len>matrix_type<Rows><Columns><element type>
+  StringRef VendorQualifier = "matrix_type";
+  Out << "U" << VendorQualifier.size() << VendorQualifier;
+  auto &ASTCtx = getASTContext();
+  unsigned BitWidth = ASTCtx.getTypeSize(ASTCtx.getSizeType());
+  llvm::APSInt Rows(BitWidth);
+  Rows = T->getNumRows();
+  mangleIntegerLiteral(ASTCtx.getSizeType(), Rows);
+  llvm::APSInt Columns(BitWidth);
+  Columns = T->getNumColumns();
+  mangleIntegerLiteral(ASTCtx.getSizeType(), Columns);
+  mangleType(T->getElementType());
+}
+
+void CXXNameMangler::mangleType(const DependentSizedMatrixType *T) {
+  // U<Len>matrix_type<row expr><column expr><element type>
+  StringRef VendorQualifier = "matrix_type";
+  Out << "U" << VendorQualifier.size() << VendorQualifier;
+  mangleTemplateArg(T->getRowExpr());
+  mangleTemplateArg(T->getColumnExpr());
   mangleType(T->getElementType());
 }
 
@@ -4207,6 +4275,15 @@ recurse:
     break;
   }
 
+  case Expr::MatrixSubscriptExprClass: {
+    const MatrixSubscriptExpr *ME = cast<MatrixSubscriptExpr>(E);
+    Out << "ixix";
+    mangleExpression(ME->getBase());
+    mangleExpression(ME->getRowIdx());
+    mangleExpression(ME->getColumnIdx());
+    break;
+  }
+
   case Expr::CompoundAssignOperatorClass: // fallthrough
   case Expr::BinaryOperatorClass: {
     const BinaryOperator *BO = cast<BinaryOperator>(E);
@@ -4289,6 +4366,9 @@ recurse:
     break;
   case Expr::CXXConstCastExprClass:
     mangleCastExpression(E, "cc");
+    break;
+  case Expr::CXXAddrspaceCastExprClass:
+    mangleCastExpression(E, "ac");
     break;
 
   case Expr::CXXOperatorCallExprClass: {
@@ -5168,6 +5248,18 @@ void ItaniumMangleContextImpl::mangleDynamicAtExitDestructor(const VarDecl *D,
   // Prefix the mangling of D with __dtor_.
   CXXNameMangler Mangler(*this, Out);
   Mangler.getStream() << "__dtor_";
+  if (shouldMangleDeclName(D))
+    Mangler.mangle(D);
+  else
+    Mangler.getStream() << D->getName();
+}
+
+void ItaniumMangleContextImpl::mangleDynamicStermFinalizer(const VarDecl *D,
+                                                           raw_ostream &Out) {
+  // Clang generates these internal-linkage functions as part of its
+  // implementation of the XL ABI.
+  CXXNameMangler Mangler(*this, Out);
+  Mangler.getStream() << "__finalize_";
   if (shouldMangleDeclName(D))
     Mangler.mangle(D);
   else

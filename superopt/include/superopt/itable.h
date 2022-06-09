@@ -3,7 +3,8 @@
 
 #include "support/src-defs.h"
 #include "i386/insn.h"
-#include "rewrite/dst-insn.h"
+#include "x64/insn.h"
+#include "insn/dst-insn.h"
 #include "superopt/typestate.h"
 #include "superopt/typesystem.h"
 #include "support/consts.h"

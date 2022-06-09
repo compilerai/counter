@@ -1,5 +1,5 @@
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -8,9 +8,10 @@
 #include "expr/expr.h"
 #include "support/src-defs.h"
 #include "i386/insn.h"
+#include "x64/insn.h"
 #include "ppc/insn.h"
-#include "codegen/etfg_insn.h"
-#include "rewrite/src-insn.h"
+#include "etfg/etfg_insn.h"
+#include "insn/src-insn.h"
 #include "sym_exec/sym_exec.h"
 
 #include <fstream>
@@ -56,16 +57,19 @@ int main(int argc, char **argv)
   string line;
   getline(in, line);
   ASSERT(is_line(line, "=Base state"));
-  map<string_ref, expr_ref> value_expr_map;
-  line = state::read_state(in, value_expr_map, ctx/*, NULL*/);
-  state base_state;
-  base_state.set_value_expr_map(value_expr_map);
-  base_state.populate_reg_counts(/*NULL*/);
+  //map<string_ref, expr_ref> value_expr_map;
+  //line = state::read_state(in, value_expr_map, ctx/*, NULL*/);
+  //state base_state;
+  //base_state.set_value_expr_map(value_expr_map);
+  //base_state.populate_reg_counts(/*NULL*/);
+  state base_state(in, ctx);
+  bool end = !getline(in, line);
+  ASSERT(!end);
   ASSERT(is_line(line, "=tfg"));
   tfg *t = new tfg(mk_string_ref("tfg_get_type_constraints"), ctx, base_state);
-  shared_ptr<tfg_node> n = make_shared<tfg_node>(pc::start());
+  dshared_ptr<tfg_node> n = make_dshared<tfg_node>(pc::start());
   t->add_node(n);
-  line = t->read_from_ifstream(in, ctx, base_state);
+  t->read_from_ifstream(in, ctx, base_state);
 
   //pair<bool, string> p = read_tfg(in, &t, "src_tfg", ctx, cs);
   ts_tab_entry_cons_t *tscons = tfg_get_type_constraints(t, "tfg_get_type_constraints");

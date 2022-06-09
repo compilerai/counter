@@ -200,7 +200,7 @@ else()
       CFLAGS ${UBSAN_CXXFLAGS}
       PARENT_TARGET ubsan)
 
-    if (FUCHSIA OR UNIX)
+    if (COMPILER_RT_HAS_VERSION_SCRIPT)
       file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/dummy.cpp "")
       add_compiler_rt_object_libraries(RTUbsan_dynamic_version_script_dummy
         ARCHS ${UBSAN_SUPPORTED_ARCH}
@@ -214,6 +214,11 @@ else()
                                       EXTRA ubsan.syms.extra)
         set(VERSION_SCRIPT_FLAG
             -Wl,--version-script,${CMAKE_CURRENT_BINARY_DIR}/clang_rt.ubsan_standalone-dynamic-${arch}.vers)
+        # The Solaris 11.4 linker supports a subset of GNU ld version scripts,
+        # but requires a special option to enable it.
+        if (COMPILER_RT_HAS_GNU_VERSION_SCRIPT_COMPAT)
+            list(APPEND VERSION_SCRIPT_FLAG -Wl,-z,gnu-version-script-compat)
+        endif()
         set_property(SOURCE
           ${CMAKE_CURRENT_BINARY_DIR}/dummy.cpp
           APPEND PROPERTY

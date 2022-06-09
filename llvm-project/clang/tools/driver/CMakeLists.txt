@@ -24,10 +24,6 @@ if(CLANG_PLUGIN_SUPPORT)
   set(support_plugins SUPPORT_PLUGINS)
 endif()
 
-if(NOT CLANG_BUILT_STANDALONE)
-  set(tablegen_deps intrinsics_gen)
-endif()
-
 add_clang_tool(clang
   driver.cpp
   cc1_main.cpp
@@ -35,7 +31,7 @@ add_clang_tool(clang
   cc1gen_reproducer_main.cpp
 
   DEPENDS
-  ${tablegen_deps}
+  intrinsics_gen
   ${support_plugins}
   )
 
@@ -122,3 +118,6 @@ if(CLANG_ORDER_FILE AND
     set_target_properties(clang PROPERTIES LINK_DEPENDS ${CLANG_ORDER_FILE})
   endif()
 endif()
+
+add_superopt_libs(slibs)
+target_link_libraries(clang PRIVATE ${slibs})

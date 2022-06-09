@@ -88,10 +88,10 @@ template<dfa_dir_t DFA_DIR>
 class distance_dfa_t : public data_flow_analysis<pc, tfg_node, tfg_edge, distance_t, DFA_DIR>
 {
 public:
-  distance_dfa_t(tfg const *t, map<pc, distance_t>& init_vals)
+  distance_dfa_t(dshared_ptr<tfg const> t, map<pc, distance_t>& init_vals)
       : data_flow_analysis<pc, tfg_node, tfg_edge, distance_t, DFA_DIR>(t, init_vals)
   { }
-  virtual bool xfer_and_meet(shared_ptr<tfg_edge const> const& e, distance_t const& in, distance_t &out) override
+  virtual dfa_xfer_retval_t xfer_and_meet(dshared_ptr<tfg_edge const> const& e, distance_t const& in, distance_t &out) override
   {
     distance_t in_xfer = in;
     if (e->get_to_state().contains_function_call()) {
@@ -99,7 +99,7 @@ public:
     } else {
       in_xfer.set(in_xfer.get() + 1);
     }
-    return out.meet(in_xfer);
+    return out.meet(in_xfer) ? DFA_XFER_RETVAL_CHANGED : DFA_XFER_RETVAL_UNCHANGED;
   }
 };
 
@@ -117,7 +117,7 @@ public:
     if (m_is_phi) {
       return string("PHI ") + get_basicblock_name(*m_BB);
     } else {
-      return sym_exec_common::get_value_name(*m_I);
+      return sym_exec_common::get_value_name_using_srcdst_keyword(*m_I, G_SRC_KEYWORD);
     }
   }
   BasicBlock *getBB() const { return m_BB; }
@@ -162,7 +162,7 @@ public:
     } else {
       stringstream ss;
       for (auto const& m : m_map) {
-        ss << sym_exec_common::get_value_name(*m.first) << " -> " << m.second.to_string() << "\n";
+        ss << sym_exec_common::get_value_name_using_srcdst_keyword(*m.first, G_SRC_KEYWORD) << " -> " << m.second.to_string() << "\n";
       }
       return ss.str();
     }
@@ -210,50 +210,50 @@ private:
   BasicBlock *m_markerBB;
   Function *m_F;
 public:
-  valversion_dfa_t(tfg const *t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap, vector<Value*> const& from, vector<Instruction*> const& to, BasicBlock* BB, Function* F, map<pc, value_version_map_t>& init_vals)
+  valversion_dfa_t(dshared_ptr<tfg const> t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap, vector<Value*> const& from, vector<Instruction*> const& to, BasicBlock* BB, Function* F, map<pc, value_version_map_t>& init_vals)
       : data_flow_analysis<pc, tfg_node, tfg_edge, value_version_map_t, dfa_dir_t::forward>(t, init_vals), m_eimap(eimap), m_from(from), m_to(to), m_markerBB(BB), m_F(F)
   {
     CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL,
         dbgs() << __func__ << " " << __LINE__ << ": DFA initialized\n";
         dbgs() << "from_values =";
         for (auto f : from) {
-          dbgs() << " " << sym_exec_common::get_value_name(*f);
+          dbgs() << " " << sym_exec_common::get_value_name_using_srcdst_keyword(*f, G_SRC_KEYWORD);
         }
         dbgs() << "\n";
         dbgs() << "to_values =";
         for (auto f : to) {
-          dbgs() << " " << sym_exec_common::get_value_name(*f);
+          dbgs() << " " << sym_exec_common::get_value_name_using_srcdst_keyword(*f, G_SRC_KEYWORD);
         }
         dbgs() << "\n";
     );
     ASSERT(m_from.size() == m_to.size());
   }
-  virtual bool xfer_and_meet(shared_ptr<tfg_edge const> const& e, value_version_map_t const& in, value_version_map_t &out) override
+  virtual dfa_xfer_retval_t xfer_and_meet(dshared_ptr<tfg_edge const> const& e, value_version_map_t const& in, value_version_map_t &out) override
   {
     pc const& to_p = e->get_to_pc();
     if (to_p.is_exit()) {
-      return false;
+      return DFA_XFER_RETVAL_UNCHANGED;
     }
     value_version_map_t in_xfer = in;
     //dbgs() << __func__ << " " << __LINE__ << ": e = " << e->to_string() << "\n";
     BasicBlock* toBB = getBBfromName(m_F, to_p.get_index());
-    if (m_eimap.count(e)) {
-      Instruction* I = m_eimap.at(e);
+    if (m_eimap.count(e.get_shared_ptr())) {
+      Instruction* I = m_eimap.at(e.get_shared_ptr());
       CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL,
           if (!I->getType()->isVoidTy()) {
-            dbgs() << __func__ << " " << __LINE__ << ": I = " << sym_exec_common::get_value_name(*I) << "\n";
+            dbgs() << __func__ << " " << __LINE__ << ": I = " << sym_exec_common::get_value_name_using_srcdst_keyword(*I, G_SRC_KEYWORD) << "\n";
           }
       );
       if (vector_contains(m_from, (Value *)I)) {
         CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL,
-            dbgs() << __func__ << " " << __LINE__ << ": adding " << sym_exec_common::get_value_name(*I) << " (identity mapping)\n";
+            dbgs() << __func__ << " " << __LINE__ << ": adding " << sym_exec_common::get_value_name_using_srcdst_keyword(*I, G_SRC_KEYWORD) << " (identity mapping)\n";
         );
         in_xfer.add(I, I);
       } else if (vector_contains(m_to, I)) {
         size_t i = vector_find(m_to, I);
         in_xfer.add(m_from.at(i), m_to.at(i));
         CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL,
-            dbgs() << __func__ << " " << __LINE__ << ": i = " << i << ", adding " << sym_exec_common::get_value_name(*m_from.at(i)) << " -> " << sym_exec_common::get_value_name(*m_to.at(i)) << "\n";
+            dbgs() << __func__ << " " << __LINE__ << ": i = " << i << ", adding " << sym_exec_common::get_value_name_using_srcdst_keyword(*m_from.at(i), G_SRC_KEYWORD) << " -> " << sym_exec_common::get_value_name_using_srcdst_keyword(*m_to.at(i), G_SRC_KEYWORD) << "\n";
         );
       }
     }
@@ -265,7 +265,7 @@ public:
           dbgs() << out.to_string() << "\n";
         }
     );
-    return changed;
+    return changed ? DFA_XFER_RETVAL_CHANGED : DFA_XFER_RETVAL_UNCHANGED;
   }
 };
 
@@ -314,17 +314,17 @@ class liveness_dfa_t : public data_flow_analysis<pc, tfg_node, tfg_edge, livenes
 private:
   map<shared_ptr<tfg_edge const>, Instruction *> const& m_eimap;
 public:
-  liveness_dfa_t(tfg const *t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap, map<pc, liveness_val_t>& init_vals)
+  liveness_dfa_t(dshared_ptr<tfg const> t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap, map<pc, liveness_val_t>& init_vals)
       : data_flow_analysis<pc, tfg_node, tfg_edge, liveness_val_t, dfa_dir_t::backward>(t, init_vals), m_eimap(eimap)
   { }
-  virtual bool xfer_and_meet(shared_ptr<tfg_edge const> const& e, liveness_val_t const& in, liveness_val_t &out) override
+  virtual dfa_xfer_retval_t xfer_and_meet(dshared_ptr<tfg_edge const> const& e, liveness_val_t const& in, liveness_val_t &out) override
   {
     liveness_val_t in_xferred = in;
     CPP_DBG_EXEC2(LLVM_LIVENESS, cout << __func__ << " " << __LINE__ << ": e = " << e->to_string() << endl);
     pc const& from_pc = e->get_from_pc();
     char const* from_name = from_pc.get_index();
-    if (m_eimap.count(e)) {
-      Instruction * I = m_eimap.at(e);
+    if (m_eimap.count(e.get_shared_ptr())) {
+      Instruction * I = m_eimap.at(e.get_shared_ptr());
       if (isa<PHINode const>(I)) {
         PHINode const *phi = dyn_cast<PHINode const>(I);
         ASSERT(phi);
@@ -339,7 +339,7 @@ public:
           }
           Value *o = phi->getIncomingValue(i);
           if (isa<const Argument>(o) || isa<const Instruction>(o)) {
-            CPP_DBG_EXEC2(LLVM_LIVENESS, cout << __func__ << " " << __LINE__ << ": adding value " << sym_exec_common::get_value_name(*o) << endl);
+            CPP_DBG_EXEC2(LLVM_LIVENESS, cout << __func__ << " " << __LINE__ << ": adding value " << sym_exec_common::get_value_name_using_srcdst_keyword(*o, G_SRC_KEYWORD) << endl);
             in_xferred.add(o);
           }
         }
@@ -347,17 +347,17 @@ public:
         for (int i = 0; i < I->getNumOperands(); i++) {
           Value *o = I->getOperand(i);
           if (isa<const Argument>(o) || isa<const Instruction>(o)) {
-            CPP_DBG_EXEC2(LLVM_LIVENESS, cout << __func__ << " " << __LINE__ << ": adding value " << sym_exec_common::get_value_name(*o) << endl);
+            CPP_DBG_EXEC2(LLVM_LIVENESS, cout << __func__ << " " << __LINE__ << ": adding value " << sym_exec_common::get_value_name_using_srcdst_keyword(*o, G_SRC_KEYWORD) << endl);
             in_xferred.add(o);
           }
         }
       }
       if (!I->getType()->isVoidTy()) {
-        CPP_DBG_EXEC2(LLVM_LIVENESS, cout << __func__ << " " << __LINE__ << ": removing value " << sym_exec_common::get_value_name(*I) << endl);
+        CPP_DBG_EXEC2(LLVM_LIVENESS, cout << __func__ << " " << __LINE__ << ": removing value " << sym_exec_common::get_value_name_using_srcdst_keyword(*I, G_SRC_KEYWORD) << endl);
         in_xferred.remove(I);
       }
     }
-    return out.meet(in_xferred);
+    return out.meet(in_xferred) ? DFA_XFER_RETVAL_CHANGED : DFA_XFER_RETVAL_UNCHANGED;
   }
 };
 
@@ -482,12 +482,12 @@ public:
   //Loop *identifyUnbrokenLoop(Function& F);
   //void unbrokenLoopVisit(Loop *L, loop_depth_t cur_depth, loop_depth_t &depth_out, Loop* &loop_out);
 private:
-  static list<Value *> get_live_values(unique_ptr<tfg_llvm_t> const& t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap, Function const * function, BasicBlock const* BB, int insn_num);
+  static list<Value *> get_live_values(dshared_ptr<tfg_llvm_t const> t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap, Function const * function, BasicBlock const* BB, int insn_num);
   void replaceUsesInBBAfterMarkerCall(Value *from, Value *to, BasicBlock *BB, Instruction *markerCallEnd);
-  void replaceGlobalUsesOfValue(vector<Value *> const& from, vector<Instruction *> const& to, BasicBlock *BB, Function *F, tfg const* t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap);
+  void replaceGlobalUsesOfValue(vector<Value *> const& from, vector<Instruction *> const& to, BasicBlock *BB, Function *F, dshared_ptr<tfg const> t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap);
 
-  bool addPhiNodesToBBForValues(BasicBlock* BB, set<Value*> const& new_vvs, map<pc, value_version_map_t> const& vals, Function* F, tfg const*t, map<BasicBlock*, map<Value*, PHINode*>>& nodesMap);
-  map<BasicBlock *, map<Value *, PHINode *>> addPhiNodesToBBIfRequired(map<pc, value_version_map_t> const& vals, Function *F, tfg const* t);
+  bool addPhiNodesToBBForValues(BasicBlock* BB, set<Value*> const& new_vvs, map<pc, value_version_map_t> const& vals, Function* F, dshared_ptr<tfg const> t, map<BasicBlock*, map<Value*, PHINode*>>& nodesMap);
+  map<BasicBlock *, map<Value *, PHINode *>> addPhiNodesToBBIfRequired(map<pc, value_version_map_t> const& vals, Function *F, dshared_ptr<tfg const> t);
   map<Value *, Value*> getValueRenameMap(BasicBlock* BB, int inum, map<pc, value_version_map_t> const& vals, map<BasicBlock *, map<Value*, PHINode*>> const& new_phi_nodes);
   void replaceUsesOfValuesInBB(BasicBlock* BB, map<pc, value_version_map_t> const& vals, map<BasicBlock *, map<Value *, PHINode *>> &new_phi_nodes);
 
@@ -538,7 +538,7 @@ get_function_name(Instruction const& I)
   const CallInst* c =  cast<const CallInst>(&I);
   Function *F = c->getCalledFunction();
   if (F == NULL) {
-    Value const *v = c->getCalledValue();
+    Value const *v = c->getCalledOperand();
     Value const *sv = v->stripPointerCasts();
     return string(sv->getName());
   } else {
@@ -660,12 +660,12 @@ IdentifyMaxDistancePC::runOnFunction(Function &F)
     return false;
   }
   map<shared_ptr<tfg_edge const>, Instruction *> eimap;
-  unique_ptr<tfg_llvm_t> t = function2tfg(&F, M, eimap);
+  dshared_ptr<tfg_llvm_t> t = function2tfg(&F, M, eimap);
   map<pc, distance_t> fdistances, bdistances;
-  distance_dfa_t<dfa_dir_t::forward> fdistance_dfa(t.get(), fdistances);
+  distance_dfa_t<dfa_dir_t::forward> fdistance_dfa(t, fdistances);
   fdistance_dfa.initialize(distance_t(0));
   fdistance_dfa.solve();
-  distance_dfa_t<dfa_dir_t::backward> bdistance_dfa(t.get(), bdistances);
+  distance_dfa_t<dfa_dir_t::backward> bdistance_dfa(t, bdistances);
   bdistance_dfa.initialize(distance_t(0));
   bdistance_dfa.solve();
 
@@ -769,11 +769,11 @@ InstrumentMarkerCall::values_to_types_vec(list<Value*> const& live_values)
 }
 
 bool
-InstrumentMarkerCall::addPhiNodesToBBForValues(BasicBlock* BB, set<Value*> const& vvs, map<pc, value_version_map_t> const& vals, Function* F, tfg const* t, map<BasicBlock*, map<Value*, PHINode*>>& nodesMap)
+InstrumentMarkerCall::addPhiNodesToBBForValues(BasicBlock* BB, set<Value*> const& vvs, map<pc, value_version_map_t> const& vals, Function* F, dshared_ptr<tfg const> t, map<BasicBlock*, map<Value*, PHINode*>>& nodesMap)
 {
   bool changed = false;
   pc p = getPCinBBAtInum(BB, PC_SUBINDEX_FIRST_INSN_IN_BB);
-  list<shared_ptr<tfg_edge const>> incoming;
+  list<dshared_ptr<tfg_edge const>> incoming;
   t->get_edges_incoming(p, incoming);
   for (auto v : vvs) {
     ASSERT(vals.count(p));
@@ -829,7 +829,7 @@ InstrumentMarkerCall::addPhiNodesToBBForValues(BasicBlock* BB, set<Value*> const
           phiInstruction->addIncoming(iv.second, (BasicBlock*)iv.first);
         }
         CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL,
-           dbgs() << __func__ << " " << __LINE__ << ": Inserting " << get_basicblock_name(*BB) << " -> (" << sym_exec_common::get_value_name(*v) << " -> " << sym_exec_common::get_value_name(*phiInstruction) << ") to nodesMap\n";
+           dbgs() << __func__ << " " << __LINE__ << ": Inserting " << get_basicblock_name(*BB) << " -> (" << sym_exec_common::get_value_name_using_srcdst_keyword(*v, G_SRC_KEYWORD) << " -> " << sym_exec_common::get_value_name_using_srcdst_keyword(*phiInstruction, G_SRC_KEYWORD) << ") to nodesMap\n";
         );
         nodesMap[BB].insert(make_pair(v, phiInstruction));
       }
@@ -847,7 +847,7 @@ InstrumentMarkerCall::addPhiNodesToBBForValues(BasicBlock* BB, set<Value*> const
 }
 
 map<BasicBlock *, map<Value *, PHINode *>>
-InstrumentMarkerCall::addPhiNodesToBBIfRequired(map<pc, value_version_map_t> const& vals, Function *F, tfg const* t)
+InstrumentMarkerCall::addPhiNodesToBBIfRequired(map<pc, value_version_map_t> const& vals, Function *F, dshared_ptr<tfg const> t)
 {
   map<BasicBlock *, map<Value *, PHINode *>> ret;
   map<BasicBlock *, set<Value*>> new_valversions;
@@ -954,7 +954,7 @@ InstrumentMarkerCall::replaceUsesOfValuesInBB(BasicBlock* BB, map<pc, value_vers
 }
 
 void
-InstrumentMarkerCall::replaceGlobalUsesOfValue(vector<Value *> const& from, vector<Instruction *> const& to, BasicBlock *markerBB, Function *F, tfg const* t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap)
+InstrumentMarkerCall::replaceGlobalUsesOfValue(vector<Value *> const& from, vector<Instruction *> const& to, BasicBlock *markerBB, Function *F, dshared_ptr<tfg const> t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap)
 {
   map<pc, value_version_map_t> vals;
   valversion_dfa_t vvdfa(t, eimap, from, to, markerBB, F, vals);
@@ -1013,7 +1013,7 @@ InstrumentMarkerCall::markerPresentInBasicBlock(Function *F, BasicBlock *BB)
     if (calleeF) {
       continue;
     }
-    Value const *v = c->getCalledValue();
+    Value const *v = c->getCalledOperand();
     if (!isa<Instruction const>(v)) {
       continue;
     }
@@ -1042,9 +1042,9 @@ InstrumentMarkerCall::markerPresentInBasicBlock(Function *F, BasicBlock *BB)
       continue;
     }
     Value const *Addr = l->getPointerOperand();
-    CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL, dbgs() << __func__ << " " << __LINE__ << ": Addr = " << sym_exec_common::get_value_name(*Addr) << "\n");
-    CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL, dbgs() << __func__ << " " << __LINE__ << ": m_markerF = " << (m_markerF ? sym_exec_common::get_value_name(*m_markerF) : "null") << "\n");
-    if (sym_exec_common::get_value_name(*Addr) == string("@") + QCC_MARKER_PREFIX "F") {
+    CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL, dbgs() << __func__ << " " << __LINE__ << ": Addr = " << sym_exec_common::get_value_name_using_srcdst_keyword(*Addr, G_SRC_KEYWORD) << "\n");
+    CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL, dbgs() << __func__ << " " << __LINE__ << ": m_markerF = " << (m_markerF ? sym_exec_common::get_value_name_using_srcdst_keyword(*m_markerF, G_SRC_KEYWORD) : "null") << "\n");
+    if (sym_exec_common::get_value_name_using_srcdst_keyword(*Addr, G_SRC_KEYWORD) == string("@") + QCC_MARKER_PREFIX "F") {
       return true;
     }
   }
@@ -1060,7 +1060,7 @@ InstrumentMarkerCall::addMarkerInBasicBlock(Function *F, BasicBlock *BB, int ins
   FunctionType *markerFT = this->getMarkerFunctionType(live_types);
   CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL, dbgs() << __func__ << " " << __LINE__ << ": adding marker in BB " << get_basicblock_name(*BB) << "\n");
   BasicBlock::iterator IP = BB->getFirstInsertionPt();
-  Value *markerFload = new LoadInst(markerFT, markerF, "", false, MaybeAlign(4), &(*IP));
+  Value *markerFload = new LoadInst(markerFT, markerF, "", false, Align(4), &(*IP));
   //CastInst *markerFcast = CastInst::CreatePointerCast(markerFload, PointerType::get(PointerType::get(markerFT, M->getDataLayout().getProgramAddressSpace()), M->getDataLayout().getProgramAddressSpace()), "", &(*IP));
   CastInst *markerFcast = CastInst::CreatePointerCast(markerFload, PointerType::get(markerFT, M->getDataLayout().getProgramAddressSpace()), "", &(*IP));
   vector<Value *> live_vals_vec = list_to_vector(live_values);
@@ -1075,7 +1075,7 @@ InstrumentMarkerCall::addMarkerInBasicBlock(Function *F, BasicBlock *BB, int ins
   //}
   CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL, dbgs() << __func__ << " " << __LINE__ << ": done inserting marker in BB " << get_basicblock_name(*BB) << "\n");
   map<shared_ptr<tfg_edge const>, Instruction *> eimap;
-  unique_ptr<tfg_llvm_t> t = function2tfg(F, M, eimap);
+  dshared_ptr<tfg_llvm_t> t = function2tfg(F, M, eimap);
   CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL, dbgs() << __func__ << " " << __LINE__ << ": done function2tfg after inserting marker in BB " << get_basicblock_name(*BB) << "\n");
   //replaceGlobalUsesOfValue(live_vals_vec, eInst_vec, BB, F, t.get(), eimap);
   CPP_DBG_EXEC(INSTRUMENT_MARKER_CALL, dbgs() << __func__ << " " << __LINE__ << ": done replaceGlobalUsesOfValue after inserting marker in BB " << get_basicblock_name(*BB) << "\n");
@@ -1128,10 +1128,10 @@ IdentifyMaxDistancePC::find_max_distance_pc(map<pc, distance_t> const& fwd_dista
 
 
 list<Value *>
-InstrumentMarkerCall::get_live_values(unique_ptr<tfg_llvm_t> const& t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap, Function const * function, BasicBlock const* BB, int insn_num)
+InstrumentMarkerCall::get_live_values(dshared_ptr<tfg_llvm_t const> t, map<shared_ptr<tfg_edge const>, Instruction *> const& eimap, Function const * function, BasicBlock const* BB, int insn_num)
 {
   map<pc, liveness_val_t> live_vals;
-  liveness_dfa_t ldfa(t.get(), eimap, live_vals);
+  liveness_dfa_t ldfa(t, eimap, live_vals);
   ldfa.initialize(liveness_val_t());
   ldfa.solve();
   CPP_DBG_EXEC(LLVM_LIVENESS,
@@ -1139,7 +1139,7 @@ InstrumentMarkerCall::get_live_values(unique_ptr<tfg_llvm_t> const& t, map<share
       for (auto const& pl : live_vals) {
         cout << pl.first.to_string() << " : ";
         for (auto const& v : pl.second.get_vals()) {
-          cout << " " << sym_exec_common::get_value_name(*v);
+          cout << " " << sym_exec_common::get_value_name_using_srcdst_keyword(*v, G_SRC_KEYWORD);
         }
         cout << endl;
       }
@@ -1191,7 +1191,7 @@ InstrumentMarkerCall::runOnFunction(Function &F)
     return false;
   }
   assert(insn_num >= 0);
-  unique_ptr<tfg_llvm_t> t = function2tfg(&F, M, eimap);
+  dshared_ptr<tfg_llvm_t> t = function2tfg(&F, M, eimap);
   //identify live vars at F/BB/insns_num
   list<Value *> live_values = get_live_values(t, eimap, function, BB, insn_num);
   addMarkerInBasicBlock(function, BB, insn_num, live_values, breaking_loop);

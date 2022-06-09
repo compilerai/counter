@@ -652,9 +652,7 @@ bool Parser::ParseTopLevelDecl(DeclGroupPtrTy &Result, bool IsFirstDecl) {
     }
 
     // Late template parsing can begin.
-    if (getLangOpts().DelayedTemplateParsing)
-      Actions.SetLateTemplateParser(LateTemplateParserCallback, nullptr,
-                                    this);
+    Actions.SetLateTemplateParser(LateTemplateParserCallback, nullptr, this);
     if (!PP.isIncrementalProcessingEnabled())
       Actions.ActOnEndOfTranslationUnit();
     //else don't tell Sema that we ended parsing: more input might come.
@@ -751,6 +749,9 @@ Parser::ParseExternalDeclaration(ParsedAttributesWithRange &attrs,
     return nullptr;
   case tok::annot_pragma_fenv_access:
     HandlePragmaFEnvAccess();
+    return nullptr;
+  case tok::annot_pragma_float_control:
+    HandlePragmaFloatControl();
     return nullptr;
   case tok::annot_pragma_fp:
     HandlePragmaFP();
@@ -1690,8 +1691,8 @@ Parser::TryAnnotateName(CorrectionCandidateCallback *CCC) {
     return ANK_Success;
   }
 
-  case Sema::NC_ContextIndependentExpr:
-    Tok.setKind(tok::annot_primary_expr);
+  case Sema::NC_OverloadSet:
+    Tok.setKind(tok::annot_overload_set);
     setExprAnnotation(Tok, Classification.getExpression());
     Tok.setAnnotationEndLoc(NameLoc);
     if (SS.isNotEmpty())

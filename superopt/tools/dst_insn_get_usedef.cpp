@@ -1,5 +1,5 @@
 #include "eq/eqcheck.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -8,9 +8,10 @@
 #include "expr/expr.h"
 #include "support/src-defs.h"
 #include "i386/insn.h"
+#include "x64/insn.h"
 #include "ppc/insn.h"
-#include "codegen/etfg_insn.h"
-#include "rewrite/dst-insn.h"
+#include "etfg/etfg_insn.h"
+#include "insn/dst-insn.h"
 
 #include <fstream>
 
@@ -67,7 +68,7 @@ int main(int argc, char **argv)
   CPP_DBG_EXEC(STATS,
     print_all_timers();
     cout << __func__ << " " << __LINE__ << ":\n" << stats::get();
-    cout << g_ctx->stat() << endl;
+    cout << g_ctx->stats() << endl;
   );
   //solver_kill();
   call_on_exit_function();

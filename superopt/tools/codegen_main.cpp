@@ -1,6 +1,6 @@
 #include "support/debug.h"
 #include "support/cmd_helper.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "graph/prove.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
@@ -9,13 +9,14 @@
 #include "support/globals.h"
 #include "expr/expr.h"
 #include "expr/local_sprel_expr_guesses.h"
-#include "codegen/codegen.h"
+#include "rewrite/static_translate.h"
 
 #include "support/timers.h"
 #include "support/utils.h"
 
 #include "i386/insn.h"
-#include "codegen/etfg_insn.h"
+#include "x64/insn.h"
+#include "etfg/etfg_insn.h"
 #include "expr/z3_solver.h"
 
 #include <fstream>
@@ -24,8 +25,6 @@
 #include <string>
 
 using namespace std;
-
-static char as1[4096];
 
 void dst_free();
 
@@ -44,14 +43,14 @@ main(int argc, char **argv)
   cmd.add_arg(&logfile);
   cmd.add_arg(&dyn_debug_arg);
   cmd.add_arg(&prune_row_size_arg);
-  cl::arg<string> debug(cl::explicit_prefix, "debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --debug=insn_match=2,smt_query=1");
+  cl::arg<string> debug(cl::explicit_prefix, "dyn_debug", "", "Enable dynamic debugging for debug-class(es).  Expects comma-separated list of debug-classes with optional level e.g. --debug=insn_match=2,smt_query=1");
   cmd.add_arg(&debug);
   cl::arg<string> dst_insn_disable_folding(cl::explicit_prefix, "no-fold", "", "Disable dst insn folding optimizations for specified functions; default: <empty-string>. Use 'ALL' for disabling folding on all functions.  Use comma-separated list of functions otherwise. e.g., --no-fold=main,fib,lists");
   cmd.add_arg(&dst_insn_disable_folding);
   cmd.parse(argc, argv);
 
-  eqspace::init_dyn_debug_from_string(debug.get_value());
-  CPP_DBG_EXEC(DYN_DEBUG, eqspace::print_debug_class_levels());
+  init_dyn_debug_from_string(debug.get_value());
+  CPP_DBG_EXEC(DYN_DEBUG, print_debug_class_levels());
 
   vector<string> disable_folding_functions = splitOnChar(dst_insn_disable_folding.get_value(), ',');
 
@@ -77,7 +76,7 @@ main(int argc, char **argv)
     disable_folding_functions = {"ALL"};
   }
 
-  map<string, shared_ptr<tfg>> function_tfg_map = get_function_tfg_map_from_etfg_file(etfg_file.get_value(), g_ctx);
+  map<string, dshared_ptr<tfg>> function_tfg_map = get_function_tfg_map_from_etfg_file(etfg_file.get_value(), g_ctx);
   codegen(function_tfg_map, output_file.get_value(), disable_folding_functions, g_ctx);
 
   dst_free();

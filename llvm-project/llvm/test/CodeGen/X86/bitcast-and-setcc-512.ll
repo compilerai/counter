@@ -27,7 +27,7 @@ define i8 @v8i64(<8 x i64> %a, <8 x i64> %b, <8 x i64> %c, <8 x i64> %d) {
 ; SSE-NEXT:    packssdw %xmm9, %xmm8
 ; SSE-NEXT:    packssdw %xmm10, %xmm8
 ; SSE-NEXT:    pand %xmm0, %xmm8
-; SSE-NEXT:    packsswb %xmm0, %xmm8
+; SSE-NEXT:    packsswb %xmm8, %xmm8
 ; SSE-NEXT:    pmovmskb %xmm8, %eax
 ; SSE-NEXT:    # kill: def $al killed $al killed $eax
 ; SSE-NEXT:    retq
@@ -123,7 +123,7 @@ define i8 @v8f64(<8 x double> %a, <8 x double> %b, <8 x double> %c, <8 x double>
 ; SSE-NEXT:    packssdw %xmm9, %xmm8
 ; SSE-NEXT:    packssdw %xmm10, %xmm8
 ; SSE-NEXT:    pand %xmm4, %xmm8
-; SSE-NEXT:    packsswb %xmm0, %xmm8
+; SSE-NEXT:    packsswb %xmm8, %xmm8
 ; SSE-NEXT:    pmovmskb %xmm8, %eax
 ; SSE-NEXT:    # kill: def $al killed $al killed $eax
 ; SSE-NEXT:    retq
@@ -251,15 +251,12 @@ define i32 @v32i16(<32 x i16> %a, <32 x i16> %b, <32 x i16> %c, <32 x i16> %d) {
 ; AVX2:       # %bb.0:
 ; AVX2-NEXT:    vpcmpgtw %ymm3, %ymm1, %ymm1
 ; AVX2-NEXT:    vpcmpgtw %ymm2, %ymm0, %ymm0
-; AVX2-NEXT:    vperm2i128 {{.*#+}} ymm2 = ymm0[2,3],ymm1[2,3]
-; AVX2-NEXT:    vinserti128 $1, %xmm1, %ymm0, %ymm0
-; AVX2-NEXT:    vpacksswb %ymm2, %ymm0, %ymm0
+; AVX2-NEXT:    vpacksswb %ymm1, %ymm0, %ymm0
 ; AVX2-NEXT:    vpcmpgtw %ymm7, %ymm5, %ymm1
 ; AVX2-NEXT:    vpcmpgtw %ymm6, %ymm4, %ymm2
-; AVX2-NEXT:    vperm2i128 {{.*#+}} ymm3 = ymm2[2,3],ymm1[2,3]
-; AVX2-NEXT:    vinserti128 $1, %xmm1, %ymm2, %ymm1
-; AVX2-NEXT:    vpacksswb %ymm3, %ymm1, %ymm1
+; AVX2-NEXT:    vpacksswb %ymm1, %ymm2, %ymm1
 ; AVX2-NEXT:    vpand %ymm1, %ymm0, %ymm0
+; AVX2-NEXT:    vpermq {{.*#+}} ymm0 = ymm0[0,2,1,3]
 ; AVX2-NEXT:    vpmovmskb %ymm0, %eax
 ; AVX2-NEXT:    vzeroupper
 ; AVX2-NEXT:    retq

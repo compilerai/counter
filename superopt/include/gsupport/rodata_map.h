@@ -1,7 +1,9 @@
 #pragma once
+
+#include "support/types.h"
+
 #include "expr/expr.h"
 #include "expr/context.h"
-#include "support/types.h"
 
 namespace eqspace {
 
@@ -54,7 +56,7 @@ public:
   void prune_non_const_symbols(graph_symbol_map_t const& symbol_map);
   void rodata_map_add_mapping(symbol_id_t symbol_id, set<rodata_offset_t> const &symaddrs);
   void rodata_map_add_mapping(symbol_id_t symbol_id, rodata_offset_t const& symaddr);
-  expr_ref get_assertions(context* ctx) const;
+  expr_ref rodata_map_get_assertions(context* ctx) const;
 private:
 };
 

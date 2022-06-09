@@ -829,7 +829,8 @@ TYPE_PARSER(construct<DataStmtRepeat>(intLiteralConstant) ||
 //        null-init | initial-data-target | structure-constructor
 // TODO: Some structure constructors can be misrecognized as array
 // references into constant subobjects.
-TYPE_PARSER(first(construct<DataStmtConstant>(scalar(Parser<ConstantValue>{})),
+TYPE_PARSER(sourced(first(
+    construct<DataStmtConstant>(scalar(Parser<ConstantValue>{})),
     construct<DataStmtConstant>(nullInit),
     construct<DataStmtConstant>(scalar(constantSubobject)) / !"("_tok,
     construct<DataStmtConstant>(Parser<StructureConstructor>{}),
@@ -837,7 +838,7 @@ TYPE_PARSER(first(construct<DataStmtConstant>(scalar(Parser<ConstantValue>{})),
     construct<DataStmtConstant>(signedIntLiteralConstant),
     extension<LanguageFeature::SignedComplexLiteral>(
         construct<DataStmtConstant>(Parser<SignedComplexLiteralConstant>{})),
-    construct<DataStmtConstant>(initialDataTarget)))
+    construct<DataStmtConstant>(initialDataTarget))))
 
 // R848 dimension-stmt ->
 //        DIMENSION [::] array-name ( array-spec )
@@ -1172,7 +1173,9 @@ constexpr auto ignore_tkr{
                              defaulted(parenthesized(some("tkr"_ch))), name))};
 TYPE_PARSER(
     beginDirective >> sourced(construct<CompilerDirective>(ignore_tkr) ||
-                          construct<CompilerDirective>("DIR$" >> many(name))) /
+                          construct<CompilerDirective>("DIR$" >>
+                              many(construct<CompilerDirective::NameValue>(
+                                  name, maybe("=" >> digitString64))))) /
         endDirective)
 
 TYPE_PARSER(extension<LanguageFeature::CrayPointer>(construct<BasedPointerStmt>(
@@ -1183,7 +1186,7 @@ TYPE_PARSER(extension<LanguageFeature::CrayPointer>(construct<BasedPointerStmt>(
 TYPE_PARSER(construct<StructureStmt>("STRUCTURE /" >> name / "/", pure(true),
                 optionalList(entityDecl)) ||
     construct<StructureStmt>(
-        "STRUCTURE" >> name, pure(false), defaulted(cut >> many(entityDecl))))
+        "STRUCTURE" >> name, pure(false), pure<std::list<EntityDecl>>()))
 
 TYPE_PARSER(construct<StructureField>(statement(StructureComponents{})) ||
     construct<StructureField>(indirect(Parser<Union>{})) ||

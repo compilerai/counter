@@ -13,6 +13,7 @@
 //#include "llvm/Support/ErrorHandling.h"
 //#include "llvm/Support/MathExtras.h"
 //#include "llvm/Support/raw_ostream.h"
+
 #include <algorithm>
 #include <cmath>
 #include <sys/mman.h>
@@ -27,6 +28,8 @@
 #include "support/dyn_debug.h"
 //using namespace llvm;
 using namespace std;
+
+#if ARCH_SRC == ARCH_ETFG && ARCH_DST == ARCH_I386
 
 bool
 dyn_debug_state_elem_t::match_execution_context(ExecutionContext &SF) const
@@ -152,3 +155,4 @@ map<llvm_pc_t, tracedb_state_space_t> tracedb_coverage_t::global_map;
 //mempool_t tracedb_t::stack_mempool;
 //mempool_t tracedb_t::globals_mempool;
 //mempool_t tracedb_t::locals_mempool;
+#endif

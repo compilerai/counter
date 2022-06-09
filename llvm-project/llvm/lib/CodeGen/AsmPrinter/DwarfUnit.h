@@ -27,7 +27,6 @@
 
 namespace llvm {
 
-class MachineLocation;
 class MachineOperand;
 class ConstantInt;
 class ConstantFP;
@@ -284,10 +283,6 @@ public:
   DIE::value_iterator addSectionLabel(DIE &Die, dwarf::Attribute Attribute,
                                       const MCSymbol *Label,
                                       const MCSymbol *Sec);
-
-  /// If the \p File has an MD5 checksum, return it as an MD5Result
-  /// allocated in the MCContext.
-  Optional<MD5::MD5Result> getMD5AsBytes(const DIFile *File) const;
 
   /// Get context owner's DIE.
   DIE *createTypeDIE(const DICompositeType *Ty);

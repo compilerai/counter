@@ -20,6 +20,7 @@
 #include "expr/z3_solver.h"
 #include "support/globals.h"
 #include "i386/insn.h"
+#include "x64/insn.h"
 #include "ppc/insn.h"
 
 #if ARCH_SRC == ARCH_PPC
@@ -30,16 +31,16 @@
 # define environ  (*_NSGetEnviron())
 #endif
 
-#include "rewrite/ldst_input.h"
+#include "valtag/ldst_input.h"
 #endif
 //#include "cpu.h"
 
 #include "i386/insntypes.h"
 #include "rewrite/static_translate.h"
-#include "rewrite/jumptable.h"
+#include "insn/jumptable.h"
 #include "rewrite/peephole.h"
 //#include "imm_map.h"
-#include "rewrite/transmap.h"
+#include "valtag/transmap.h"
 #include "support/timers.h"
 //#include "exec-all.h"
 #include "valtag/elf/elf.h"

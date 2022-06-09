@@ -33,7 +33,7 @@ struct UnifyLoopExits : public FunctionPass {
     initializeUnifyLoopExitsPass(*PassRegistry::getPassRegistry());
   }
 
-  void getAnalysisUsage(AnalysisUsage &AU) const {
+  void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.addRequiredID(LowerSwitchID);
     AU.addRequired<LoopInfoWrapperPass>();
     AU.addRequired<DominatorTreeWrapperPass>();
@@ -42,7 +42,7 @@ struct UnifyLoopExits : public FunctionPass {
     AU.addPreserved<DominatorTreeWrapperPass>();
   }
 
-  bool runOnFunction(Function &F);
+  bool runOnFunction(Function &F) override;
 };
 } // namespace
 
@@ -183,7 +183,7 @@ static bool unifyLoopExits(DominatorTree &DT, LoopInfo &LI, Loop *L) {
 #if defined(EXPENSIVE_CHECKS)
   assert(DT.verify(DominatorTree::VerificationLevel::Full));
 #else
-  assert(DT.verify(DominatorTree::VerificationLevel::Full));
+  assert(DT.verify(DominatorTree::VerificationLevel::Fast));
 #endif // EXPENSIVE_CHECKS
   L->verifyLoop();
 

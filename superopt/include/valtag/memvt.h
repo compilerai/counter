@@ -25,6 +25,7 @@ typedef struct memvt_t {
   } seg;
   valtag_t base;
   valtag_t index;
+  valtag_t riprel;
   unsigned scale:4;
   valtag_t disp;
 #ifdef __cplusplus
@@ -36,7 +37,7 @@ typedef struct memvt_t {
 struct regmap_t;
 struct imm_vt_map_t;
 
-void memvt_init(memvt_t *mvt);
+void memvt_init(memvt_t *mvt, size_t addrsize);
 bool mem_valtag_is_src_env_const_access(memvt_t const *mvt);
 #ifdef __cplusplus
 class memslot_map_t;
@@ -47,7 +48,7 @@ size_t memvt_to_int_array(memvt_t const *vt, int64_t arr[], size_t len);
 //size_t memvt_to_string(memvt_t const *vt, char *buf, size_t size);
 void memvt_copy(memvt_t *dst, memvt_t const *src);
 bool memvt_equal(memvt_t const *dst, memvt_t const *src);
-size_t memvt_from_string(memvt_t *mvt, char const *buf, size_t size);
+//size_t memvt_from_string(memvt_t *mvt, char const *buf, size_t size);
 //void memvt_rename(memvt_t *mvt, struct regmap_t const *regmap);
 size_t memvt_to_string(memvt_t const *valtag,
     bool rex_used,

@@ -97,28 +97,33 @@
 #ifndef LLVM_TRANSFORMS_IPO_ATTRIBUTOR_H
 #define LLVM_TRANSFORMS_IPO_ATTRIBUTOR_H
 
+#include "llvm/ADT/GraphTraits.h"
 #include "llvm/ADT/MapVector.h"
-#include "llvm/ADT/SCCIterator.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/AssumeBundleQueries.h"
 #include "llvm/Analysis/CFG.h"
 #include "llvm/Analysis/CGSCCPassManager.h"
-#include "llvm/Analysis/CallGraph.h"
-#include "llvm/Analysis/InlineCost.h"
 #include "llvm/Analysis/LazyCallGraph.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/MustExecute.h"
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Analysis/TargetTransformInfo.h"
-#include "llvm/IR/CallSite.h"
+#include "llvm/IR/AbstractCallSite.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Support/Allocator.h"
+#include "llvm/Support/Casting.h"
+#include "llvm/Support/DOTGraphTraits.h"
+#include "llvm/Support/GraphWriter.h"
+#include "llvm/Support/TimeProfiler.h"
 #include "llvm/Transforms/Utils/CallGraphUpdater.h"
 
 namespace llvm {
 
+struct AADepGraphNode;
+struct AADepGraph;
 struct Attributor;
 struct AbstractAttribute;
 struct InformationCache;
@@ -143,6 +148,74 @@ enum class DepClassTy {
 };
 ///}
 
+/// The data structure for the nodes of a dependency graph
+struct AADepGraphNode {
+public:
+  virtual ~AADepGraphNode(){};
+  using DepTy = PointerIntPair<AADepGraphNode *, 1>;
+
+protected:
+  /// Set of dependency graph nodes which should be updated if this one
+  /// is updated. The bit encodes if it is optional.
+  TinyPtrVector<DepTy> Deps;
+
+  static AADepGraphNode *DepGetVal(DepTy &DT) { return DT.getPointer(); }
+  static AbstractAttribute *DepGetValAA(DepTy &DT) {
+    return cast<AbstractAttribute>(DT.getPointer());
+  }
+
+  operator AbstractAttribute *() { return cast<AbstractAttribute>(this); }
+
+public:
+  using iterator =
+      mapped_iterator<TinyPtrVector<DepTy>::iterator, decltype(&DepGetVal)>;
+  using aaiterator =
+      mapped_iterator<TinyPtrVector<DepTy>::iterator, decltype(&DepGetValAA)>;
+
+  aaiterator begin() { return aaiterator(Deps.begin(), &DepGetValAA); }
+  aaiterator end() { return aaiterator(Deps.end(), &DepGetValAA); }
+  iterator child_begin() { return iterator(Deps.begin(), &DepGetVal); }
+  iterator child_end() { return iterator(Deps.end(), &DepGetVal); }
+
+  virtual void print(raw_ostream &OS) const { OS << "AADepNode Impl\n"; }
+  TinyPtrVector<DepTy> &getDeps() { return Deps; }
+
+  friend struct Attributor;
+  friend struct AADepGraph;
+};
+
+/// The data structure for the dependency graph
+///
+/// Note that in this graph if there is an edge from A to B (A -> B),
+/// then it means that B depends on A, and when the state of A is
+/// updated, node B should also be updated
+struct AADepGraph {
+  AADepGraph() {}
+  ~AADepGraph() {}
+
+  using DepTy = AADepGraphNode::DepTy;
+  static AADepGraphNode *DepGetVal(DepTy &DT) { return DT.getPointer(); }
+  using iterator =
+      mapped_iterator<TinyPtrVector<DepTy>::iterator, decltype(&DepGetVal)>;
+
+  /// There is no root node for the dependency graph. But the SCCIterator
+  /// requires a single entry point, so we maintain a fake("synthetic") root
+  /// node that depends on every node.
+  AADepGraphNode SyntheticRoot;
+  AADepGraphNode *GetEntryNode() { return &SyntheticRoot; }
+
+  iterator begin() { return SyntheticRoot.child_begin(); }
+  iterator end() { return SyntheticRoot.child_end(); }
+
+  void viewGraph();
+
+  /// Dump graph to file
+  void dumpGraph();
+
+  /// Print dependency graph
+  void print();
+};
+
 /// Helper to describe and deal with positions in the LLVM-IR.
 ///
 /// A position in the IR is described by an anchor value and an "offset" that
@@ -153,29 +226,24 @@ enum class DepClassTy {
 /// are floating values that do not have a corresponding attribute list
 /// position.
 struct IRPosition {
-  virtual ~IRPosition() {}
 
   /// The positions we distinguish in the IR.
-  ///
-  /// The values are chosen such that the KindOrArgNo member has a value >= 0
-  /// if it is an argument or call site argument while a value < 0 indicates the
-  /// respective kind of that value.
-  enum Kind : int {
-    IRP_INVALID = -6, ///< An invalid position.
-    IRP_FLOAT = -5, ///< A position that is not associated with a spot suitable
-                    ///< for attributes. This could be any value or instruction.
-    IRP_RETURNED = -4, ///< An attribute for the function return value.
-    IRP_CALL_SITE_RETURNED = -3, ///< An attribute for a call site return value.
-    IRP_FUNCTION = -2,           ///< An attribute for a function (scope).
-    IRP_CALL_SITE = -1, ///< An attribute for a call site (function scope).
-    IRP_ARGUMENT = 0,   ///< An attribute for a function argument.
-    IRP_CALL_SITE_ARGUMENT = 1, ///< An attribute for a call site argument.
+  enum Kind : char {
+    IRP_INVALID,  ///< An invalid position.
+    IRP_FLOAT,    ///< A position that is not associated with a spot suitable
+                  ///< for attributes. This could be any value or instruction.
+    IRP_RETURNED, ///< An attribute for the function return value.
+    IRP_CALL_SITE_RETURNED, ///< An attribute for a call site return value.
+    IRP_FUNCTION,           ///< An attribute for a function (scope).
+    IRP_CALL_SITE,          ///< An attribute for a call site (function scope).
+    IRP_ARGUMENT,           ///< An attribute for a function argument.
+    IRP_CALL_SITE_ARGUMENT, ///< An attribute for a call site argument.
   };
 
   /// Default constructor available to create invalid positions implicitly. All
   /// other positions need to be created explicitly through the appropriate
   /// static member function.
-  IRPosition() : AnchorVal(nullptr), KindOrArgNo(IRP_INVALID) { verify(); }
+  IRPosition() : Enc(nullptr, ENC_VALUE) { verify(); }
 
   /// Create a position describing the value of \p V.
   static const IRPosition value(const Value &V) {
@@ -198,7 +266,7 @@ struct IRPosition {
 
   /// Create a position describing the argument \p Arg.
   static const IRPosition argument(const Argument &Arg) {
-    return IRPosition(const_cast<Argument &>(Arg), Kind(Arg.getArgNo()));
+    return IRPosition(const_cast<Argument &>(Arg), IRP_ARGUMENT);
   }
 
   /// Create a position describing the function scope of \p CB.
@@ -214,7 +282,8 @@ struct IRPosition {
   /// Create a position describing the argument of \p CB at position \p ArgNo.
   static const IRPosition callsite_argument(const CallBase &CB,
                                             unsigned ArgNo) {
-    return IRPosition(const_cast<CallBase &>(CB), Kind(ArgNo));
+    return IRPosition(const_cast<Use &>(CB.getArgOperandUse(ArgNo)),
+                      IRP_CALL_SITE_ARGUMENT);
   }
 
   /// Create a position describing the argument of \p ACS at position \p ArgNo.
@@ -242,9 +311,7 @@ struct IRPosition {
     return IRPosition::function(*IRP.getAssociatedFunction());
   }
 
-  bool operator==(const IRPosition &RHS) const {
-    return (AnchorVal == RHS.AnchorVal) && (KindOrArgNo == RHS.KindOrArgNo);
-  }
+  bool operator==(const IRPosition &RHS) const { return Enc == RHS.Enc; }
   bool operator!=(const IRPosition &RHS) const { return !(*this == RHS); }
 
   /// Return the value this abstract attribute is anchored with.
@@ -254,16 +321,21 @@ struct IRPosition {
   /// far, only the case for call site arguments as the value is not sufficient
   /// to pinpoint them. Instead, we can use the call site as an anchor.
   Value &getAnchorValue() const {
-    assert(KindOrArgNo != IRP_INVALID &&
-           "Invalid position does not have an anchor value!");
-    return *AnchorVal;
+    switch (getEncodingBits()) {
+    case ENC_VALUE:
+    case ENC_RETURNED_VALUE:
+    case ENC_FLOATING_FUNCTION:
+      return *getAsValuePtr();
+    case ENC_CALL_SITE_ARGUMENT_USE:
+      return *(getAsUsePtr()->getUser());
+    default:
+      llvm_unreachable("Unkown encoding!");
+    };
   }
 
   /// Return the associated function, if any.
   Function *getAssociatedFunction() const {
-    assert(KindOrArgNo != IRP_INVALID &&
-           "Invalid position does not have an anchor scope!");
-    if (auto *CB = dyn_cast<CallBase>(AnchorVal))
+    if (auto *CB = dyn_cast<CallBase>(&getAnchorValue()))
       return CB->getCalledFunction();
     return getAnchorScope();
   }
@@ -312,18 +384,14 @@ struct IRPosition {
 
   /// Return the value this abstract attribute is associated with.
   Value &getAssociatedValue() const {
-    assert(KindOrArgNo != IRP_INVALID &&
-           "Invalid position does not have an associated value!");
-    if (getArgNo() < 0 || isa<Argument>(AnchorVal))
-      return *AnchorVal;
-    assert(isa<CallBase>(AnchorVal) && "Expected a call base!");
-    return *cast<CallBase>(AnchorVal)->getArgOperand(getArgNo());
+    if (getArgNo() < 0 || isa<Argument>(&getAnchorValue()))
+      return getAnchorValue();
+    assert(isa<CallBase>(&getAnchorValue()) && "Expected a call base!");
+    return *cast<CallBase>(&getAnchorValue())->getArgOperand(getArgNo());
   }
 
   /// Return the type this abstract attribute is associated with.
   Type *getAssociatedType() const {
-    assert(KindOrArgNo != IRP_INVALID &&
-           "Invalid position does not have an associated type!");
     if (getPositionKind() == IRPosition::IRP_RETURNED)
       return getAssociatedFunction()->getReturnType();
     return getAssociatedValue().getType();
@@ -331,7 +399,18 @@ struct IRPosition {
 
   /// Return the argument number of the associated value if it is an argument or
   /// call site argument, otherwise a negative value.
-  int getArgNo() const { return KindOrArgNo; }
+  int getArgNo() const {
+    switch (getPositionKind()) {
+    case IRPosition::IRP_ARGUMENT:
+      return cast<Argument>(getAsValuePtr())->getArgNo();
+    case IRPosition::IRP_CALL_SITE_ARGUMENT: {
+      Use &U = *getAsUsePtr();
+      return cast<CallBase>(U.getUser())->getArgOperandNo(&U);
+    }
+    default:
+      return -1;
+    }
+  }
 
   /// Return the index in the attribute list for this position.
   unsigned getAttrIdx() const {
@@ -347,7 +426,7 @@ struct IRPosition {
       return AttributeList::ReturnIndex;
     case IRPosition::IRP_ARGUMENT:
     case IRPosition::IRP_CALL_SITE_ARGUMENT:
-      return KindOrArgNo + AttributeList::FirstArgIndex;
+      return getArgNo() + AttributeList::FirstArgIndex;
     }
     llvm_unreachable(
         "There is no attribute index for a floating or invalid position!");
@@ -355,19 +434,23 @@ struct IRPosition {
 
   /// Return the associated position kind.
   Kind getPositionKind() const {
-    if (getArgNo() >= 0) {
-      assert(((isa<Argument>(getAnchorValue()) &&
-               isa<Argument>(getAssociatedValue())) ||
-              isa<CallBase>(getAnchorValue())) &&
-             "Expected argument or call base due to argument number!");
-      if (isa<CallBase>(getAnchorValue()))
-        return IRP_CALL_SITE_ARGUMENT;
-      return IRP_ARGUMENT;
-    }
+    char EncodingBits = getEncodingBits();
+    if (EncodingBits == ENC_CALL_SITE_ARGUMENT_USE)
+      return IRP_CALL_SITE_ARGUMENT;
+    if (EncodingBits == ENC_FLOATING_FUNCTION)
+      return IRP_FLOAT;
 
-    assert(KindOrArgNo < 0 &&
-           "Expected (call site) arguments to never reach this point!");
-    return Kind(KindOrArgNo);
+    Value *V = getAsValuePtr();
+    if (!V)
+      return IRP_INVALID;
+    if (isa<Argument>(V))
+      return IRP_ARGUMENT;
+    if (isa<Function>(V))
+      return isReturnPosition(EncodingBits) ? IRP_RETURNED : IRP_FUNCTION;
+    if (isa<CallBase>(V))
+      return isReturnPosition(EncodingBits) ? IRP_CALL_SITE_RETURNED
+                                            : IRP_CALL_SITE;
+    return IRP_FLOAT;
   }
 
   /// TODO: Figure out if the attribute related helper functions should live
@@ -435,14 +518,52 @@ struct IRPosition {
   static const IRPosition TombstoneKey;
   ///}
 
+  /// Conversion into a void * to allow reuse of pointer hashing.
+  operator void *() const { return Enc.getOpaqueValue(); }
+
 private:
   /// Private constructor for special values only!
-  explicit IRPosition(int KindOrArgNo)
-      : AnchorVal(0), KindOrArgNo(KindOrArgNo) {}
+  explicit IRPosition(void *Ptr) { Enc.setFromOpaqueValue(Ptr); }
 
   /// IRPosition anchored at \p AnchorVal with kind/argument numbet \p PK.
-  explicit IRPosition(Value &AnchorVal, Kind PK)
-      : AnchorVal(&AnchorVal), KindOrArgNo(PK) {
+  explicit IRPosition(Value &AnchorVal, Kind PK) {
+    switch (PK) {
+    case IRPosition::IRP_INVALID:
+      llvm_unreachable("Cannot create invalid IRP with an anchor value!");
+      break;
+    case IRPosition::IRP_FLOAT:
+      // Special case for floating functions.
+      if (isa<Function>(AnchorVal))
+        Enc = {&AnchorVal, ENC_FLOATING_FUNCTION};
+      else
+        Enc = {&AnchorVal, ENC_VALUE};
+      break;
+    case IRPosition::IRP_FUNCTION:
+    case IRPosition::IRP_CALL_SITE:
+      Enc = {&AnchorVal, ENC_VALUE};
+      break;
+    case IRPosition::IRP_RETURNED:
+    case IRPosition::IRP_CALL_SITE_RETURNED:
+      Enc = {&AnchorVal, ENC_RETURNED_VALUE};
+      break;
+    case IRPosition::IRP_ARGUMENT:
+      Enc = {&AnchorVal, ENC_VALUE};
+      break;
+    case IRPosition::IRP_CALL_SITE_ARGUMENT:
+      llvm_unreachable(
+          "Cannot create call site argument IRP with an anchor value!");
+      break;
+    }
+    verify();
+  }
+
+  /// IRPosition for the use \p U. The position kind \p PK needs to be
+  /// IRP_CALL_SITE_ARGUMENT, the anchor value is the user, the associated value
+  /// the used value.
+  explicit IRPosition(Use &U, Kind PK) {
+    assert(PK == IRP_CALL_SITE_ARGUMENT &&
+           "Use constructor is for call site arguments only!");
+    Enc = {&U, ENC_CALL_SITE_ARGUMENT_USE};
     verify();
   }
 
@@ -459,29 +580,64 @@ private:
                            SmallVectorImpl<Attribute> &Attrs,
                            Attributor &A) const;
 
-protected:
-  /// The value this position is anchored at.
-  Value *AnchorVal;
+  /// Return the underlying pointer as Value *, valid for all positions but
+  /// IRP_CALL_SITE_ARGUMENT.
+  Value *getAsValuePtr() const {
+    assert(getEncodingBits() != ENC_CALL_SITE_ARGUMENT_USE &&
+           "Not a value pointer!");
+    return reinterpret_cast<Value *>(Enc.getPointer());
+  }
 
-  /// If AnchorVal is Argument or CallBase then this number should be
-  /// non-negative and it denotes the argument or call site argument index
-  /// respectively. Otherwise, it denotes the kind of this IRPosition according
-  /// to Kind above.
-  int KindOrArgNo;
+  /// Return the underlying pointer as Use *, valid only for
+  /// IRP_CALL_SITE_ARGUMENT positions.
+  Use *getAsUsePtr() const {
+    assert(getEncodingBits() == ENC_CALL_SITE_ARGUMENT_USE &&
+           "Not a value pointer!");
+    return reinterpret_cast<Use *>(Enc.getPointer());
+  }
+
+  /// Return true if \p EncodingBits describe a returned or call site returned
+  /// position.
+  static bool isReturnPosition(char EncodingBits) {
+    return EncodingBits == ENC_RETURNED_VALUE;
+  }
+
+  /// Return true if the encoding bits describe a returned or call site returned
+  /// position.
+  bool isReturnPosition() const { return isReturnPosition(getEncodingBits()); }
+
+  /// The encoding of the IRPosition is a combination of a pointer and two
+  /// encoding bits. The values of the encoding bits are defined in the enum
+  /// below. The pointer is either a Value* (for the first three encoding bit
+  /// combinations) or Use* (for ENC_CALL_SITE_ARGUMENT_USE).
+  ///
+  ///{
+  enum {
+    ENC_VALUE = 0b00,
+    ENC_RETURNED_VALUE = 0b01,
+    ENC_FLOATING_FUNCTION = 0b10,
+    ENC_CALL_SITE_ARGUMENT_USE = 0b11,
+  };
+
+  // Reserve the maximal amount of bits so there is no need to mask out the
+  // remaining ones. We will not encode anything else in the pointer anyway.
+  static constexpr int NumEncodingBits =
+      PointerLikeTypeTraits<void *>::NumLowBitsAvailable;
+  static_assert(NumEncodingBits >= 2, "At least two bits are required!");
+
+  /// The pointer with the encoding bits.
+  PointerIntPair<void *, NumEncodingBits, char> Enc;
+  ///}
+
+  /// Return the encoding bits.
+  char getEncodingBits() const { return Enc.getInt(); }
 };
 
 /// Helper that allows IRPosition as a key in a DenseMap.
-template <> struct DenseMapInfo<IRPosition> {
+template <> struct DenseMapInfo<IRPosition> : DenseMapInfo<void *> {
   static inline IRPosition getEmptyKey() { return IRPosition::EmptyKey; }
   static inline IRPosition getTombstoneKey() {
     return IRPosition::TombstoneKey;
-  }
-  static unsigned getHashValue(const IRPosition &IRP) {
-    return (DenseMapInfo<Value *>::getHashValue(&IRP.getAnchorValue()) << 4) ^
-           (unsigned(IRP.getArgNo()));
-  }
-  static bool isEqual(const IRPosition &LHS, const IRPosition &RHS) {
-    return LHS == RHS;
   }
 };
 
@@ -549,8 +705,8 @@ private:
 /// instance down in the abstract attributes.
 struct InformationCache {
   InformationCache(const Module &M, AnalysisGetter &AG,
-                   SetVector<Function *> *CGSCC)
-      : DL(M.getDataLayout()),
+                   BumpPtrAllocator &Allocator, SetVector<Function *> *CGSCC)
+      : DL(M.getDataLayout()), Allocator(Allocator),
         Explorer(
             /* ExploreInterBlock */ true, /* ExploreCFGForward */ true,
             /* ExploreCFGBackward */ true,
@@ -567,20 +723,23 @@ struct InformationCache {
         AG(AG), CGSCC(CGSCC) {}
 
   ~InformationCache() {
-    DeleteContainerSeconds(FuncInfoMap);
+    // The FunctionInfo objects are allocated via a BumpPtrAllocator, we call
+    // the destructor manually.
+    for (auto &It : FuncInfoMap)
+      It.getSecond()->~FunctionInfo();
   }
 
+  /// A vector type to hold instructions.
+  using InstructionVectorTy = SmallVector<Instruction *, 8>;
+
   /// A map type from opcodes to instructions with this opcode.
-  using OpcodeInstMapTy = DenseMap<unsigned, SmallVector<Instruction *, 32>>;
+  using OpcodeInstMapTy = DenseMap<unsigned, InstructionVectorTy *>;
 
   /// Return the map that relates "interesting" opcodes with all instructions
   /// with that opcode in \p F.
   OpcodeInstMapTy &getOpcodeInstMapForFunction(const Function &F) {
     return getFunctionInfo(F).OpcodeInstMap;
   }
-
-  /// A vector type to hold instructions.
-  using InstructionVectorTy = SmallVector<Instruction *, 4>;
 
   /// Return the instructions in \p F that may read or write memory.
   InstructionVectorTy &getReadOrWriteInstsForFunction(const Function &F) {
@@ -628,8 +787,25 @@ struct InformationCache {
   /// Return the map conaining all the knowledge we have from `llvm.assume`s.
   const RetainedKnowledgeMap &getKnowledgeMap() const { return KnowledgeMap; }
 
+  /// Return if \p To is potentially reachable form \p From or not
+  /// If the same query was answered, return cached result
+  bool getPotentiallyReachable(const Instruction &From, const Instruction &To) {
+    auto KeyPair = std::make_pair(&From, &To);
+    auto Iter = PotentiallyReachableMap.find(KeyPair);
+    if (Iter != PotentiallyReachableMap.end())
+      return Iter->second;
+    const Function &F = *From.getFunction();
+    bool Result = isPotentiallyReachable(
+        &From, &To, nullptr, AG.getAnalysis<DominatorTreeAnalysis>(F),
+        AG.getAnalysis<LoopAnalysis>(F));
+    PotentiallyReachableMap.insert(std::make_pair(KeyPair, Result));
+    return Result;
+  }
+
 private:
   struct FunctionInfo {
+    ~FunctionInfo();
+
     /// A nested map that remembers all instructions in a function with a
     /// certain instruction opcode (Instruction::getOpcode()).
     OpcodeInstMapTy OpcodeInstMap;
@@ -652,7 +828,7 @@ private:
   FunctionInfo &getFunctionInfo(const Function &F) {
     FunctionInfo *&FI = FuncInfoMap[&F];
     if (!FI) {
-      FI = new FunctionInfo();
+      FI = new (Allocator) FunctionInfo();
       initializeInformationCache(F, *FI);
     }
     return *FI;
@@ -666,6 +842,9 @@ private:
 
   /// The datalayout used in the module.
   const DataLayout &DL;
+
+  /// The allocator used to allocate memory, e.g. for `FunctionInfo`s.
+  BumpPtrAllocator &Allocator;
 
   /// MustBeExecutedContextExplorer
   MustBeExecutedContextExplorer Explorer;
@@ -681,6 +860,10 @@ private:
 
   /// Set of inlineable functions
   SmallPtrSet<const Function *, 8> InlineableFunctions;
+
+  /// A map for caching results of queries for isPotentiallyReachable
+  DenseMap<std::pair<const Instruction *, const Instruction *>, bool>
+      PotentiallyReachableMap;
 
   /// Give the Attributor access to the members so
   /// Attributor::identifyDefaultAbstractAttributes(...) can initialize them.
@@ -721,14 +904,12 @@ struct Attributor {
   /// \param InfoCache Cache to hold various information accessible for
   ///                  the abstract attributes.
   /// \param CGUpdater Helper to update an underlying call graph.
-  /// \param DepRecomputeInterval Number of iterations until the dependences
-  ///                             between abstract attributes are recomputed.
-  /// \param Whitelist If not null, a set limiting the attribute opportunities.
+  /// \param Allowed If not null, a set limiting the attribute opportunities.
   Attributor(SetVector<Function *> &Functions, InformationCache &InfoCache,
-             CallGraphUpdater &CGUpdater, unsigned DepRecomputeInterval,
-             DenseSet<const char *> *Whitelist = nullptr)
-      : Functions(Functions), InfoCache(InfoCache), CGUpdater(CGUpdater),
-        DepRecomputeInterval(DepRecomputeInterval), Whitelist(Whitelist) {}
+             CallGraphUpdater &CGUpdater,
+             DenseSet<const char *> *Allowed = nullptr)
+      : Allocator(InfoCache.Allocator), Functions(Functions),
+        InfoCache(InfoCache), CGUpdater(CGUpdater), Allowed(Allowed) {}
 
   ~Attributor();
 
@@ -764,8 +945,120 @@ struct Attributor {
   const AAType &getAAFor(const AbstractAttribute &QueryingAA,
                          const IRPosition &IRP, bool TrackDependence = true,
                          DepClassTy DepClass = DepClassTy::REQUIRED) {
-    return getOrCreateAAFor<AAType>(IRP, &QueryingAA, TrackDependence,
-                                    DepClass);
+    return getOrCreateAAFor<AAType>(IRP, &QueryingAA, TrackDependence, DepClass,
+                                    /* ForceUpdate */ false);
+  }
+
+  /// Similar to getAAFor but the return abstract attribute will be updated (via
+  /// `AbstractAttribute::update`) even if it is found in the cache. This is
+  /// especially useful for AAIsDead as changes in liveness can make updates
+  /// possible/useful that were not happening before as the abstract attribute
+  /// was assumed dead.
+  template <typename AAType>
+  const AAType &getAndUpdateAAFor(const AbstractAttribute &QueryingAA,
+                                  const IRPosition &IRP,
+                                  bool TrackDependence = true,
+                                  DepClassTy DepClass = DepClassTy::REQUIRED) {
+    return getOrCreateAAFor<AAType>(IRP, &QueryingAA, TrackDependence, DepClass,
+                                    /* ForceUpdate */ true);
+  }
+
+  /// The version of getAAFor that allows to omit a querying abstract
+  /// attribute. Using this after Attributor started running is restricted to
+  /// only the Attributor itself. Initial seeding of AAs can be done via this
+  /// function.
+  template <typename AAType>
+  const AAType &getOrCreateAAFor(const IRPosition &IRP,
+                                 const AbstractAttribute *QueryingAA = nullptr,
+                                 bool TrackDependence = false,
+                                 DepClassTy DepClass = DepClassTy::OPTIONAL,
+                                 bool ForceUpdate = false) {
+    if (AAType *AAPtr = lookupAAFor<AAType>(IRP, QueryingAA, TrackDependence)) {
+      if (ForceUpdate)
+        updateAA(*AAPtr);
+      return *AAPtr;
+    }
+
+    // No matching attribute found, create one.
+    // Use the static create method.
+    auto &AA = AAType::createForPosition(IRP, *this);
+
+    // If we are currenty seeding attributes, enforce seeding rules.
+    if (SeedingPeriod && !shouldSeedAttribute(AA)) {
+      AA.getState().indicatePessimisticFixpoint();
+      return AA;
+    }
+
+    registerAA(AA);
+
+    // For now we ignore naked and optnone functions.
+    bool Invalidate = Allowed && !Allowed->count(&AAType::ID);
+    const Function *FnScope = IRP.getAnchorScope();
+    if (FnScope)
+      Invalidate |= FnScope->hasFnAttribute(Attribute::Naked) ||
+                    FnScope->hasFnAttribute(Attribute::OptimizeNone);
+
+    // Bootstrap the new attribute with an initial update to propagate
+    // information, e.g., function -> call site. If it is not on a given
+    // Allowed we will not perform updates at all.
+    if (Invalidate) {
+      AA.getState().indicatePessimisticFixpoint();
+      return AA;
+    }
+
+    {
+      TimeTraceScope TimeScope(AA.getName() + "::initialize");
+      AA.initialize(*this);
+    }
+    // We can initialize (=look at) code outside the current function set but
+    // not call update because that would again spawn new abstract attributes in
+    // potentially unconnected code regions (=SCCs).
+    if (FnScope && !Functions.count(const_cast<Function *>(FnScope))) {
+      AA.getState().indicatePessimisticFixpoint();
+      return AA;
+    }
+
+    // Allow seeded attributes to declare dependencies.
+    // Remember the seeding state.
+    bool OldSeedingPeriod = SeedingPeriod;
+    SeedingPeriod = false;
+
+    updateAA(AA);
+
+    SeedingPeriod = OldSeedingPeriod;
+
+    if (TrackDependence && AA.getState().isValidState())
+      recordDependence(AA, const_cast<AbstractAttribute &>(*QueryingAA),
+                       DepClass);
+    return AA;
+  }
+
+  /// Return the attribute of \p AAType for \p IRP if existing. This also allows
+  /// non-AA users lookup.
+  template <typename AAType>
+  AAType *lookupAAFor(const IRPosition &IRP,
+                      const AbstractAttribute *QueryingAA = nullptr,
+                      bool TrackDependence = false,
+                      DepClassTy DepClass = DepClassTy::OPTIONAL) {
+    static_assert(std::is_base_of<AbstractAttribute, AAType>::value,
+                  "Cannot query an attribute with a type not derived from "
+                  "'AbstractAttribute'!");
+    assert((QueryingAA || !TrackDependence) &&
+           "Cannot track dependences without a QueryingAA!");
+
+    // Lookup the abstract attribute of type AAType. If found, return it after
+    // registering a dependence of QueryingAA on the one returned attribute.
+    AbstractAttribute *AAPtr = AAMap.lookup({&AAType::ID, IRP});
+    if (!AAPtr)
+      return nullptr;
+
+    AAType *AA = static_cast<AAType *>(AAPtr);
+
+    // Do not register a dependence on an attribute with an invalid state.
+    if (TrackDependence && AA->getState().isValidState())
+      recordDependence(*AA, const_cast<AbstractAttribute &>(*QueryingAA),
+                       DepClass);
+    return AA;
   }
 
   /// Explicitly record a dependence from \p FromAA to \p ToAA, that is if
@@ -796,11 +1089,14 @@ struct Attributor {
     // Put the attribute in the lookup map structure and the container we use to
     // keep track of all attributes.
     const IRPosition &IRP = AA.getIRPosition();
-    auto &KindToAbstractAttributeMap = AAMap[IRP];
-    assert(!KindToAbstractAttributeMap.count(&AAType::ID) &&
-           "Attribute already in map!");
-    KindToAbstractAttributeMap[&AAType::ID] = &AA;
-    AllAbstractAttributes.push_back(&AA);
+    AbstractAttribute *&AAPtr = AAMap[{&AAType::ID, IRP}];
+
+    assert(!AAPtr && "Attribute already in map!");
+    AAPtr = &AA;
+
+    DG.SyntheticRoot.Deps.push_back(
+        AADepGraphNode::DepTy(&AA, unsigned(DepClassTy::REQUIRED)));
+
     return AA;
   }
 
@@ -811,6 +1107,11 @@ struct Attributor {
   bool isModulePass() const {
     return !Functions.empty() &&
            Functions.size() == Functions.front()->getParent()->size();
+  }
+
+  /// Return true if we derive attributes for \p Fn
+  bool isRunOn(Function &Fn) const {
+    return Functions.empty() || Functions.count(&Fn);
   }
 
   /// Determine opportunities to derive 'default' attributes in \p F and create
@@ -842,6 +1143,14 @@ struct Attributor {
            "Only local linkage is assumed dead initially.");
 
     identifyDefaultAbstractAttributes(const_cast<Function &>(F));
+  }
+
+  /// Helper function to remove callsite.
+  void removeCallSite(CallInst *CI) {
+    if (!CI)
+      return;
+
+    CGUpdater.removeCallSite(*CI);
   }
 
   /// Record that \p U is to be replaces with \p NV after information was
@@ -1100,9 +1409,33 @@ struct Attributor {
   const DataLayout &getDataLayout() const { return InfoCache.DL; }
 
   /// The allocator used to allocate memory, e.g. for `AbstractAttribute`s.
-  BumpPtrAllocator Allocator;
+  BumpPtrAllocator &Allocator;
 
 private:
+  /// This method will do fixpoint iteration until fixpoint or the
+  /// maximum iteration count is reached.
+  ///
+  /// If the maximum iteration count is reached, This method will
+  /// indicate pessimistic fixpoint on attributes that transitively depend
+  /// on attributes that were scheduled for an update.
+  void runTillFixpoint();
+
+  /// Gets called after scheduling, manifests attributes to the LLVM IR.
+  ChangeStatus manifestAttributes();
+
+  /// Gets called after attributes have been manifested, cleans up the IR.
+  /// Deletes dead functions, blocks and instructions.
+  /// Rewrites function signitures and updates the call graph.
+  ChangeStatus cleanupIR();
+
+  /// Run `::update` on \p AA and track the dependences queried while doing so.
+  /// Also adjust the state if we know further updates are not necessary.
+  ChangeStatus updateAA(AbstractAttribute &AA);
+
+  /// Remember the dependences on the top of the dependence stack such that they
+  /// may trigger further updates. (\see DependenceStack)
+  void rememberDependences();
+
   /// Check \p Pred on all call sites of \p Fn.
   ///
   /// This method will evaluate \p Pred on call sites and return
@@ -1115,122 +1448,26 @@ private:
                             const AbstractAttribute *QueryingAA,
                             bool &AllCallSitesKnown);
 
-  /// The private version of getAAFor that allows to omit a querying abstract
-  /// attribute. See also the public getAAFor method.
-  template <typename AAType>
-  const AAType &getOrCreateAAFor(const IRPosition &IRP,
-                                 const AbstractAttribute *QueryingAA = nullptr,
-                                 bool TrackDependence = false,
-                                 DepClassTy DepClass = DepClassTy::OPTIONAL) {
-    if (const AAType *AAPtr =
-            lookupAAFor<AAType>(IRP, QueryingAA, TrackDependence))
-      return *AAPtr;
-
-    // No matching attribute found, create one.
-    // Use the static create method.
-    auto &AA = AAType::createForPosition(IRP, *this);
-    registerAA(AA);
-
-    // For now we ignore naked and optnone functions.
-    bool Invalidate = Whitelist && !Whitelist->count(&AAType::ID);
-    const Function *FnScope = IRP.getAnchorScope();
-    if (FnScope)
-      Invalidate |= FnScope->hasFnAttribute(Attribute::Naked) ||
-                    FnScope->hasFnAttribute(Attribute::OptimizeNone);
-
-    // Bootstrap the new attribute with an initial update to propagate
-    // information, e.g., function -> call site. If it is not on a given
-    // whitelist we will not perform updates at all.
-    if (Invalidate) {
-      AA.getState().indicatePessimisticFixpoint();
-      return AA;
-    }
-
-    AA.initialize(*this);
-
-    // We can initialize (=look at) code outside the current function set but
-    // not call update because that would again spawn new abstract attributes in
-    // potentially unconnected code regions (=SCCs).
-    if (FnScope && !Functions.count(const_cast<Function *>(FnScope))) {
-      AA.getState().indicatePessimisticFixpoint();
-      return AA;
-    }
-
-    AA.update(*this);
-
-    if (TrackDependence && AA.getState().isValidState())
-      recordDependence(AA, const_cast<AbstractAttribute &>(*QueryingAA),
-                       DepClass);
-    return AA;
-  }
-
-  /// Return the attribute of \p AAType for \p IRP if existing.
-  template <typename AAType>
-  const AAType *lookupAAFor(const IRPosition &IRP,
-                            const AbstractAttribute *QueryingAA = nullptr,
-                            bool TrackDependence = false,
-                            DepClassTy DepClass = DepClassTy::OPTIONAL) {
-    static_assert(std::is_base_of<AbstractAttribute, AAType>::value,
-                  "Cannot query an attribute with a type not derived from "
-                  "'AbstractAttribute'!");
-    assert((QueryingAA || !TrackDependence) &&
-           "Cannot track dependences without a QueryingAA!");
-
-    // Lookup the abstract attribute of type AAType. If found, return it after
-    // registering a dependence of QueryingAA on the one returned attribute.
-    auto KindToAbstractAttributeMapIt = AAMap.find(IRP);
-    if ( KindToAbstractAttributeMapIt == AAMap.end())
-      return nullptr;
-    if (AAType *AA = static_cast<AAType *>(
-            KindToAbstractAttributeMapIt->second.lookup(&AAType::ID))) {
-      // Do not register a dependence on an attribute with an invalid state.
-      if (TrackDependence && AA->getState().isValidState())
-        recordDependence(*AA, const_cast<AbstractAttribute &>(*QueryingAA),
-                         DepClass);
-      return AA;
-    }
-    return nullptr;
-  }
-
   /// Apply all requested function signature rewrites
   /// (\see registerFunctionSignatureRewrite) and return Changed if the module
   /// was altered.
   ChangeStatus
   rewriteFunctionSignatures(SmallPtrSetImpl<Function *> &ModifiedFns);
 
-  /// The set of all abstract attributes.
-  ///{
-  using AAVector = SmallVector<AbstractAttribute *, 64>;
-  AAVector AllAbstractAttributes;
-  ///}
+  /// Check if the Attribute \p AA should be seeded.
+  /// See getOrCreateAAFor.
+  bool shouldSeedAttribute(AbstractAttribute &AA);
 
   /// A nested map to lookup abstract attributes based on the argument position
   /// on the outer level, and the addresses of the static member (AAType::ID) on
   /// the inner level.
   ///{
-  using KindToAbstractAttributeMap =
-      SmallDenseMap<const char *, AbstractAttribute *, /*InlineBuckets=*/32>;
-  DenseMap<IRPosition, KindToAbstractAttributeMap> AAMap;
-  ///}
-
-  /// A map from abstract attributes to the ones that queried them through calls
-  /// to the getAAFor<...>(...) method.
-  ///{
-  struct QueryMapValueTy {
-    /// Set of abstract attributes which were used but not necessarily required
-    /// for a potential optimistic state.
-    SetVector<AbstractAttribute *> OptionalAAs;
-
-    /// Set of abstract attributes which were used and which were necessarily
-    /// required for any potential optimistic state.
-    SetVector<AbstractAttribute *> RequiredAAs;
-  };
-  using QueryMapTy = MapVector<const AbstractAttribute *, QueryMapValueTy>;
-  QueryMapTy QueryMap;
+  using AAMapKeyTy = std::pair<const char *, IRPosition>;
+  DenseMap<AAMapKeyTy, AbstractAttribute *> AAMap;
   ///}
 
   /// Map to remember all requested signature changes (= argument replacements).
-  DenseMap<Function *, SmallVector<ArgumentReplacementInfo *, 8>>
+  DenseMap<Function *, SmallVector<std::unique_ptr<ArgumentReplacementInfo>, 8>>
       ArgumentReplacementMap;
 
   /// The set of functions we are deriving attributes for.
@@ -1242,19 +1479,33 @@ private:
   /// Helper to update an underlying call graph.
   CallGraphUpdater &CGUpdater;
 
+  /// Abstract Attribute dependency graph
+  AADepGraph DG;
+
   /// Set of functions for which we modified the content such that it might
   /// impact the call graph.
   SmallPtrSet<Function *, 8> CGModifiedFunctions;
 
-  /// Set if the attribute currently updated did query a non-fix attribute.
-  bool QueriedNonFixAA;
+  /// Information about a dependence. If FromAA is changed ToAA needs to be
+  /// updated as well.
+  struct DepInfo {
+    const AbstractAttribute *FromAA;
+    const AbstractAttribute *ToAA;
+    DepClassTy DepClass;
+  };
 
-  /// Number of iterations until the dependences between abstract attributes are
-  /// recomputed.
-  const unsigned DepRecomputeInterval;
+  /// The dependence stack is used to track dependences during an
+  /// `AbstractAttribute::update` call. As `AbstractAttribute::update` can be
+  /// recursive we might have multiple vectors of dependences in here. The stack
+  /// size, should be adjusted according to the expected recursion depth and the
+  /// inner dependence vector size to the expected number of dependences per
+  /// abstract attribute. Since the inner vectors are actually allocated on the
+  /// stack we can be generous with their size.
+  using DependenceVector = SmallVector<DepInfo, 8>;
+  SmallVector<DependenceVector *, 16> DependenceStack;
 
   /// If not null, a set limiting the attribute opportunities.
-  const DenseSet<const char *> *Whitelist;
+  const DenseSet<const char *> *Allowed;
 
   /// A set to remember the functions we already assume to be live and visited.
   DenseSet<const Function *> VisitedFunctions;
@@ -1269,6 +1520,10 @@ private:
   /// Invoke instructions with at least a single dead successor block.
   SmallVector<WeakVH, 16> InvokeWithDeadSuccessor;
 
+  /// Wheather attributes are being `seeded`, always false after ::run function
+  /// gets called \see getOrCreateAAFor.
+  bool SeedingPeriod = true;
+
   /// Functions, blocks, and instructions we delete after manifest is done.
   ///
   ///{
@@ -1276,6 +1531,8 @@ private:
   SmallPtrSet<BasicBlock *, 8> ToBeDeletedBlocks;
   SmallDenseSet<WeakVH, 8> ToBeDeletedInsts;
   ///}
+
+  friend AADepGraph;
 };
 
 /// An interface to query the internal state of an abstract attribute.
@@ -1348,6 +1605,9 @@ struct IntegerStateBase : public AbstractState {
 
   /// Return the worst possible representable state.
   static constexpr base_t getWorstState() { return WorstState; }
+  static constexpr base_t getWorstState(const IntegerStateBase &) {
+    return getWorstState();
+  }
 
   /// See AbstractState::isValidState()
   /// NOTE: For now we simply pretend that the worst possible state is invalid.
@@ -1739,10 +1999,13 @@ struct IRAttributeManifest {
 };
 
 /// Helper to tie a abstract state implementation to an abstract attribute.
-template <typename StateTy, typename Base>
-struct StateWrapper : public StateTy, public Base {
+template <typename StateTy, typename BaseType, class... Ts>
+struct StateWrapper : public BaseType, public StateTy {
   /// Provide static access to the type of the state.
   using StateType = StateTy;
+
+  StateWrapper(const IRPosition &IRP, Ts... Args)
+      : BaseType(IRP), StateTy(Args...) {}
 
   /// See AbstractAttribute::getState(...).
   StateType &getState() override { return *this; }
@@ -1752,16 +2015,16 @@ struct StateWrapper : public StateTy, public Base {
 };
 
 /// Helper class that provides common functionality to manifest IR attributes.
-template <Attribute::AttrKind AK, typename Base>
-struct IRAttribute : public IRPosition, public Base {
-  IRAttribute(const IRPosition &IRP) : IRPosition(IRP) {}
-  ~IRAttribute() {}
+template <Attribute::AttrKind AK, typename BaseType>
+struct IRAttribute : public BaseType {
+  IRAttribute(const IRPosition &IRP) : BaseType(IRP) {}
 
   /// See AbstractAttribute::initialize(...).
   virtual void initialize(Attributor &A) override {
     const IRPosition &IRP = this->getIRPosition();
     if (isa<UndefValue>(IRP.getAssociatedValue()) ||
-        hasAttr(getAttrKind(), /* IgnoreSubsumingPositions */ false, &A)) {
+        this->hasAttr(getAttrKind(), /* IgnoreSubsumingPositions */ false,
+                      &A)) {
       this->getState().indicateOptimisticFixpoint();
       return;
     }
@@ -1781,11 +2044,12 @@ struct IRAttribute : public IRPosition, public Base {
 
   /// See AbstractAttribute::manifest(...).
   ChangeStatus manifest(Attributor &A) override {
-    if (isa<UndefValue>(getIRPosition().getAssociatedValue()))
+    if (isa<UndefValue>(this->getIRPosition().getAssociatedValue()))
       return ChangeStatus::UNCHANGED;
     SmallVector<Attribute, 4> DeducedAttrs;
-    getDeducedAttributes(getAnchorValue().getContext(), DeducedAttrs);
-    return IRAttributeManifest::manifestAttrs(A, getIRPosition(), DeducedAttrs);
+    getDeducedAttributes(this->getAnchorValue().getContext(), DeducedAttrs);
+    return IRAttributeManifest::manifestAttrs(A, this->getIRPosition(),
+                                              DeducedAttrs);
   }
 
   /// Return the kind that identifies the abstract attribute implementation.
@@ -1796,9 +2060,6 @@ struct IRAttribute : public IRPosition, public Base {
                                     SmallVectorImpl<Attribute> &Attrs) const {
     Attrs.emplace_back(Attribute::get(Ctx, getAttrKind()));
   }
-
-  /// Return an IR position, see struct IRPosition.
-  const IRPosition &getIRPosition() const override { return *this; }
 };
 
 /// Base struct for all "concrete attribute" deductions.
@@ -1844,11 +2105,21 @@ struct IRAttribute : public IRPosition, public Base {
 ///       both directions will be added in the future.
 /// NOTE: The mechanics of adding a new "concrete" abstract attribute are
 ///       described in the file comment.
-struct AbstractAttribute {
+struct AbstractAttribute : public IRPosition, public AADepGraphNode {
   using StateType = AbstractState;
+
+  AbstractAttribute(const IRPosition &IRP) : IRPosition(IRP) {}
 
   /// Virtual destructor.
   virtual ~AbstractAttribute() {}
+
+  /// This function is used to identify if an \p DGN is of type
+  /// AbstractAttribute so that the dyn_cast and cast can use such information
+  /// to cast an AADepGraphNode to an AbstractAttribute.
+  ///
+  /// We eagerly return true here because all AADepGraphNodes except for the
+  /// Synthethis Node are of type AbstractAttribute
+  static bool classof(const AADepGraphNode *DGN) { return true; }
 
   /// Initialize the state with the information in the Attributor \p A.
   ///
@@ -1865,15 +2136,23 @@ struct AbstractAttribute {
   virtual const StateType &getState() const = 0;
 
   /// Return an IR position, see struct IRPosition.
-  virtual const IRPosition &getIRPosition() const = 0;
+  const IRPosition &getIRPosition() const { return *this; };
+  IRPosition &getIRPosition() { return *this; };
 
   /// Helper functions, for debug purposes only.
   ///{
-  virtual void print(raw_ostream &OS) const;
+  void print(raw_ostream &OS) const override;
+  virtual void printWithDeps(raw_ostream &OS) const;
   void dump() const { print(dbgs()); }
 
   /// This function should return the "summarized" assumed state as string.
   virtual const std::string getAsStr() const = 0;
+
+  /// This function should return the name of the AbstractAttribute
+  virtual const std::string getName() const = 0;
+
+  /// This function should return the address of the ID of the AbstractAttribute
+  virtual const char *getIdAddr() const = 0;
   ///}
 
   /// Allow the Attributor access to the protected methods.
@@ -1949,7 +2228,7 @@ Pass *createAttributorCGSCCLegacyPass();
 /// An abstract attribute for the returned values of a function.
 struct AAReturnedValues
     : public IRAttribute<Attribute::Returned, AbstractAttribute> {
-  AAReturnedValues(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AAReturnedValues(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Return an assumed unique return value if a single candidate is found. If
   /// there cannot be one, return a nullptr. If it is not clear yet, return the
@@ -1982,6 +2261,18 @@ struct AAReturnedValues
   static AAReturnedValues &createForPosition(const IRPosition &IRP,
                                              Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAReturnedValues"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is
+  /// AAReturnedValues
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
@@ -1989,7 +2280,7 @@ struct AAReturnedValues
 struct AANoUnwind
     : public IRAttribute<Attribute::NoUnwind,
                          StateWrapper<BooleanState, AbstractAttribute>> {
-  AANoUnwind(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AANoUnwind(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Returns true if nounwind is assumed.
   bool isAssumedNoUnwind() const { return getAssumed(); }
@@ -2000,6 +2291,17 @@ struct AANoUnwind
   /// Create an abstract attribute view for the position \p IRP.
   static AANoUnwind &createForPosition(const IRPosition &IRP, Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AANoUnwind"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AANoUnwind
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
@@ -2007,7 +2309,7 @@ struct AANoUnwind
 struct AANoSync
     : public IRAttribute<Attribute::NoSync,
                          StateWrapper<BooleanState, AbstractAttribute>> {
-  AANoSync(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AANoSync(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Returns true if "nosync" is assumed.
   bool isAssumedNoSync() const { return getAssumed(); }
@@ -2018,6 +2320,17 @@ struct AANoSync
   /// Create an abstract attribute view for the position \p IRP.
   static AANoSync &createForPosition(const IRPosition &IRP, Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AANoSync"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AANoSync
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
@@ -2026,7 +2339,7 @@ struct AANoSync
 struct AANonNull
     : public IRAttribute<Attribute::NonNull,
                          StateWrapper<BooleanState, AbstractAttribute>> {
-  AANonNull(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AANonNull(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Return true if we assume that the underlying value is nonnull.
   bool isAssumedNonNull() const { return getAssumed(); }
@@ -2037,6 +2350,17 @@ struct AANonNull
   /// Create an abstract attribute view for the position \p IRP.
   static AANonNull &createForPosition(const IRPosition &IRP, Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AANonNull"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AANonNull
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
@@ -2045,7 +2369,7 @@ struct AANonNull
 struct AANoRecurse
     : public IRAttribute<Attribute::NoRecurse,
                          StateWrapper<BooleanState, AbstractAttribute>> {
-  AANoRecurse(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AANoRecurse(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Return true if "norecurse" is assumed.
   bool isAssumedNoRecurse() const { return getAssumed(); }
@@ -2056,6 +2380,17 @@ struct AANoRecurse
   /// Create an abstract attribute view for the position \p IRP.
   static AANoRecurse &createForPosition(const IRPosition &IRP, Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AANoRecurse"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AANoRecurse
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
@@ -2064,7 +2399,7 @@ struct AANoRecurse
 struct AAWillReturn
     : public IRAttribute<Attribute::WillReturn,
                          StateWrapper<BooleanState, AbstractAttribute>> {
-  AAWillReturn(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AAWillReturn(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Return true if "willreturn" is assumed.
   bool isAssumedWillReturn() const { return getAssumed(); }
@@ -2075,15 +2410,26 @@ struct AAWillReturn
   /// Create an abstract attribute view for the position \p IRP.
   static AAWillReturn &createForPosition(const IRPosition &IRP, Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAWillReturn"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AAWillReturn
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
 
 /// An abstract attribute for undefined behavior.
 struct AAUndefinedBehavior
-    : public StateWrapper<BooleanState, AbstractAttribute>,
-      public IRPosition {
-  AAUndefinedBehavior(const IRPosition &IRP) : IRPosition(IRP) {}
+    : public StateWrapper<BooleanState, AbstractAttribute> {
+  using Base = StateWrapper<BooleanState, AbstractAttribute>;
+  AAUndefinedBehavior(const IRPosition &IRP, Attributor &A) : Base(IRP) {}
 
   /// Return true if "undefined behavior" is assumed.
   bool isAssumedToCauseUB() const { return getAssumed(); }
@@ -2097,43 +2443,62 @@ struct AAUndefinedBehavior
   /// Return true if "undefined behavior" is known for a specific instruction.
   virtual bool isKnownToCauseUB(Instruction *I) const = 0;
 
-  /// Return an IR position, see struct IRPosition.
-  const IRPosition &getIRPosition() const override { return *this; }
-
   /// Create an abstract attribute view for the position \p IRP.
   static AAUndefinedBehavior &createForPosition(const IRPosition &IRP,
                                                 Attributor &A);
+
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAUndefinedBehavior"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is
+  /// AAUndefineBehavior
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
 
   /// Unique ID (due to the unique address)
   static const char ID;
 };
 
 /// An abstract interface to determine reachability of point A to B.
-struct AAReachability : public StateWrapper<BooleanState, AbstractAttribute>,
-                        public IRPosition {
-  AAReachability(const IRPosition &IRP) : IRPosition(IRP) {}
+struct AAReachability : public StateWrapper<BooleanState, AbstractAttribute> {
+  using Base = StateWrapper<BooleanState, AbstractAttribute>;
+  AAReachability(const IRPosition &IRP, Attributor &A) : Base(IRP) {}
 
   /// Returns true if 'From' instruction is assumed to reach, 'To' instruction.
   /// Users should provide two positions they are interested in, and the class
   /// determines (and caches) reachability.
-  bool isAssumedReachable(const Instruction *From,
-                          const Instruction *To) const {
-    return isPotentiallyReachable(From, To);
+  bool isAssumedReachable(Attributor &A, const Instruction &From,
+                          const Instruction &To) const {
+    return A.getInfoCache().getPotentiallyReachable(From, To);
   }
 
   /// Returns true if 'From' instruction is known to reach, 'To' instruction.
   /// Users should provide two positions they are interested in, and the class
   /// determines (and caches) reachability.
-  bool isKnownReachable(const Instruction *From, const Instruction *To) const {
-    return isPotentiallyReachable(From, To);
+  bool isKnownReachable(Attributor &A, const Instruction &From,
+                        const Instruction &To) const {
+    return A.getInfoCache().getPotentiallyReachable(From, To);
   }
-
-  /// Return an IR position, see struct IRPosition.
-  const IRPosition &getIRPosition() const override { return *this; }
 
   /// Create an abstract attribute view for the position \p IRP.
   static AAReachability &createForPosition(const IRPosition &IRP,
                                            Attributor &A);
+
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAReachability"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is
+  /// AAReachability
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
 
   /// Unique ID (due to the unique address)
   static const char ID;
@@ -2143,7 +2508,7 @@ struct AAReachability : public StateWrapper<BooleanState, AbstractAttribute>,
 struct AANoAlias
     : public IRAttribute<Attribute::NoAlias,
                          StateWrapper<BooleanState, AbstractAttribute>> {
-  AANoAlias(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AANoAlias(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Return true if we assume that the underlying value is alias.
   bool isAssumedNoAlias() const { return getAssumed(); }
@@ -2154,6 +2519,17 @@ struct AANoAlias
   /// Create an abstract attribute view for the position \p IRP.
   static AANoAlias &createForPosition(const IRPosition &IRP, Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AANoAlias"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AANoAlias
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
@@ -2162,7 +2538,7 @@ struct AANoAlias
 struct AANoFree
     : public IRAttribute<Attribute::NoFree,
                          StateWrapper<BooleanState, AbstractAttribute>> {
-  AANoFree(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AANoFree(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Return true if "nofree" is assumed.
   bool isAssumedNoFree() const { return getAssumed(); }
@@ -2173,6 +2549,17 @@ struct AANoFree
   /// Create an abstract attribute view for the position \p IRP.
   static AANoFree &createForPosition(const IRPosition &IRP, Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AANoFree"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AANoFree
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
@@ -2181,7 +2568,7 @@ struct AANoFree
 struct AANoReturn
     : public IRAttribute<Attribute::NoReturn,
                          StateWrapper<BooleanState, AbstractAttribute>> {
-  AANoReturn(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AANoReturn(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Return true if the underlying object is assumed to never return.
   bool isAssumedNoReturn() const { return getAssumed(); }
@@ -2192,14 +2579,25 @@ struct AANoReturn
   /// Create an abstract attribute view for the position \p IRP.
   static AANoReturn &createForPosition(const IRPosition &IRP, Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AANoReturn"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AANoReturn
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
 
 /// An abstract interface for liveness abstract attribute.
-struct AAIsDead : public StateWrapper<BooleanState, AbstractAttribute>,
-                  public IRPosition {
-  AAIsDead(const IRPosition &IRP) : IRPosition(IRP) {}
+struct AAIsDead : public StateWrapper<BooleanState, AbstractAttribute> {
+  using Base = StateWrapper<BooleanState, AbstractAttribute>;
+  AAIsDead(const IRPosition &IRP, Attributor &A) : Base(IRP) {}
 
 protected:
   /// The query functions are protected such that other attributes need to go
@@ -2238,15 +2636,23 @@ protected:
   }
 
 public:
-  /// Return an IR position, see struct IRPosition.
-  const IRPosition &getIRPosition() const override { return *this; }
-
   /// Create an abstract attribute view for the position \p IRP.
   static AAIsDead &createForPosition(const IRPosition &IRP, Attributor &A);
 
   /// Determine if \p F might catch asynchronous exceptions.
   static bool mayCatchAsynchronousExceptions(const Function &F) {
     return F.hasPersonalityFn() && !canSimplifyInvokeNoUnwind(&F);
+  }
+
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAIsDead"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AAIsDead
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
   }
 
   /// Unique ID (due to the unique address)
@@ -2260,6 +2666,16 @@ struct DerefState : AbstractState {
 
   static DerefState getBestState() { return DerefState(); }
   static DerefState getBestState(const DerefState &) { return getBestState(); }
+
+  /// Return the worst possible representable state.
+  static DerefState getWorstState() {
+    DerefState DS;
+    DS.indicatePessimisticFixpoint();
+    return DS;
+  }
+  static DerefState getWorstState(const DerefState &) {
+    return getWorstState();
+  }
 
   /// State representing for dereferenceable bytes.
   IncIntegerState<> DerefBytesState;
@@ -2351,13 +2767,13 @@ struct DerefState : AbstractState {
   }
 
   /// Equality for DerefState.
-  bool operator==(const DerefState &R) {
+  bool operator==(const DerefState &R) const {
     return this->DerefBytesState == R.DerefBytesState &&
            this->GlobalState == R.GlobalState;
   }
 
   /// Inequality for DerefState.
-  bool operator!=(const DerefState &R) { return !(*this == R); }
+  bool operator!=(const DerefState &R) const { return !(*this == R); }
 
   /// See IntegerStateBase::operator^=
   DerefState operator^=(const DerefState &R) {
@@ -2395,7 +2811,7 @@ protected:
 struct AADereferenceable
     : public IRAttribute<Attribute::Dereferenceable,
                          StateWrapper<DerefState, AbstractAttribute>> {
-  AADereferenceable(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AADereferenceable(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Return true if we assume that the underlying value is nonnull.
   bool isAssumedNonNull() const {
@@ -2429,6 +2845,18 @@ struct AADereferenceable
   static AADereferenceable &createForPosition(const IRPosition &IRP,
                                               Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AADereferenceable"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is
+  /// AADereferenceable
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
@@ -2439,13 +2867,24 @@ using AAAlignmentStateType =
 struct AAAlign : public IRAttribute<
                      Attribute::Alignment,
                      StateWrapper<AAAlignmentStateType, AbstractAttribute>> {
-  AAAlign(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AAAlign(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Return assumed alignment.
   unsigned getAssumedAlign() const { return getAssumed(); }
 
   /// Return known alignment.
   unsigned getKnownAlign() const { return getKnown(); }
+
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAAlign"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AAAlign
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
 
   /// Create an abstract attribute view for the position \p IRP.
   static AAAlign &createForPosition(const IRPosition &IRP, Attributor &A);
@@ -2459,7 +2898,7 @@ struct AANoCapture
     : public IRAttribute<
           Attribute::NoCapture,
           StateWrapper<BitIntegerState<uint16_t, 7, 0>, AbstractAttribute>> {
-  AANoCapture(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AANoCapture(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// State encoding bits. A set bit in the state means the property holds.
   /// NO_CAPTURE is the best possible state, 0 the worst possible state.
@@ -2501,17 +2940,25 @@ struct AANoCapture
   /// Create an abstract attribute view for the position \p IRP.
   static AANoCapture &createForPosition(const IRPosition &IRP, Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AANoCapture"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AANoCapture
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
 
 /// An abstract interface for value simplify abstract attribute.
-struct AAValueSimplify : public StateWrapper<BooleanState, AbstractAttribute>,
-                         public IRPosition {
-  AAValueSimplify(const IRPosition &IRP) : IRPosition(IRP) {}
-
-  /// Return an IR position, see struct IRPosition.
-  const IRPosition &getIRPosition() const { return *this; }
+struct AAValueSimplify : public StateWrapper<BooleanState, AbstractAttribute> {
+  using Base = StateWrapper<BooleanState, AbstractAttribute>;
+  AAValueSimplify(const IRPosition &IRP, Attributor &A) : Base(IRP) {}
 
   /// Return an assumed simplified value if a single candidate is found. If
   /// there cannot be one, return original value. If it is not clear yet, return
@@ -2522,13 +2969,25 @@ struct AAValueSimplify : public StateWrapper<BooleanState, AbstractAttribute>,
   static AAValueSimplify &createForPosition(const IRPosition &IRP,
                                             Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAValueSimplify"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is
+  /// AAValueSimplify
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
 
-struct AAHeapToStack : public StateWrapper<BooleanState, AbstractAttribute>,
-                       public IRPosition {
-  AAHeapToStack(const IRPosition &IRP) : IRPosition(IRP) {}
+struct AAHeapToStack : public StateWrapper<BooleanState, AbstractAttribute> {
+  using Base = StateWrapper<BooleanState, AbstractAttribute>;
+  AAHeapToStack(const IRPosition &IRP, Attributor &A) : Base(IRP) {}
 
   /// Returns true if HeapToStack conversion is assumed to be possible.
   bool isAssumedHeapToStack() const { return getAssumed(); }
@@ -2536,11 +2995,19 @@ struct AAHeapToStack : public StateWrapper<BooleanState, AbstractAttribute>,
   /// Returns true if HeapToStack conversion is known to be possible.
   bool isKnownHeapToStack() const { return getKnown(); }
 
-  /// Return an IR position, see struct IRPosition.
-  const IRPosition &getIRPosition() const { return *this; }
-
   /// Create an abstract attribute view for the position \p IRP.
   static AAHeapToStack &createForPosition(const IRPosition &IRP, Attributor &A);
+
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAHeapToStack"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is AAHeapToStack
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
 
   /// Unique ID (due to the unique address)
   static const char ID;
@@ -2556,9 +3023,10 @@ struct AAHeapToStack : public StateWrapper<BooleanState, AbstractAttribute>,
 /// (=nocapture), it is (for now) not written (=readonly & noalias), we know
 /// what values are necessary to make the private copy look like the original
 /// one, and the values we need can be loaded (=dereferenceable).
-struct AAPrivatizablePtr : public StateWrapper<BooleanState, AbstractAttribute>,
-                           public IRPosition {
-  AAPrivatizablePtr(const IRPosition &IRP) : IRPosition(IRP) {}
+struct AAPrivatizablePtr
+    : public StateWrapper<BooleanState, AbstractAttribute> {
+  using Base = StateWrapper<BooleanState, AbstractAttribute>;
+  AAPrivatizablePtr(const IRPosition &IRP, Attributor &A) : Base(IRP) {}
 
   /// Returns true if pointer privatization is assumed to be possible.
   bool isAssumedPrivatizablePtr() const { return getAssumed(); }
@@ -2570,16 +3038,21 @@ struct AAPrivatizablePtr : public StateWrapper<BooleanState, AbstractAttribute>,
   /// value. None means it is not clear yet, nullptr means there is none.
   virtual Optional<Type *> getPrivatizableType() const = 0;
 
-  /// Return an IR position, see struct IRPosition.
-  ///
-  ///{
-  IRPosition &getIRPosition() { return *this; }
-  const IRPosition &getIRPosition() const { return *this; }
-  ///}
-
   /// Create an abstract attribute view for the position \p IRP.
   static AAPrivatizablePtr &createForPosition(const IRPosition &IRP,
                                               Attributor &A);
+
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAPrivatizablePtr"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is
+  /// AAPricatizablePtr
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
 
   /// Unique ID (due to the unique address)
   static const char ID;
@@ -2591,7 +3064,7 @@ struct AAMemoryBehavior
     : public IRAttribute<
           Attribute::ReadNone,
           StateWrapper<BitIntegerState<uint8_t, 3>, AbstractAttribute>> {
-  AAMemoryBehavior(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AAMemoryBehavior(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// State encoding bits. A set bit in the state means the property holds.
   /// BEST_STATE is the best possible state, 0 the worst possible state.
@@ -2632,6 +3105,18 @@ struct AAMemoryBehavior
   static AAMemoryBehavior &createForPosition(const IRPosition &IRP,
                                              Attributor &A);
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAMemoryBehavior"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is
+  /// AAMemoryBehavior
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
@@ -2644,7 +3129,7 @@ struct AAMemoryLocation
           StateWrapper<BitIntegerState<uint32_t, 511>, AbstractAttribute>> {
   using MemoryLocationsKind = StateType::base_t;
 
-  AAMemoryLocation(const IRPosition &IRP) : IRAttribute(IRP) {}
+  AAMemoryLocation(const IRPosition &IRP, Attributor &A) : IRAttribute(IRP) {}
 
   /// Encoding of different locations that could be accessed by a memory
   /// access.
@@ -2790,20 +3275,28 @@ struct AAMemoryLocation
     return getMemoryLocationsAsStr(getAssumedNotAccessedLocation());
   }
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAMemoryLocation"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is
+  /// AAMemoryLocation
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
 };
 
 /// An abstract interface for range value analysis.
-struct AAValueConstantRange : public IntegerRangeState,
-                              public AbstractAttribute,
-                              public IRPosition {
-  AAValueConstantRange(const IRPosition &IRP)
-      : IntegerRangeState(IRP.getAssociatedType()->getIntegerBitWidth()),
-        IRPosition(IRP) {}
-
-  /// Return an IR position, see struct IRPosition.
-  const IRPosition &getIRPosition() const override { return *this; }
+struct AAValueConstantRange
+    : public StateWrapper<IntegerRangeState, AbstractAttribute, uint32_t> {
+  using Base = StateWrapper<IntegerRangeState, AbstractAttribute, uint32_t>;
+  AAValueConstantRange(const IRPosition &IRP, Attributor &A)
+      : Base(IRP, IRP.getAssociatedType()->getIntegerBitWidth()) {}
 
   /// See AbstractAttribute::getState(...).
   IntegerRangeState &getState() override { return *this; }
@@ -2839,8 +3332,28 @@ struct AAValueConstantRange : public IntegerRangeState,
     return nullptr;
   }
 
+  /// See AbstractAttribute::getName()
+  const std::string getName() const override { return "AAValueConstantRange"; }
+
+  /// See AbstractAttribute::getIdAddr()
+  const char *getIdAddr() const override { return &ID; }
+
+  /// This function should return true if the type of the \p AA is
+  /// AAValueConstantRange
+  static bool classof(const AbstractAttribute *AA) {
+    return (AA->getIdAddr() == &ID);
+  }
+
   /// Unique ID (due to the unique address)
   static const char ID;
+};
+
+/// Run options, used by the pass manager.
+enum AttributorRunOption {
+  NONE = 0,
+  MODULE = 1 << 0,
+  CGSCC = 1 << 1,
+  ALL = MODULE | CGSCC
 };
 
 } // end namespace llvm

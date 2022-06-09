@@ -29,7 +29,10 @@
 #include <system_error>
 #include <utility>
 
-#define DBG(x)
+#include "support/debug.h"
+#include "support/dyn_debug.h"
+
+//#define DBG(x)
 //#define DBG(x) do { x; } while(0)
 
 using namespace clang;
@@ -246,15 +249,15 @@ void Compilation::ExecuteJobs(const JobList &Jobs,
     if (!InputsOk(Job, FailingCommands))
       continue;
     const Command *FailingCommand = nullptr;
-    DBG(llvm::errs() << __FILE__ << " " << __func__ << " " << __LINE__ << ": calling ExecuteCommand\n");
+    DYN_DEBUG(clang_driver, llvm::errs() << __FILE__ << " " << __func__ << " " << __LINE__ << ": calling ExecuteCommand\n");
     if (int Res = ExecuteCommand(Job, FailingCommand)) {
-      DBG(llvm::errs() << __FILE__ << " " << __func__ << " " << __LINE__ << ": returned from ExecuteCommand with non-zero res (error)\n");
+      DYN_DEBUG(clang_driver, llvm::errs() << __FILE__ << " " << __func__ << " " << __LINE__ << ": returned from ExecuteCommand with non-zero res (error)\n");
       FailingCommands.push_back(std::make_pair(Res, FailingCommand));
       // Bail as soon as one command fails in cl driver mode.
       if (TheDriver.IsCLMode())
         return;
     } else {
-      DBG(llvm::errs() << __FILE__ << " " << __func__ << " " << __LINE__ << ": successfully returned from ExecuteCommand\n");
+      DYN_DEBUG(clang_driver, llvm::errs() << __FILE__ << " " << __func__ << " " << __LINE__ << ": successfully returned from ExecuteCommand\n");
     }
   }
 }

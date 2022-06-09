@@ -4,7 +4,7 @@
 
 #include "support/types.h"
 #include "graph/point_set.h"
-#include "graph/invariant_state_eqclass.h"
+#include "graph/smallest_point_cover.h"
 
 //XXX: this file is not being used; it may become relevant if the linear solver ever becomes the performance bottleneck.
 namespace eqspace {

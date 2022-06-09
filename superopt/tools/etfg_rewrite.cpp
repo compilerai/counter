@@ -1,6 +1,6 @@
 #include "support/debug.h"
 #include "support/cmd_helper.h"
-#include "tfg/parse_input_eq_file.h"
+#include "eq/parse_input_eq_file.h"
 #include "expr/consts_struct.h"
 #include "support/mytimer.h"
 #include "support/log.h"
@@ -8,12 +8,13 @@
 #include "support/globals.h"
 #include "expr/expr.h"
 #include "expr/local_sprel_expr_guesses.h"
-#include "codegen/codegen.h"
+#include "rewrite/static_translate.h"
 
 #include "support/timers.h"
 
 #include "i386/insn.h"
-#include "codegen/etfg_insn.h"
+#include "x64/insn.h"
+#include "etfg/etfg_insn.h"
 #include "expr/z3_solver.h"
 #include "graph/tfg_rewrite.h"
 
@@ -49,14 +50,14 @@ main(int argc, char **argv)
 
   usedef_init();
 
-  map<string, shared_ptr<tfg>> function_tfg_map = get_function_tfg_map_from_etfg_file(etfg_file.get_value(), g_ctx);
+  map<string, dshared_ptr<tfg>> function_tfg_map = get_function_tfg_map_from_etfg_file(etfg_file.get_value(), g_ctx);
   ofstream outputStream;
   outputStream.open(output_file.get_value(), ios_base::out | ios_base::trunc);
 
   for (const auto &ft : function_tfg_map) {
     string const &fname = ft.first;
     outputStream << "=FunctionName: " << fname << "\n";
-    shared_ptr<tfg> new_tfg = tfg::tfg_rewrite(*ft.second);
+    dshared_ptr<tfg> new_tfg = tfg::tfg_rewrite(*ft.second);
     outputStream << new_tfg->graph_to_string() << "\n";
     //delete new_tfg;
   }

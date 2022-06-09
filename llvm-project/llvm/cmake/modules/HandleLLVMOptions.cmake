@@ -11,8 +11,9 @@ include(HandleLLVMStdlib)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(CheckSymbolExists)
+include(CMakeDependentOption)
 
-if(CMAKE_LINKER MATCHES "lld-link" OR (WIN32 AND LLVM_USE_LINKER STREQUAL "lld") OR LLVM_ENABLE_LLD)
+if(CMAKE_LINKER MATCHES "lld-link" OR (MSVC AND (LLVM_USE_LINKER STREQUAL "lld" OR LLVM_ENABLE_LLD)))
   set(LINKER_IS_LLD_LINK TRUE)
 else()
   set(LINKER_IS_LLD_LINK FALSE)
@@ -26,7 +27,7 @@ string(TOUPPER "${LLVM_ENABLE_LTO}" uppercase_LLVM_ENABLE_LTO)
 set(LLVM_PARALLEL_COMPILE_JOBS "" CACHE STRING
   "Define the maximum number of concurrent compilation jobs (Ninja only).")
 if(LLVM_PARALLEL_COMPILE_JOBS)
-  if(NOT CMAKE_MAKE_PROGRAM MATCHES "ninja")
+  if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
     message(WARNING "Job pooling is only available with Ninja generators.")
   else()
     set_property(GLOBAL APPEND PROPERTY JOB_POOLS compile_job_pool=${LLVM_PARALLEL_COMPILE_JOBS})
@@ -36,7 +37,7 @@ endif()
 
 set(LLVM_PARALLEL_LINK_JOBS "" CACHE STRING
   "Define the maximum number of concurrent link jobs (Ninja only).")
-if(CMAKE_MAKE_PROGRAM MATCHES "ninja")
+if(CMAKE_GENERATOR STREQUAL "Ninja")
   if(NOT LLVM_PARALLEL_LINK_JOBS AND uppercase_LLVM_ENABLE_LTO STREQUAL "THIN")
     message(STATUS "ThinLTO provides its own parallel linking - limiting parallel link jobs to 2.")
     set(LLVM_PARALLEL_LINK_JOBS "2")
@@ -195,6 +196,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
     # XL generates a small number of relocations not of the large model, -bbigtoc is needed.
     append("-Wl,-bbigtoc"
            CMAKE_EXE_LINKER_FLAGS CMAKE_MODULE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
+    # The default behaviour on AIX processes dynamic initialization of non-local variables with
+    # static storage duration even for archive members that are otherwise unreferenced.
+    # Since `--whole-archive` is not used by the LLVM build to keep such initializations for Linux,
+    # we can limit the processing for archive members to only those that are otherwise referenced.
+    append("-bcdtors:mbr"
+           CMAKE_EXE_LINKER_FLAGS CMAKE_MODULE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
   endif()
 endif()
 
@@ -254,7 +261,12 @@ if( LLVM_ENABLE_LLD )
   if ( LLVM_USE_LINKER )
     message(FATAL_ERROR "LLVM_ENABLE_LLD and LLVM_USE_LINKER can't be set at the same time")
   endif()
-  set(LLVM_USE_LINKER "lld")
+  # In case of MSVC cmake always invokes the linker directly, so the linker
+  # should be specified by CMAKE_LINKER cmake variable instead of by -fuse-ld
+  # compiler option.
+  if ( NOT MSVC )
+    set(LLVM_USE_LINKER "lld")
+  endif()
 endif()
 
 if( LLVM_USE_LINKER )
@@ -461,6 +473,10 @@ if( MSVC )
       endif()
     endif()
   endif()
+  # By default MSVC has a 2^16 limit on the number of sections in an object file,
+  # but in many objects files need more than that. This flag is to increase the
+  # number of sections.
+  append("/bigobj" CMAKE_CXX_FLAGS)
 endif( MSVC )
 
 # Warnings-as-errors handling for GCC-compatible compilers:
@@ -665,6 +681,21 @@ if (LLVM_ENABLE_WARNINGS AND (LLVM_COMPILER_IS_GCC_COMPATIBLE OR CLANG_CL))
   # Enable -Wdelete-non-virtual-dtor if available.
   add_flag_if_supported("-Wdelete-non-virtual-dtor" DELETE_NON_VIRTUAL_DTOR_FLAG)
 
+  # Enable -Wsuggest-override if it's available, and only if it doesn't
+  # suggest adding 'override' to functions that are already marked 'final'
+  # (which means it is disabled for GCC < 9.2).
+  check_cxx_compiler_flag("-Wsuggest-override" CXX_SUPPORTS_SUGGEST_OVERRIDE_FLAG)
+  if (CXX_SUPPORTS_SUGGEST_OVERRIDE_FLAG)
+    set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror=suggest-override")
+    CHECK_CXX_SOURCE_COMPILES("class base {public: virtual void anchor();};
+                               class derived : base {public: void anchor() final;};
+                               int main() { return 0; }"
+                              CXX_WSUGGEST_OVERRIDE_ALLOWS_ONLY_FINAL)
+    set(CMAKE_REQUIRED_FLAGS ${OLD_CMAKE_REQUIRED_FLAGS})
+    append_if(CXX_WSUGGEST_OVERRIDE_ALLOWS_ONLY_FINAL "-Wsuggest-override" CMAKE_CXX_FLAGS)
+  endif()
+
   # Check if -Wcomment is OK with an // comment ending with '\' if the next
   # line is also a // comment.
   set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
@@ -728,6 +759,8 @@ if(LLVM_USE_SANITIZER)
     elseif (LLVM_USE_SANITIZER STREQUAL "Thread")
       append_common_sanitizer_flags()
       append("-fsanitize=thread" CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+    elseif (LLVM_USE_SANITIZER STREQUAL "DataFlow")
+      append("-fsanitize=dataflow" CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
     elseif (LLVM_USE_SANITIZER STREQUAL "Address;Undefined" OR
             LLVM_USE_SANITIZER STREQUAL "Undefined;Address")
       append_common_sanitizer_flags()
@@ -884,6 +917,28 @@ if (LLVM_BUILD_INSTRUMENTED)
   endif()
 endif()
 
+# When using clang-cl with an instrumentation-based tool, add clang's library
+# resource directory to the library search path. Because cmake invokes the
+# linker directly, it isn't sufficient to pass -fsanitize=* to the linker.
+if (CLANG_CL AND (LLVM_BUILD_INSTRUMENTED OR LLVM_USE_SANITIZER))
+  execute_process(
+    COMMAND ${CMAKE_CXX_COMPILER} /clang:-print-resource-dir
+    OUTPUT_VARIABLE clang_resource_dir
+    ERROR_VARIABLE clang_cl_stderr
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE clang_cl_exit_code)
+  if (NOT "${clang_cl_exit_code}" STREQUAL "0")
+    message(FATAL_ERROR
+      "Unable to invoke clang-cl to find resource dir: ${clang_cl_stderr}")
+  endif()
+  file(TO_CMAKE_PATH "${clang_resource_dir}" clang_resource_dir)
+  append("/libpath:${clang_resource_dir}/lib/windows"
+    CMAKE_EXE_LINKER_FLAGS
+    CMAKE_MODULE_LINKER_FLAGS
+    CMAKE_SHARED_LINKER_FLAGS)
+endif()
+
 if(LLVM_PROFDATA_FILE AND EXISTS ${LLVM_PROFDATA_FILE})
   if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" )
     append("-fprofile-instr-use=\"${LLVM_PROFDATA_FILE}\""
@@ -911,7 +966,7 @@ if (LLVM_BUILD_INSTRUMENTED AND LLVM_BUILD_INSTRUMENTED_COVERAGE)
   message(FATAL_ERROR "LLVM_BUILD_INSTRUMENTED and LLVM_BUILD_INSTRUMENTED_COVERAGE cannot both be specified")
 endif()
 
-if(LLVM_ENABLE_LTO AND LLVM_ON_WIN32 AND NOT LINKER_IS_LLD_LINK)
+if(LLVM_ENABLE_LTO AND LLVM_ON_WIN32 AND NOT LINKER_IS_LLD_LINK AND NOT MINGW)
   message(FATAL_ERROR "When compiling for Windows, LLVM_ENABLE_LTO requires using lld as the linker (point CMAKE_LINKER at lld-link.exe)")
 endif()
 if(uppercase_LLVM_ENABLE_LTO STREQUAL "THIN")
@@ -926,7 +981,7 @@ if(uppercase_LLVM_ENABLE_LTO STREQUAL "THIN")
   if(APPLE)
     append("-Wl,-cache_path_lto,${PROJECT_BINARY_DIR}/lto.cache"
            CMAKE_EXE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
-  elseif(UNIX AND LLVM_USE_LINKER STREQUAL "lld")
+  elseif((UNIX OR MINGW) AND LLVM_USE_LINKER STREQUAL "lld")
     append("-Wl,--thinlto-cache-dir=${PROJECT_BINARY_DIR}/lto.cache"
            CMAKE_EXE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
   elseif(LLVM_USE_LINKER STREQUAL "gold")
@@ -948,12 +1003,23 @@ elseif(LLVM_ENABLE_LTO)
   endif()
 endif()
 
+# Set an AIX default for LLVM_EXPORT_SYMBOLS_FOR_PLUGINS based on whether we are
+# doing dynamic linking (see below).
+set(LLVM_EXPORT_SYMBOLS_FOR_PLUGINS_AIX_default OFF)
+if (NOT (BUILD_SHARED_LIBS OR LLVM_LINK_LLVM_DYLIB))
+  set(LLVM_EXPORT_SYMBOLS_FOR_PLUGINS_AIX_default ON)
+endif()
+
 # This option makes utils/extract_symbols.py be used to determine the list of
-# symbols to export from LLVM tools. This is necessary when using MSVC if you
-# want to allow plugins, though note that the plugin has to explicitly link
-# against (exactly one) tool so we can't unilaterally turn on
+# symbols to export from LLVM tools. This is necessary when on AIX or when using
+# MSVC if you want to allow plugins. On AIX we don't show this option, and we
+# enable it by default except when the LLVM libraries are set up for dynamic
+# linking (due to incompatibility). With MSVC, note that the plugin has to
+# explicitly link against (exactly one) tool so we can't unilaterally turn on
 # LLVM_ENABLE_PLUGINS when it's enabled.
-option(LLVM_EXPORT_SYMBOLS_FOR_PLUGINS "Export symbols from LLVM tools so that plugins can import them" OFF)
+CMAKE_DEPENDENT_OPTION(LLVM_EXPORT_SYMBOLS_FOR_PLUGINS
+       "Export symbols from LLVM tools so that plugins can import them" OFF
+       "NOT ${CMAKE_SYSTEM_NAME} MATCHES AIX" ${LLVM_EXPORT_SYMBOLS_FOR_PLUGINS_AIX_default})
 if(BUILD_SHARED_LIBS AND LLVM_EXPORT_SYMBOLS_FOR_PLUGINS)
   message(FATAL_ERROR "BUILD_SHARED_LIBS not compatible with LLVM_EXPORT_SYMBOLS_FOR_PLUGINS")
 endif()
