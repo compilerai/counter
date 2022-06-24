@@ -21,7 +21,11 @@ An ideal machine for running this artifact would have at least:
 ## Setup <a name="setup"></a>
 
 1. Clone the repository to a directory with the path `/home/sbansal/counter`
-2. Build
+2. Checkout the static-persist branch
+   ```
+   git checkout static-persist
+   ```
+3. Build
    ```
    make
    ```
