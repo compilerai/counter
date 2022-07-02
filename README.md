@@ -5,6 +5,7 @@
    1. [Ideal machine configuration](#machine-config)
    2. [Setup](#setup)
    3. [Running the compile-time reachability tool on the tests](#run)
+   3. [Understanding the output of the tool ](#understand)
 
 
 # Getting started <a name="getting-started"></a>
@@ -49,3 +50,10 @@ Follow these steps for building and running the equivalence checker based on Cou
    ```
    /home/sbansal/counter/superopt/build/etfg_x64/identify_durables --call-context-depth 2 /home/sbansal/couunter/tests/c/linked_list.c
    ```
+
+## Understanding the output of the tool <a name="understand"></a>
+
+1. The programmer can annotate global variables as _durable roots_ by using the `pmem_` prefix in their names.  For example, the `pmem\_root` global variable in `tests/c/binary_search_tree.c`
+2. The programmer could also annotate heap allocation statements as _durable roots_ by using the `pmem_malloc()` function.  For example, the use of `pmem_malloc()` in the `insert2()` function in `tests/c/linked_list.c` indicates that all allocations made through that statement would be allocated in persistent memory.
+3. Upon running the tool on the source code file, it outputs all the allocation statements (represented as bounded-depth call-stacks) that are reachable through the annotated durable roots.
+4. The call-context-depth parameter controls the maximum depth of the call-stacks used to identify the allocation statements.  For example, a call-context-depth of 2 will produce bounded-depth call-stacks of depth 2 or smaller.
