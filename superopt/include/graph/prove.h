@@ -1,8 +1,5 @@
 #pragma once
 
-#include <list>
-#include <fstream>
-
 #include "support/globals_cpp.h"
 #include "support/globals.h"
 #include "support/utils.h"
@@ -151,7 +148,7 @@ is_expr_equal_using_lhs_set_and_precond_helper(context *ctx, list<guarded_pred_t
   expr_ref suffixpath_expr = src_tfg.tfg_suffixpath_get_expr(src_suffixpath);
   suffixpath_expr = ctx->expr_eliminate_constructs_that_the_solver_cannot_handle(suffixpath_expr);
 
-  expr_ref avail_expr = src_avail_exprs.avail_exprs_and(expr_true(ctx), src_tfg.get_locid2expr_map()/*, src_suffixpath*/);
+  expr_ref avail_expr = avail_exprs_and(expr_true(ctx), src_avail_exprs, src_tfg.get_locid2expr_map());
   avail_expr = ctx->expr_eliminate_constructs_that_the_solver_cannot_handle(avail_expr);
 
   expr_ref sprel_map_pair_expr = sprel_map_pair_and_var_locs(sprel_map_pair, expr_true(ctx)); // in prove, we add the non-var locs
@@ -658,11 +655,11 @@ output_lhs_set_guard_etc_and_src_dst_to_file(ostream &fo, list<guarded_pred_t> c
   fo << "=src_suffixpath" << endl;
   src_suffixpath->graph_edge_composition_to_stream(fo, "=src_suffixpath");
   fo << "=src_avail_exprs" << endl;
-  src_avail_exprs.avail_exprs_to_stream(fo, src_tfg.get_locid2expr_map());
+  src_avail_exprs.to_stream(fo, src_tfg.get_locid2expr_map());
   fo << "=aliasing_constraints" << endl;
   fo << alias_cons.to_string_for_eq();
   fo << "=memlabel_map" << endl;
-  fo << memlabel_map_to_string(memlabel_map, "");
+  memlabel_map_to_stream(fo, memlabel_map, "");
   fo << "=src" << endl;
   fo << ctx->expr_to_string_table(src, true) << endl;
   fo << "=dst" << endl;

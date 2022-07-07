@@ -1,8 +1,5 @@
 #pragma once
-#include <unordered_map>
-#include <assert.h>
-#include <memory>
-#include <sstream>
+
 
 //should be used if the number of unique T objects is known to be bounded (for bounded memory consumption), e.g., reg_identifiers
 template <typename T> class manager_raw

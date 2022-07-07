@@ -1,12 +1,5 @@
 #pragma once
 
-#include <stdbool.h>
-#include <list>
-#include <map>
-#include <stack>
-#include <string>
-#include <vector>
-
 #include "support/log.h"
 #include "support/src-defs.h"
 

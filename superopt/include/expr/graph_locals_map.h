@@ -1,8 +1,5 @@
 #pragma once
 
-#include <map>
-#include <string>
-
 #include "support/types.h"
 
 #include "expr/expr.h"
@@ -22,10 +19,6 @@ public:
   { }
   graph_locals_map_t(map<allocsite_t, graph_local_t> const& m) : m_map(m)
   { }
-  graph_locals_map_t(graph_locals_map_t const& other)
-  {
-    m_map = other.m_map;
-  }
   graph_locals_map_t(istream& is);
   set<allocsite_t> graph_locals_map_get_allocsites() const;
   graph_local_t const& at(allocsite_t const& l) const

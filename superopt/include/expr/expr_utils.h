@@ -1,5 +1,7 @@
 #pragma once
 
+#include "support/str_utils.h"
+
 #include "expr/expr.h"
 #include "gsupport/rodata_map.h"
 #include "gsupport/graph_symbol.h"
@@ -213,6 +215,7 @@ void expr_debug_check(expr_ref e, consts_struct_t const *cs);
 expr_ref expr_replace_fcall_with_const(expr_ref e);
 bool expr_contains_input_stack_pointer_const(expr_ref e);
 
+bool is_mem_alloc_sort(expr_ref const& e);
 bool is_mem_data_sort(expr_ref const& e);
 bool is_dst_expr(expr_ref const& e);
 expr_ref expr_rename_symbols_to_dst_symbol_addrs(expr_ref const& e);
@@ -241,5 +244,10 @@ vector<sort_ref> expr_vector_to_sort_vector(expr_vector const& ev);
 
 bool expr_is_simple_select(expr_ref const& e);
 expr_set expr_get_simple_selects(expr_ref const& e);
+
+expr_ref expr_substitute_iteratively_using_submap(expr_ref e, expr_submap_t const& submap);
+
+bool expr_represents_signed_inequality(expr_ref const& e);
+bool expr_represents_unsigned_inequality(expr_ref const& e);
 
 }

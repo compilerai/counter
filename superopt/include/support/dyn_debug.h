@@ -3,7 +3,6 @@
 #ifdef __cplusplus
 #include <string>
 #include <iostream>
-
 #endif
 
 extern bool dyn_debug_flag;

@@ -1,9 +1,5 @@
 #pragma once
 
-#include <string>
-#include <list>
-#include <map>
-
 #include "support/dyn_debug.h"
 
 #include "expr/expr.h"

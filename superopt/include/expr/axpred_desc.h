@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include "support/manager.h"
 
 namespace eqspace {

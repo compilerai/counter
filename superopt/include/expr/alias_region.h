@@ -1,9 +1,4 @@
 #pragma once
-#include <set>
-#include <vector>
-#include <string>
-#include <map>
-#include <stdlib.h>
 
 #include "support/types.h"
 #include "support/src_tag.h"

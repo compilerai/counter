@@ -1,12 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <cassert>
-#include <sstream>
-#include <set>
-#include <memory>
-
 #include "support/utils.h"
 #include "support/log.h"
 #include "support/searchable_queue.h"
@@ -78,8 +71,8 @@ public:
   //returns true if all asserts are still provable
   bool recompute_invariants_at_all_pcs();
 
-  //returns true if all asserts are still provable
-  void update_invariant_state_over_edge(dshared_ptr<T_E const> const &e, string const& graph_debug_name /*for debugging*/);
+  //returns true if invariant state was weakened
+  bool update_invariant_state_over_edge(dshared_ptr<T_E const> const &e, string const& graph_debug_name /*for debugging*/);
 
   bool check_monotonicity_of_invariants(T_PC const& p, int start_check_at_num_ces, set<expr_group_t::expr_idx_t> const& bv_exprs_to_remove);
   void check_CEs_satisfy_preds(list<nodece_ref<T_PC, T_N, T_E>> const& cur_ces, unordered_set<shared_ptr<T_PRED const>> const& preds);

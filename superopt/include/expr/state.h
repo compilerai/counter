@@ -1,8 +1,5 @@
 #pragma once
 
-#include <vector>
-#include <list>
-
 #include "support/debug.h"
 
 #include "expr/expr.h"
@@ -278,9 +275,13 @@ public:
   expr_ref state_contains_alloca_ptr_expr() const;
   expr_ref state_contains_alloca_expr() const;
   expr_ref state_contains_dealloc_expr() const;
+  map<string_ref,expr_ref> state_contains_mem_data_mappings() const;
+  map<string_ref,expr_ref> state_contains_mem_alloc_mappings() const;
 
   string_ref state_identify_sp_version_candidate() const;
   bool state_has_non_sp_version_stack_pointer_update() const;
+
+  expr_ref state_get_assigned_sp_version_expr() const;
 
   static void get_exreg_details_from_name(string name, int *group, int *regnum);
   static map<expr_id_t, pair<expr_ref, expr_ref>> create_submap_from_value_expr_map(/*map<string_ref, expr_ref> const &from_value_expr_map, */map<string_ref, expr_ref> const &to_value_expr_map);

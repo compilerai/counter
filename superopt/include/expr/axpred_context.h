@@ -4,8 +4,8 @@
 #include <functional>
 #include <map>
 #include <string>
-
 #include "boost/optional.hpp"
+
 #include "yaml-cpp/yaml.h"
 
 #include "expr/axpred_parser.h"
@@ -46,8 +46,8 @@ private:
   void init(const std::string &AxsFile);
 
   // Returns S such that Concl[S] = AxExpr
-  boost::optional<SubstTy> computeEqualizerSubst(expr_ref Concl,
-                                                 expr_ref AxExpr) const;
+  optional<SubstTy> computeEqualizerSubst(expr_ref Concl,
+                                          expr_ref AxExpr) const;
   bool computeEqualizerSubstImpl(expr_ref Concl, expr_ref AxExpr,
                                  SubstTy &Subst) const;
 

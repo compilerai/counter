@@ -1,13 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <assert.h>
-#include <sstream>
-#include <set>
-#include <stack>
-#include <memory>
-
 #include "expr/context.h"
 #include "expr/call_context.h"
 #include "expr/pc.h"

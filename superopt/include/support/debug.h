@@ -2,14 +2,21 @@
 #define DEBUG_H
 
 #include <sys/time.h>
+#include <execinfo.h>
+#include <unistd.h>
+#include <assert.h>
+#include "support/types.h"
+
+#ifdef __cplusplus
+// automatically included PCH
+#include <memory>
+#else
 #include <assert.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <execinfo.h>
-#include <unistd.h>
-#include "support/types.h"
+#endif
 
 /* GCC lets us add "attributes" to functions, function
  *    parameters, etc. to indicate their properties.

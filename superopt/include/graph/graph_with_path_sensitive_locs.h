@@ -1,13 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <string>
-#include <cassert>
-#include <sstream>
-#include <set>
-#include <memory>
-
 #include "support/utils.h"
 #include "support/log.h"
 #include "support/timers.h"
@@ -182,19 +174,18 @@ public:
     if (!orig_locid_to_cloned_locid_map_for_input_path_id.size())
       return;
     /*if(this->has_avail_exprs_at_pc(pp.first)) */{
-      map<graph_loc_id_t, avail_exprs_val_t> new_avail_exprs;
-      for (auto const& m : this->get_avail_exprs/*_at_pc*/(/*pp.first*/).avail_exprs_get_loc_map())
-      {
-        if (orig_locid_to_cloned_locid_map_for_input_path_id.count(m.first)) {
-          auto cloned_locid = orig_locid_to_cloned_locid_map_for_input_path_id.at(m.first);
+      remove_cv_t<remove_reference_t<decltype((this->get_avail_exprs().get_map()))>> new_avail_exprs_map;
+      for (auto const& [locid,av_val] : this->get_avail_exprs().get_map()) {
+        if (orig_locid_to_cloned_locid_map_for_input_path_id.count(locid)) {
+          auto cloned_locid = orig_locid_to_cloned_locid_map_for_input_path_id.at(locid);
           if (cloned_locid != GRAPH_LOC_ID_INVALID) {
-            new_avail_exprs.insert(make_pair(cloned_locid, m.second));
+            new_avail_exprs_map.emplace(cloned_locid,av_val);
           }
         } else {
-          new_avail_exprs.insert(m);
+          new_avail_exprs_map.emplace(locid,av_val);
         }
       }
-      m_path_sensitive_avail_exprs[pp] = avail_exprs_t(new_avail_exprs);
+      m_path_sensitive_avail_exprs[pp] = avail_exprs_t(new_avail_exprs_map);
       if (m_path_sensitive_sprels.count(pp))
         m_path_sensitive_sprels.erase(pp);
       m_path_sensitive_sprels.insert(make_pair(pp, this->get_sprel_map_from_avail_exprs(this->get_avail_exprs_for_path_id(pp), this->get_locs(), this->get_locid2expr_map())));

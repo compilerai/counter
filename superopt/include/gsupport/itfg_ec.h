@@ -7,14 +7,6 @@
 #include "support/types.h"
 #include "support/serpar_composition.h"
 
-#include <map>
-#include <list>
-#include <assert.h>
-#include <sstream>
-#include <set>
-#include <stack>
-#include <memory>
-
 namespace eqspace {
 
 class itfg_ec_node_t : public serpar_composition_node_t<itfg_edge_ref>

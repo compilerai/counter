@@ -1,15 +1,5 @@
 #pragma once
 
-#include <vector>
-#include <list>
-#include <stack>
-#include <string>
-#include <map>
-#include <set>
-#include <functional>
-#include <unordered_set>
-#include <stdlib.h>
-
 #include "support/types.h"
 #include "support/manager.h"
 #include "support/free_id_list.h"
@@ -17,7 +7,8 @@
 #include "expr/langtype.h"
 #include "expr/expr.h"
 //#include "expr/solver_interface.h"
-#include "expr/memlabel_map.h"
+//#include "expr/memlabel_map.h"
+#include "expr/mlvarname.h"
 #include "expr/axpred_desc.h"
 #include "expr/fsignature.h"
 #include "expr/proof_result.h"
@@ -36,6 +27,7 @@ class context_cache_t;
 struct consts_struct_t;
 //class callee_summary_t;
 class sprel_map_t;
+class graph_memlabel_map_t;
 class sprel_map_pair_t;
 class counter_example_t;
 class state;
@@ -92,7 +84,7 @@ public:
     unsigned unroll_factor = 1;
     unsigned dst_unroll_factor = 1;
     unsigned path_exprs_lookahead = 1;
-    bool enable_inequality_inference = false;
+    bool disable_constant_inequality_inference = false;
     bool anchor_loop_tail = false;
     bool consider_non_vars_for_dst_ineq = false;
     bool use_sage = false;
@@ -112,8 +104,9 @@ public:
     bool enable_CE_fuzzing = false;
     std::string axpreds_file = "";
     std::string axpreds_debug_file = "";
-    bool use_only_debug_headers_for_lsprels = false;
+    bool use_esp_versions_for_guessing_lsprels = true;
     bool do_not_use_debug_headers_for_lsprels = false;
+    bool use_compile_log_for_guessing_lsprels = true;
     bool enable_semantic_simplification_in_prove_path = false;
     bool disable_SSA = false;
     bool disable_ssa_cloning = false;
@@ -465,11 +458,15 @@ public:
   bool expr_is_rodata_memlabel_bound(expr_ref const& e) const;
   string_ref get_key_for_memlabel_lb(memlabel_t const& ml) const;
   string_ref get_key_for_memlabel_ub(memlabel_t const& ml) const;
-  string_ref get_key_for_memlabel_is_absent(memlabel_t const& ml) const;
-  //string_ref get_key_for_alloca_seen(local_id_t lid);
   expr_ref get_lb_expr_for_memlabel(memlabel_t const& ml);
   expr_ref get_ub_expr_for_memlabel(memlabel_t const& ml);
-  expr_ref get_is_absent_expr_for_memlabel(memlabel_t const& ml);
+
+  string_ref get_key_for_local_memlabel_lb(memlabel_t const& ml, string const& srcdst_keyword) const;
+  string_ref get_key_for_local_memlabel_ub(memlabel_t const& ml, string const& srcdst_keyword) const;
+  string_ref get_key_for_local_memlabel_is_absent(memlabel_t const& ml, string const& srcdst_keyword) const;
+  expr_ref get_lb_expr_for_local_memlabel(memlabel_t const& ml, string const& srcdst_keyword);
+  expr_ref get_ub_expr_for_local_memlabel(memlabel_t const& ml, string const& srcdst_keyword);
+  expr_ref get_is_absent_expr_for_local_memlabel(memlabel_t const& ml, string const& srcdst_keyword);
   //expr_ref get_alloca_seen_expr_for_local(local_id_t lid, sort_ref const& s);
 
   //pair<vector<sort_ref>, sort_ref> get_argument_retval_sort_for_op(expr::operation_kind op, container_type_ref const& container_type);
@@ -648,8 +645,6 @@ public:
   expr_ref expr_substitute_using_sprel_map(expr_ref const &in, sprel_map_t const &sprel_map/*, map<graph_loc_id_t, expr_ref> const &locid2expr_map*/);
 
   expr_ref memlabel_var(string const &graph_name, int varnum);
-  mlvarname_t memlabel_varname(string const &graph_name, int varnum);
-  mlvarname_t memlabel_varname_for_fcall(string const &graph_name, int varnum);
 
   //expr_ref expr_resize_farg_expr_for_function_calling_conventions(expr_ref const &e);
   expr_ref get_fun_expr(vector<sort_ref> const &args_type, sort_ref ret_type);
@@ -759,9 +754,10 @@ public:
   string counter_example_xml_print(counter_example_t const& ce, graph_symbol_map_t const& symbol_map, graph_locals_map_t const& locals_map, context::xml_output_format_t xml_output_format, string const& prefix = "");
   expr_ref get_riprel();
   bool expr_represents_alloca_ptr_fn(expr_ref const& e) const;
-  bool sort_represents_mem_alloc_sort() const;
+  bool expr_represents_alloca_size_fn(expr_ref const& e) const;
 
   string get_next_ce_name(string const& prefix);
+  long get_next_memslot_varnum();
 
   static void expr_visitor_previsit_mem_only(expr_ref const &e, int interesting_args[], int &num_interesting_args);
   static void expr_visitor_previsit_mem_alloc_only(expr_ref const &e, int interesting_args[], int &num_interesting_args);
@@ -795,6 +791,7 @@ private:
 
   // saved/restored state
   long m_global_ce_count = 0;
+  long m_global_memslot_varnum = 0;
 };
 
 expr_ref assembly_fcall_arg_on_stack(expr_ref const& mem, expr_ref const& mem_alloc, expr_ref const &stackpointer, size_t argnum/*, graph_memlabel_map_t &memlabel_map*/, string const &graph_name, long &max_memlabel_varnum);

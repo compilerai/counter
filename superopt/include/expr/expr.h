@@ -1,15 +1,5 @@
 #pragma once
 
-#include <stdlib.h>
-#include <vector>
-#include <list>
-#include <stack>
-#include <string>
-#include <map>
-#include <set>
-#include <functional>
-#include <unordered_set>
-
 #include "support/types.h"
 #include "support/utils.h"
 #include "support/mybitset.h"
@@ -238,7 +228,6 @@ enum {
 };
 enum {
   ALLOCA_SIZE_FN_ARGNUM_LOCAL_ALLOC_COUNT = 0,
-  ALLOCA_SIZE_FN_ARGNUM_MEM_ALLOC,
   ALLOCA_SIZE_FN_ARGNUM_MEMLABEL,
   ALLOCA_SIZE_FN_ARGS
 };
@@ -256,6 +245,11 @@ enum {
   OP_DEALLOC_ARGNUM_SIZE,
   OP_DEALLOC_ARGS
 };
+static_assert(OP_ALLOCA_ARGNUM_MEM_ALLOC == OP_DEALLOC_ARGNUM_MEM_ALLOC, "assumption");
+static_assert(OP_ALLOCA_ARGNUM_MEMLABEL  == OP_DEALLOC_ARGNUM_MEMLABEL, "assumption");
+static_assert(OP_ALLOCA_ARGNUM_ADDR      == OP_DEALLOC_ARGNUM_ADDR, "assumption");
+static_assert(OP_ALLOCA_ARGNUM_SIZE      == OP_DEALLOC_ARGNUM_SIZE, "assumption");
+
 enum {
   OP_SELECT_SHADOW_BOOL_ARGNUM_MEM,
   OP_SELECT_SHADOW_BOOL_ARGNUM_ADDR,
@@ -611,6 +605,7 @@ public:
   constant_value const *get_const_value_ptr() const { return m_const_value2.get(); }
   bool expr_represents_alignment_mask_on_expr(expr_ref const& e) const;
   bool expr_represents_alloca_ptr_construction() const;
+  bool expr_represents_alloca_size_construction() const;
 
 private:
   string get_formatted_constant() const;

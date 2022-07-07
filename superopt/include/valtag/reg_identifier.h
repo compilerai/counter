@@ -1,21 +1,11 @@
-#ifndef __REG_IDENTIFIER_H
-#define __REG_IDENTIFIER_H
-#include <map>
-#include <string>
-#include <sstream>
-#include <assert.h>
-#include <iostream>
-#include <map>
-#include <string>
-#include <cstdlib>
-#include <memory>
-#include "boost/lexical_cast.hpp"
-#include <bits/stdc++.h>
+#pragma once
+
 #include "support/types.h"
 #include "cutils/chash.h"
 #include "valtag/valtag.h"
 #include "support/debug.h"
 #include "support/utils.h"
+#include "support/str_utils.h"
 
 
 
@@ -412,5 +402,3 @@ private:
 //reg_identifier_t const &reg_identifier_invalid();
 reg_identifier_t get_reg_identifier_for_regname(std::string const &regname);
 void reg_identifier_map_insert(std::map<reg_identifier_t, reg_identifier_t> &haystack, std::pair<reg_identifier_t, reg_identifier_t> const &needle);
-
-#endif

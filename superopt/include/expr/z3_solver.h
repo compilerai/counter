@@ -150,7 +150,8 @@ public:
 
   proof_result_t solver_satisfiable(expr_ref e, const query_comment& qc, relevant_memlabels_t const& relevant_memlabels/*, list<counter_example_t> &counter_examples*/) override;
   proof_result_t solver_provable(expr_ref e, const query_comment& qc, relevant_memlabels_t const& relevant_memlabels/*, list<counter_example_t> &counter_examples*/) override;
-  expr_ref solver_simplify(expr_ref, consts_struct_t const &cs) override;
+  expr_ref solver_simplify(expr_ref const&) override;
+  bool solver_prove_internal(expr_ref const&) override;
 
   //void evaluate(expr_ref);
 
@@ -178,7 +179,11 @@ private:
   pair<solver_res,duration_us_t> spawn_smt_query(string filename, unsigned timeout_secs, list<counter_example_t> &counter_examples);
 
   void get_counter_example(int recv_channel, expr_ref e_expr);
-  expr_ref simplify_internal(expr_ref, consts_struct_t const &);
+
+  expr_ref simplify_internal(expr_ref const&);
+  proof_status_t prove_internal(expr_ref const&);
+
+  pair<expr_ref,map<expr_id_t,expr_pair>> solver_get_substituted_expr_and_submap(expr_ref const& e, bool substitute_ineq=true);
 
   z3::solver m_solver;
   expr_query_cache m_expr_query_cache;

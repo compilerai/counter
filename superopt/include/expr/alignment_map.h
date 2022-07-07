@@ -1,8 +1,5 @@
 #pragma once
 
-#include <map>
-#include <string>
-
 #include "expr/memlabel_obj.h"
 #include "support/types.h"
 #include "gsupport/graph_symbol.h"

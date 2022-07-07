@@ -1,8 +1,7 @@
 #pragma once
-#include <map>
-#include <string>
 
 #include "graph/graph_cp_location.h"
+#include "graph/graph_locs_map.h"
 
 namespace eqspace {
 
@@ -59,7 +58,7 @@ public:
     m_memlabel->get_ml().memlabel_to_stream(os);
     os << "\n=nbytes\n" << m_nbytes << endl;
   }
-  static vector<addr_that_may_differ_t> compute_addrs_that_may_differ(memlabel_t const& ml, map<graph_loc_id_t, graph_cp_location> const& locs, context *ctx);
+  static vector<addr_that_may_differ_t> compute_addrs_that_may_differ(memlabel_t const& ml, graph_locs_map_t const& locs, context *ctx);
 };
 
 }

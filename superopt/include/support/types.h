@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "support/string_ref.h"
 #include "support/config-all.h"
 #endif
 
@@ -243,18 +242,17 @@ typedef int exreg_group_id_t;
 typedef int exreg_id_t;
 typedef size_t offset_t;
 #ifdef __cplusplus
-using mlvarname_t = string_ref;
 //using mlvarname_t = string;
 class transmap_t;
 typedef size_t align_t;
 typedef std::pair<transmap_t, std::vector<transmap_t>> in_out_tmaps_t;
 //typedef std::map<symbol_id_t,std::tuple<std::string_ref,size_t,bool>> graph_symbol_map_t;
-using bcfile_t = string;
-using asmfile_t = string;
-using objfile_t = string;
-using proof_file_t = string;
-using harvest_file_t = string;
-using harvest_log_t = string;
+using bcfile_t = std::string;
+using asmfile_t = std::string;
+using objfile_t = std::string;
+using proof_file_t = std::string;
+using harvest_file_t = std::string;
+using harvest_log_t = std::string;
 using section_idx_t = int;
 using clone_prefix_t = std::string;
 #endif

@@ -1,13 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <map>
-#include <list>
-#include <string>
-#include <cassert>
-#include <sstream>
-#include <set>
-
 #include "support/utils.h"
 #include "support/log.h"
 #include "support/timers.h"
@@ -23,10 +15,14 @@
 #include "graph/lr_status.h"
 #include "graph/lr_map.h"
 #include "graph/alias_dfa.h"
-#include "graph/available_exprs_alias_analysis_combo.h"
+#include "graph/sp_version_relations.h"
+//#include "graph/available_exprs_alias_analysis_combo.h"
 #include "graph/context_sensitive_ftmap_dfa_val.h"
 
 namespace eqspace {
+
+template<typename T_PC, typename T_N, typename T_E, typename T_PRED>
+class available_exprs_alias_analysis_combo_val_t;
 
 using namespace std;
 template<typename T_PC, typename T_N, typename T_E, typename T_PRED>
@@ -70,7 +66,7 @@ public:
   }
 
 
-  void graph_populate_non_memslot_locs(map<graph_loc_id_t, graph_cp_location> const &llvm_locs);
+  void graph_populate_non_memslot_locs(map<graph_loc_id_t,graph_cp_location> const& old_locs);
 
 
   //virtual callee_summary_t get_callee_summary_for_nextpc(nextpc_id_t nextpc_num, size_t num_fargs) const = 0;
@@ -133,19 +129,18 @@ public:
   //  this->graph_preds_visit_exprs({p}, f);
   //}
 
-  set<graph_loc_id_t> graph_add_location_slots_using_state_mem_acc_map(graph_locs_map_t& new_locs/*map<graph_loc_id_t, graph_cp_location> &new_locs, map<graph_loc_id_t, expr_ref>& locid2expr_map, map<expr_id_t, graph_loc_id_t>& exprid2locid_map*/, set<eqspace::state::mem_access> const &mem_acc, map<graph_loc_id_t, graph_cp_location> const &old_locs, sprel_map_pair_t const& sprel_map_pair, graph_memlabel_map_t const& memlabel_map, map<graph_loc_id_t, lr_status_ref> const& lr_status_map) const;
+  set<graph_loc_id_t> graph_add_location_slots_using_state_mem_acc_map(graph_locs_map_t& new_locs/*map<graph_loc_id_t, graph_cp_location> &new_locs, map<graph_loc_id_t, expr_ref>& locid2expr_map, map<expr_id_t, graph_loc_id_t>& exprid2locid_map*/, set<eqspace::state::mem_access> const &mem_acc, map<graph_loc_id_t, graph_cp_location> const &old_locs, sprel_map_pair_t const& sprel_map_pair, sp_version_relations_lattice_t const& spvr_lattice, graph_memlabel_map_t const& memlabel_map, map<graph_loc_id_t, lr_status_ref> const& lr_status_map, bool coarsen_ro_memlabels_to_rodata = false) const;
 
   void graph_update_callee_memlabels_in_expr(expr_ref const& e, graph_memlabel_map_t& memlabel_map, memlabel_t const& ml_readable, memlabel_t const& ml_writeable) const;
 
-  ///*map<graph_loc_id_t, graph_cp_location>*/void update_locs_based_on_edge(shared_ptr<T_E const> const& e, available_exprs_alias_analysis_combo_val_t<T_PC,T_N,T_E,T_PRED> const& in, map<graph_loc_id_t, graph_cp_location>& locs, map<graph_loc_id_t, expr_ref>& locid2expr_map, graph_memlabel_map_t const& memlabel_map, map<graph_loc_id_t, lr_status_ref> const& lr_status_map) const;
-  set<graph_loc_id_t> add_new_locs_based_on_edge(dshared_ptr<T_E const> const& e, graph_locs_map_t& new_locs/*map<graph_loc_id_t, graph_cp_location>& locs, map<graph_loc_id_t, expr_ref>& locid2expr_map, map<expr_id_t, graph_loc_id_t>& exprid2locid_map*/, sprel_map_pair_t const& sprel_map_pair, graph_memlabel_map_t const& memlabel_map, map<graph_loc_id_t, lr_status_ref> const& lr_status_map) const;
-  void update_memlabels_for_memslot_locs(call_context_ref const& cc, graph_locs_map_t& locs, map<expr_id_t, graph_loc_id_t> const& exprid2locid_map/*, map<graph_loc_id_t, expr_ref>& locid2expr_map*/, map<graph_loc_id_t, lr_status_ref> const& lr_status_map/*, avail_exprs_t const& avail_exprs, graph_memlabel_map_t const& memlabel_map*/) const;
+  set<graph_loc_id_t> add_new_locs_based_on_edge(dshared_ptr<T_E const> const& e, graph_locs_map_t& new_locs, sprel_map_pair_t const& sprel_map_pair, sp_version_relations_lattice_t const& spvr_lattice, graph_memlabel_map_t const& memlabel_map, map<graph_loc_id_t, lr_status_ref> const& lr_status_map, bool coarsen_ro_memlabels_to_rodata, map<graph_loc_id_t,graph_cp_location> const& old_locs) const;
+  void update_memlabels_for_memslot_locs(call_context_ref const& cc, graph_locs_map_t& locs, map<graph_loc_id_t, lr_status_ref> const& lr_status_map/*, avail_exprs_t const& avail_exprs, graph_memlabel_map_t const& memlabel_map*/, bool coarsen_ro_memlabels_to_rodata = false) const;
 
   void
-  edge_update_memlabel_map_for_mlvars(call_context_ref const& cc, dshared_ptr<T_E const> const& e, map<graph_loc_id_t, lr_status_ref> const& in, bool update_callee_memlabels/*, callee_rw_memlabels_t::get_callee_rw_memlabels_fn_t get_callee_rw_memlabels*/, graph_memlabel_map_t& memlabel_map, map<graph_loc_id_t, graph_cp_location> const& locs, map<expr_id_t, graph_loc_id_t> const& exprid2locid_map, sprel_map_pair_t const& sprel_map_pair) const;
+  edge_update_memlabel_map_for_mlvars(call_context_ref const& cc, dshared_ptr<T_E const> const& e, map<graph_loc_id_t, lr_status_ref> const& in, bool update_callee_memlabels, bool coarsen_ro_memlabels_to_rodata/*, callee_rw_memlabels_t::get_callee_rw_memlabels_fn_t get_callee_rw_memlabels*/, graph_memlabel_map_t& memlabel_map, graph_locs_map_t const& locs, sprel_map_pair_t const& sprel_map_pair, sp_version_relations_lattice_t const& spvr_lattice) const;
 
 
-  void populate_gen_and_kill_sets_for_edge(dshared_ptr<T_E const> const &e, map<graph_loc_id_t, graph_cp_location> const& locs, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair/*avail_exprs_t const& avail_exprs, map<graph_loc_id_t, expr_ref> const& locid2expr_map*/, map<graph_loc_id_t, expr_ref> &gen_set, set<graph_loc_id_t> &killed_locs) const;
+  void populate_gen_and_kill_sets_for_edge(dshared_ptr<T_E const> const &e, graph_locs_map_t const& locs, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair, map<graph_loc_id_t, expr_ref> &gen_set, set<graph_loc_id_t> &killed_locs) const;
 
 
   //void split_memory_in_graph_initialize(bool update_callee_memlabels, map<graph_loc_id_t, graph_cp_location> const &llvm_locs = map<graph_loc_id_t, graph_cp_location>())
@@ -200,21 +195,27 @@ public:
     m_lr_status_map = new_lr_status_map;
   }
 
+  set<memlabel_ref> graph_get_non_arg_local_memlabels() const;
+
+  virtual bool graph_expr_is_ssa_var(expr_ref const& e) const override;
+  virtual bool is_llvm_graph() const { return false; }
+  virtual set<expr_ref> get_parent_sp_versions_of(expr_ref const& e) const { return {}; }
+  virtual expr_ref graph_get_upper_bound_spv_for_ml(memlabel_t const& ml) const { return nullptr; }
+  virtual set<expr_ref> graph_get_all_sp_versions() const { return {}; }
+  virtual bool graph_expr_refers_to_alloca_addr(expr_ref const& e) const { return false; }
+
 protected:
 
-  graph_loc_id_t get_loc_id_for_memmask(memlabel_t const &ml) const;
   reachable_memlabels_map_t compute_reachable_memlabels_map(map<graph_loc_id_t, lr_status_ref> const& in) const;
   memlabel_t get_reachable_memlabels(map<graph_loc_id_t, lr_status_ref> const& in, memlabel_t const &ml) const;
-  map<graph_loc_id_t,expr_ref>
-  compute_simplified_loc_exprs_for_edge(dshared_ptr<T_E const> const& e, set<graph_loc_id_t> const& locids, map<graph_loc_id_t, graph_cp_location> const& locs, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair/*avail_exprs_t const& avail_exprs, map<graph_loc_id_t, expr_ref> const& locid2expr_map*/) const;
+  map<graph_loc_id_t,expr_ref> compute_simplified_loc_exprs_for_edge(dshared_ptr<T_E const> const& e, graph_locs_map_t const& locs, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair) const;
 
+  map<graph_loc_id_t,expr_ref> compute_locs_potentially_written_on_edge(dshared_ptr<T_E const> const& e, graph_locs_map_t const& locs, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair) const;
 
-  map<graph_loc_id_t,expr_ref> compute_locs_potentially_written_on_edge(dshared_ptr<T_E const> const& e, map<graph_loc_id_t, graph_cp_location> const& locs, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair/*avail_exprs_t const& avail_exprs, map<graph_loc_id_t, expr_ref> const& locid2expr_map*/) const;
+  map<graph_loc_id_t, lr_status_ref> compute_new_lr_status_on_locs(call_context_ref const& cc, dshared_ptr<T_E const> const &e, map<graph_loc_id_t, lr_status_ref> const &in, graph_locs_map_t const& locs_map, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair) const;
+  map<string, expr_ref> graph_get_mem_simplified_at_pc_for_locs(state const& to_state, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair) const;
 
-  map<graph_loc_id_t, lr_status_ref> compute_new_lr_status_on_locs(call_context_ref const& cc, dshared_ptr<T_E const> const &e, map<graph_loc_id_t, lr_status_ref> const &in, map<graph_loc_id_t, graph_cp_location> const& locs, map<expr_id_t, graph_loc_id_t> const& exprid2locid_map, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair/*avail_exprs_t const& avail_exprs, map<graph_loc_id_t, expr_ref> const& locidexpr_map*/) const;
-  map<string, expr_ref> graph_get_mem_simplified_at_pc_for_locs(/*T_PC const& p, */state const& to_state, map<graph_loc_id_t, graph_cp_location> const& locs, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair/*avail_exprs_t const& avail_exprs, map<graph_loc_id_t, expr_ref> const& locid2expr_map*/) const;
-
-  expr_ref graph_get_value_simplified_using_mem_simplified_at_pc_for_locs(dshared_ptr<T_E const> const& e, state const& to_state, graph_loc_id_t l, map<string, expr_ref> const& mem_simplified, map<graph_loc_id_t, graph_cp_location> const& locs, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair/*avail_exprs_t const& avail_exprs, map<graph_loc_id_t, expr_ref> const& locid2expr_map*/) const;
+  expr_ref graph_get_value_simplified_using_mem_simplified_at_pc_for_locs(dshared_ptr<T_E const> const& e, state const& to_state, graph_loc_id_t l, map<string, expr_ref> const& mem_simplified, graph_locs_map_t const& locs_map, graph_memlabel_map_t const& memlabel_map, sprel_map_pair_t const& sprel_map_pair) const;
   lr_status_ref compute_lr_status_for_expr(call_context_ref const& cc, expr_ref const& e, map<expr_id_t, graph_loc_id_t> const &exprid2locid_map, map<graph_loc_id_t, lr_status_ref> const &prev_lr) const;
 
   set<graph_loc_id_t> get_start_relevant_locids_for_pointsto_analysis(bool function_is_program_entry) const;
@@ -245,7 +246,7 @@ private:
 
   void read_alias_analysis(istream& in);
 
-  void populate_memlabel_map_for_expr_and_loc_status(call_context_ref const& cc, expr_ref const &e, map<graph_loc_id_t, graph_cp_location> const &locs, map<expr_id_t, graph_loc_id_t> const &exprid2locid_map, map<graph_loc_id_t, lr_status_ref> const &in, sprel_map_pair_t const &sprel_map_pair/*, set<memlabel_ref> const &relevant_addr_refs*/, graph_arg_regs_t const &argument_regs, graph_symbol_map_t const &symbol_map, graph_locals_map_t const &locals_map, bool update_callee_memlabels/*, callee_rw_memlabels_t::get_callee_rw_memlabels_fn_t get_callee_rw_memlabels*/, graph_memlabel_map_t &memlabel_map/*, std::function<callee_summary_t (nextpc_id_t, int)> get_callee_summary_fn, std::function<graph_loc_id_t (expr_ref const &)> expr2locid_fn*/) const;
+  void populate_memlabel_map_for_expr_and_loc_status(call_context_ref const& cc, expr_ref const &e, graph_locs_map_t const &locs, map<graph_loc_id_t, lr_status_ref> const &in, sprel_map_pair_t const &sprel_map_pair, sp_version_relations_lattice_t const& spvr_lattice/*, set<memlabel_ref> const &relevant_addr_refs*/, graph_arg_regs_t const &argument_regs, graph_symbol_map_t const &symbol_map, graph_locals_map_t const &locals_map, bool update_callee_memlabels, bool coarsen_ro_memlabels_to_rodata/*, callee_rw_memlabels_t::get_callee_rw_memlabels_fn_t get_callee_rw_memlabels*/, graph_memlabel_map_t &memlabel_map/*, std::function<callee_summary_t (nextpc_id_t, int)> get_callee_summary_fn, std::function<graph_loc_id_t (expr_ref const &)> expr2locid_fn*/) const;
 
 private:
 

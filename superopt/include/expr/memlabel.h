@@ -1,10 +1,4 @@
 #pragma once
-#include <set>
-#include <vector>
-#include <string>
-#include <map>
-#include <stdlib.h>
-
 #include "expr/alias_region.h"
 
 using namespace std;
@@ -106,8 +100,9 @@ public:
   size_t get_alias_set_size() const { return m_alias_set.size(); }
   string to_string() const;
   static string memlabel_set_to_string(set<memlabel_ref> const& mls);
-  void memlabel_to_stream(ostream& os) const;
-  void memlabel_from_stream(istream& is);
+  ostream& memlabel_to_stream(ostream& os) const;
+  static memlabel_t memlabel_from_stream(istream& is);
+  static memlabel_t memlabel_from_string(string const& str);
   static bool alias_set_contains_only_readonly_symbols(set<alias_region_t> const &alias_set);
   bool memlabel_contains_only_readonly_symbols() const;
   bool operator<(memlabel_t const &other) const;
@@ -126,6 +121,7 @@ public:
   bool memlabel_is_top() const;
   bool memlabel_is_stack() const;
   bool memlabel_contains_only_stack_or_local() const;
+  bool memlabel_contains_only_stack_and_local() const;
   bool memlabel_is_heap() const;
   bool memlabel_is_rodata() const;
   bool memlabel_is_local() const;
@@ -138,10 +134,12 @@ public:
   bool memlabel_contains_local() const;
   bool memlabel_contains_stack_or_local() const;
   bool memlabel_represents_symbol() const;
+  bool memlabel_represents_rodata() const;
   bool memlabel_contains_symbol() const;
   bool memlabel_contains_arg() const;
   //bool memlabel_get_size(variable_size_t& sz) const;
   bool memlabel_has_symbol(symbol_id_t const& sid) const;
+  bool memlabel_contains(memlabel_t const& needle) const;
   symbol_id_t memlabel_get_symbol_id() const;
   allocstack_t memlabel_get_local_id() const;
   allocstack_t memlabel_get_heap_alloc_id() const;

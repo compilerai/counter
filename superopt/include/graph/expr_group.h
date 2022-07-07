@@ -1,6 +1,4 @@
 #pragma once
-#include <map>
-#include <string>
 
 #include "support/types.h"
 #include "support/bv_const.h"
@@ -26,6 +24,7 @@ class expr_group_t
 {
 public:
   using expr_idx_t = bv_solve_var_idx_t;
+  static expr_idx_t EXPR_IDX_INVALID;
   using expr_group_type_t = enum { EXPR_GROUP_TYPE_ARR_EQ, EXPR_GROUP_TYPE_BV_EQ, EXPR_GROUP_TYPE_BV_INEQ, EXPR_GROUP_TYPE_MEMADDRS_DIFF, EXPR_GROUP_TYPE_HOUDINI, EXPR_GROUP_TYPE_HOUDINI_AXIOM_BASED, EXPR_GROUP_TYPE_HOUDINI_EXPECTS_STABILITY, EXPR_GROUP_TYPE_BV_CONST_INEQ };
 private:
   string_ref m_name;
@@ -78,7 +77,7 @@ public:
         return id;
       }
     }
-    return (expr_idx_t)-1;
+    return EXPR_IDX_INVALID;
   }
 
   bool expr_group_has_ghost_exprs(context* ctx) const

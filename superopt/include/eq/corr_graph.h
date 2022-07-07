@@ -1,12 +1,5 @@
 #pragma once
 
-#include <list>
-#include <vector>
-#include <map>
-#include <deque>
-#include <set>
-#include <chrono>
-
 #include "support/log.h"
 #include "support/mymemory.h"
 #include "support/bv_rank_val.h"
@@ -59,8 +52,7 @@ class corr_graph : public graph_with_correctness_covers<pcpair, corr_graph_node,
 public:
   corr_graph(string_ref const &name, string_ref const& fname, dshared_ptr<eqcheck> const& eq) :
     graph_with_correctness_covers<pcpair, corr_graph_node, corr_graph_edge, predicate>(name->get_str(), fname->get_str(), eq->get_context()/*, eq->eqcheck_get_memlabel_assertions()*/),
-    m_eq(eq), m_src_tfg(tfg_ssa_t::tfg_ssa_construct_from_non_ssa_tfg(eq->get_src_tfg_ptr()->get_ssa_tfg(), dshared_ptr<tfg const>::dshared_nullptr())),
-    m_dst_tfg(tfg_ssa_t::tfg_ssa_construct_from_non_ssa_tfg(eq->get_dst_tfg_ptr()->get_ssa_tfg(), eq->get_src_tfg_ptr()->get_ssa_tfg()))
+    m_eq(eq), m_src_tfg(eq->get_src_tfg_ptr()), m_dst_tfg(eq->get_dst_tfg_ptr())
   {
     tfg const& src_tfg = *(m_src_tfg->get_ssa_tfg());
     tfg const& dst_tfg = *(m_dst_tfg->get_ssa_tfg());
@@ -269,7 +261,7 @@ public:
   }
 
   tfg const& get_dst_tfg() const { return *(m_dst_tfg->get_ssa_tfg()); }
-  //tfg &get_dst_tfg()             { return *m_dst_tfg; }
+  tfg &get_dst_tfg()             { return *(m_dst_tfg->get_ssa_tfg()); }
 
   //void cg_xml_print(ostream& os) const;
   virtual aliasing_constraints_t get_aliasing_constraints_for_edge(dshared_ptr<corr_graph_edge const> const& e) const override;
@@ -332,10 +324,10 @@ public:
     return false;
 
   }
-  virtual list<shared_ptr<predicate const>> get_sp_version_relations_preds_at_pc(pcpair const &pp) const override
+  virtual set<shared_ptr<predicate const>> get_sp_version_relations_preds_at_pc(pcpair const &pp) const override
   {
     auto ret = this->get_src_tfg().get_sp_version_relations_preds_at_pc(pp.get_first());
-    ret.splice(ret.begin(), this->get_dst_tfg().get_sp_version_relations_preds_at_pc(pp.get_second()));
+    set_union(ret, this->get_dst_tfg().get_sp_version_relations_preds_at_pc(pp.get_second()));
     return ret;
   }
 
@@ -487,7 +479,8 @@ public:
   {
     ASSERT(cc == call_context_t::call_context_null());
     graph_memlabel_map_t memlabel_map = this->get_src_tfg().get_memlabel_map(cc);
-    memlabel_map_union(memlabel_map, this->get_dst_tfg().get_memlabel_map(cc));
+    //memlabel_map_union(memlabel_map, this->get_dst_tfg().get_memlabel_map(cc));
+    memlabel_map.mlmap_union(this->get_dst_tfg().get_memlabel_map(cc));
     // we no longer maintain separate to_state for CG edges and therefore there is no need to keep memlabel_map for it
     //memlabel_map_intersect(memlabel_map, this->m_memlabel_map);
     /*
@@ -809,6 +802,8 @@ private:
   void populate_cg_edge_contains_repeated_src_tfg_edge(dshared_ptr<corr_graph_edge const> const& new_cg_edge);
 
   set<memlabel_ref> cg_get_nonarg_locals() const;
+
+  void cg_tighten_dst_local_memlabels_using_cg_inferred_relations_for_alloca_edge(dshared_ptr<corr_graph_edge const> const& cg_edge);
 
 protected:
 

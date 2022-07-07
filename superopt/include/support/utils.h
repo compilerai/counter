@@ -1,26 +1,15 @@
 #pragma once
 
-#include <cstdlib>
-#include <list>
-#include <string>
-#include <sstream>
-#include <execinfo.h>
-#include <functional>
+#include <boost/multiprecision/gmp.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 #include <unordered_set>
-#include <set>
 #include <chrono>
-#include <map>
-#include <cassert>
-#include <assert.h>
-#include <typeinfo>
-#include <optional>
+#include <cxxabi.h>
+#include <list>
 
 #include "support/c_utils.h"
 #include "support/types.h"
 #include "support/debug.h"
-
-#include <boost/multiprecision/cpp_int.hpp>
-#include <cxxabi.h>
 
 using namespace boost::multiprecision;
 
@@ -697,9 +686,20 @@ template <typename T>
 string set_to_string(const set<T>& s)
 {
   stringstream ss;
-  ss << "{";
+  ss << "{ ";
   for(const T& e : s)
     ss << e << ", ";
+  ss << "}";
+  return ss.str();
+}
+
+template <typename T,typename TO_STR>
+string set_to_string(const set<T>& s, TO_STR to_str)
+{
+  stringstream ss;
+  ss << "{";
+  for(const T& e : s)
+    ss << to_str(e) << ", ";
   ss << "}";
   return ss.str();
 }
@@ -812,23 +812,8 @@ get_nonzero_bitmap_along_row(vector<vector<T>> const& grid, size_t maxcol)
   return bitmap;
 }
 
-
-void trim(string& s);
-void remove_space(string& s);
-bool stob(string const &s);
-
 size_t vector_max(vector<size_t> const &v);
 unsigned long round_up_to_nearest_power_of_ten(unsigned long in);
-void string_replace(string &haystack, string const &pattern, string const &replacement);
-bool string_contains(string const &haystack, string const &pattern);
-bool string_has_prefix(string const &s, string const &expected_prefix);
-bool string_has_suffix(string const &s, string const &expected_suffix);
-bool is_line(const string& line, const string& keyword);
-bool string_is_numeric(string const &str);
-bool stringIsInteger(string const &s);
-bool stringStartsWith(string const &haystack, string const &needle);
-string string_get_maximal_alpha_prefix(string const& s);
-string lowercase(string const& s);
 
 inline bool file_exists(const std::string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );
@@ -973,38 +958,7 @@ map_get_values_vec(map<K,V> const &m)
   return ret;
 }
 
-
-
 string chrono_duration_to_string(chrono::duration<double> const &d, streamsize const& precision = 2);
-static inline
-string pad_string(string const &in, size_t padlen)
-{
-  size_t len = in.size();
-  if (len >= padlen) {
-    return in;
-  }
-  string space_pad;
-  char pad[padlen - len + 1];
-  for (size_t i = 0; i < padlen - len; i++) {
-    pad[i] = ' ';
-  }
-  pad[padlen - len] = '\0';
-  string ret = in;
-  ret.append(pad);
-  return ret;
-}
-static inline
-string lpad_string(string const &in, size_t padlen)
-{
-  size_t len = in.size();
-  if (len >= padlen) {
-    return in;
-  }
-  string ret((padlen-len), ' ');
-  ret.append(in);
-  return ret;
-}
-
 string file_to_string(string const &filename);
 
 template<typename T>
@@ -1217,57 +1171,6 @@ list<B> generate_all_except_empty_combinations_with_filter(list<A> const& in,
   return ret;
 }
 
-template<typename It, typename Comp, typename Getter>
-class Histogram
-{
-  using Ty = long long;
-  It m_begin;
-  It m_end;
-
-  Ty m_min_v;
-  Ty m_max_v;
-  Ty m_range;
-  vector<Ty> m_hist;
-  vector<Ty> m_acc;
-public:
-  Histogram(It begin, It end, Comp cmp, Getter getter, unsigned num_buckets = 10)
-    : m_begin(begin), m_end(end),
-      m_hist(num_buckets, 0),
-      m_acc(num_buckets, 0)
-  {
-    auto [min_itr,max_itr] = minmax_element(m_begin, m_end, cmp);
-    m_min_v = getter(min_itr);
-    m_max_v = getter(max_itr);
-    m_range = DIV_ROUND_UP(m_max_v-m_min_v+1, num_buckets);
-
-    for (auto itr = m_begin; itr != m_end; ++itr) {
-      Ty ent = getter(itr);
-      unsigned slot = (ent - m_min_v)/m_range;
-      m_hist[slot]++;
-      m_acc[slot] += ent;
-    }
-  }
-
-  Ty get_min_value() const { return m_min_v; }
-  Ty get_max_value() const { return m_max_v; }
-
-  string to_string(function<string(Ty)> fmt, string const& prefix = "histogram:")
-  {
-    ostringstream ss;
-    ss << prefix << '\n';
-    for (size_t i = 0; i < m_hist.size(); ++i) {
-      auto low = m_min_v+i*m_range;
-      auto high = m_min_v+(i+1)*m_range-1;
-      auto avg = m_hist[i] != 0 ? m_acc[i]/m_hist[i] : 0;
-
-      ostringstream os;
-      os << fmt(low) << " - " << fmt(high) << " (avg. " << fmt(avg) << ')';
-      ss << pad_string(os.str(), 40) << " : " << m_hist[i] << '\n';
-    }
-    return ss.str();
-  }
-};
-
 template<typename K, typename V>
 V
 map_get_max_val(map<K, V> const& m, V const& inval)
@@ -1279,6 +1182,54 @@ map_get_max_val(map<K, V> const& m, V const& inval)
     }
   }
   return ret;
+}
+
+// mut_or_erase -> true => element is deleted from map
+template<typename K, typename V>
+bool
+map_mutate_or_erase(map<K,V>& m, function<bool(K const&,V&)> mut_or_erase)
+{
+  bool changed = false;
+  for (auto itr = m.begin(); itr != m.end(); ) {
+    bool erase = mut_or_erase(itr->first,itr->second);
+    if (erase) {
+      itr = m.erase(itr);
+      changed = true;
+    } else {
+      ++itr;
+    }
+  }
+  return changed;
+}
+
+template<typename K, typename V>
+bool
+map_meet(map<K,V>& a, map<K,V> const& b, function<bool(V&,V const&)> val_meet)
+{
+  bool changed = false;
+  // do intersection of common elements
+  auto itr = a.begin();   auto jtr = b.begin();
+  auto itr_end = a.end(); auto jtr_end = b.end();
+  while (itr != itr_end && jtr != jtr_end) {
+    if (itr->first < jtr->first) {
+      itr = a.erase(itr);
+      changed = true;
+      continue;
+    } else if (itr->first > jtr->first) {
+      ++jtr;
+      continue;
+    } else {
+      ASSERT(itr->first == jtr->first);
+      changed = val_meet(itr->second, jtr->second) || changed;
+      ++itr; ++jtr;
+    }
+  }
+  // erase remaining non-common elements
+  while (itr != itr_end) {
+    itr = a.erase(itr);
+    changed = true;
+  }
+  return changed;
 }
 
 set<size_t> identity_set(size_t n);

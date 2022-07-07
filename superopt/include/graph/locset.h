@@ -1,9 +1,7 @@
 #pragma once
-#include <map>
-#include <string>
-#include <set>
-#include <assert.h>
+
 #include "support/types.h"
+#include "support/manager.h"
 
 namespace eqspace {
 

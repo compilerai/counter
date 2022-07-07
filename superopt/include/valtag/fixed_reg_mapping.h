@@ -15,8 +15,8 @@ public:
   void fixed_reg_mapping_from_string(std::string const &s);
   std::map<exreg_group_id_t, std::map<exreg_id_t, exreg_id_t>> const &get_map() const { return m_map; }
   std::string fixed_reg_mapping_to_string() const;
-  void fixed_reg_mapping_to_stream(ostream& os) const;
-  void fixed_reg_mapping_from_stream(istream& is);
+  void fixed_reg_mapping_to_stream(std::ostream& os) const;
+  void fixed_reg_mapping_from_stream(std::istream& is);
   void add(exreg_group_id_t g, exreg_id_t machine_regname, exreg_id_t cur_regname);
   exreg_id_t get_mapping(exreg_group_id_t g, exreg_id_t r) const;
   bool var_reg_maps_to_fixed_reg(exreg_group_id_t g, exreg_id_t var_regnum) const;

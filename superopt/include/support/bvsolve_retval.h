@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-#include <map>
 
 #include "support/types.h"
 #include "support/bv_const.h"

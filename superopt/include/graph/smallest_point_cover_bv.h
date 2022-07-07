@@ -1,6 +1,4 @@
 #pragma once
-#include <map>
-#include <string>
 
 #include "support/bv_const.h"
 #include "support/bv_const_ref.h"
@@ -180,8 +178,10 @@ private:
   void bvcover_weaken_till_arity_within_bound(int arity_bound) const
   {
     autostop_timer func_timer(demangled_type_name(typeid(*this))+"."+__func__);
+    cout << _FNLN_ << ": bvcover_weaken_till_arity_within_bound() called with arity bound " << arity_bound << endl;
     bool arity_bound_violation;
     do {
+      cout << _FNLN_ << ": outer loop iteration" << endl;
       arity_bound_violation = false;
       for (auto const& row : m_bv_solve_output_matrix) {
         unsigned arity = compute_arity(row.second);
@@ -203,7 +203,16 @@ private:
     auto const& row = m_bv_solve_output_matrix.at(rownum);
 
     do {
+      cout << _FNLN_ << ": Weakening row at " << rownum << " till arity_bound " << arity_bound << endl;
+      //cout << "m_bv_solve_output_matrix =\n";
+      //bv_matrix_map_ref_to_stream(cout, m_bv_solve_output_matrix);
+
       expr_idx_t expr_idx = find_rightmost_expr_idx_with_non_zero_entry(row);
+      //if (!expr_idx_has_non_zero_value_in_matrix_only_for_one_row(expr_idx, m_bv_solve_output_matrix, rownum)) {
+      //  cout << _FNLN_ << ": found rightmost expr-idx " << expr_idx << " that has non-zero values at other rows while weakening row at " << rownum << " till arity_bound " << arity_bound << ", m_bv_solve_output_matrix =\n";
+      //  bv_matrix_map_ref_to_stream(cout, m_bv_solve_output_matrix);
+      //  NOT_REACHED();
+      //}
       bv_const_ref coeff = row.at(expr_idx);
       ASSERT(coeff->get_bv() != 0);
       unsigned int coeff_rank = bv_rank(coeff->get_bv(), bvlen);
@@ -235,6 +244,7 @@ private:
       //ASSERT(!m_bv_solve_output_matrix.count(expr_idx) || bv_rank(m_bv_solve_output_matrix.at(expr_idx).at(expr_idx)->get_bv(), bvlen) == coeff_rank);
       ASSERT(!m_bv_solve_output_matrix.count(rownum) || bv_rank(m_bv_solve_output_matrix.at(rownum).at(expr_idx)->get_bv(), bvlen) == coeff_rank);
     } while (m_bv_solve_output_matrix.count(rownum) && compute_arity(m_bv_solve_output_matrix.at(rownum)) > arity_bound);
+    bvcover_solve_and_update_output_matrix();
   }
 
   //void bvcover_mask_out_expr_idx(expr_group_t::expr_idx_t expr_idx) const
@@ -411,13 +421,6 @@ private:
           if (m_bv_solve_output_matrix.count(row_id)) { //this row (row_id) may have been eliminated due to previous weakening
             bvcover_weaken_row_till_arity_within_bound(row_id, BV_PRED_ARITY_THRESHOLD);
           }
-          //unsigned arity = get_arity_from_pred_comment(timeout_pred->get_comment());
-          //DYN_DEBUG(eqclass_bv, cout << "masking out expr at index " << expr_idx << ": " << expr_string(this->get_exprs_to_be_correlated()->at(expr_idx)) << " for relations with arity >= " << arity << endl);
-          //if (m_masked_expr_ids.count(expr_idx) && !(m_masked_expr_ids.at(expr_idx) > arity)) {
-          //}
-          ////if expr_idx is already masked, then this pred's arity must have been equal to or less than previous masked arity
-          //ASSERTCHECK((!m_masked_expr_ids.count(expr_idx) || m_masked_expr_ids.at(expr_idx) >= arity), cout << "Masking out expr at index " << expr_idx << ": " << expr_string(this->get_exprs_to_be_correlated()->at(expr_idx)) << " for relations with arity >= " << arity << " but it was already masked and somehow its previous arity was " << m_masked_expr_ids.at(expr_idx) << endl);
-          //m_masked_expr_ids[expr_idx] = arity;
         }
       }
     }
@@ -474,9 +477,10 @@ private:
   static unsigned
   get_arity_from_pred_comment(string const& comment)
   {
-    ASSERT(string_has_prefix(comment, PRED_LINEAR_PREFIX));
+    size_t prefix = comment.find(PRED_COMMENT_LINEAR);
+    ASSERT(prefix != string::npos);
     unsigned ret;
-    string wo_prefix = comment.substr(strlen(PRED_LINEAR_PREFIX));
+    string wo_prefix = comment.substr(prefix + strlen(PRED_COMMENT_LINEAR));
     istringstream ss(wo_prefix);
     ss >> ret;
     ASSERTCHECK(ret, cout << "wo_prefix = " << wo_prefix << "; comment = " << comment << endl);

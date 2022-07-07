@@ -3,9 +3,6 @@
 #include "gsupport/rodata_map.h"
 //#include "cg/parse_edge_composition.h"
 #include "graph/graphce.h"
-#include <string>
-#include <list>
-#include <map>
 
 namespace eqspace {
 using namespace std;

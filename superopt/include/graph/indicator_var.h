@@ -1,8 +1,5 @@
 #pragma once
 
-#include <vector>
-#include <list>
-
 #include "support/consts.h"
 #include "support/types.h"
 #include "support/debug.h"

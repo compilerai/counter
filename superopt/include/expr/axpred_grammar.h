@@ -1,6 +1,5 @@
 #pragma once
 
-#include <functional>
 
 #include "boost/fusion/include/std_pair.hpp"
 #include "boost/spirit/home/x3.hpp"

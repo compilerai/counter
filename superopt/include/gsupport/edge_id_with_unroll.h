@@ -1,9 +1,6 @@
 #ifndef EDGE_ID_WITH_UNROLL_H
 #define EDGE_ID_WITH_UNROLL_H
 
-#include <string>
-#include <memory>
-
 #include "gsupport/edge_id.h"
 #include "gsupport/edge_with_unroll.h"
 

@@ -1,12 +1,4 @@
 #pragma once
-#include <map>
-#include <list>
-#include <assert.h>
-#include <sstream>
-#include <set>
-#include <stack>
-#include <memory>
-#include <numeric>
 
 #include "gsupport/edge_id.h"
 

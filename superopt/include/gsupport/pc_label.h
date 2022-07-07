@@ -1,7 +1,7 @@
 #pragma once
 
-#include <expr/allocsite.h>
-#include <gsupport/alloc_dealloc.h>
+#include "expr/allocsite.h"
+#include "gsupport/alloc_dealloc.h"
 
 namespace eqspace {
 

@@ -1,15 +1,5 @@
 #pragma once
 
-#include <stdlib.h>
-#include <vector>
-#include <list>
-#include <stack>
-#include <string>
-#include <map>
-#include <set>
-#include <functional>
-#include <unordered_set>
-
 #include "support/types.h"
 #include "support/utils.h"
 #include "support/mybitset.h"
@@ -93,6 +83,8 @@ public:
   context *get_context() const { return m_context; }
   context* get_context() { return m_context; }
   bool sort_represents_alloca_ptr_fn_sort() const;
+  bool sort_represents_alloca_size_fn_sort() const;
+  bool sort_represents_mem_data_sort() const;
   bool sort_represents_mem_alloc_sort() const;
 
 private:

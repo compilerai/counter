@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include "expr/memlabel.h"
 #include "expr/memlabel_obj.h"
 

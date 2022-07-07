@@ -1,8 +1,5 @@
 #pragma once
-#include <memory>
-#include <string>
-#include <assert.h>
-//#include "support/debug.h"
+
 template <typename T> class manager; // fwd decl
 
 using namespace std;

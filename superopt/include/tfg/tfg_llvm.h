@@ -142,7 +142,7 @@ public:
   //virtual void tfg_preprocess(bool is_asm_tfg, dshared_ptr<tfg_llvm_t const> src_llvm_tfg/*, list<string> const& sorted_bbl_indices = {}, map<graph_loc_id_t, graph_cp_location> const &llvm_locs = map<graph_loc_id_t, graph_cp_location>()*/, context::xml_output_format_t xml_output_format = context::XML_OUTPUT_FORMAT_TEXT_NOCOLOR) override;
 
   //void tfg_run_pointsto_analysis(bool is_asm_tfg/*, list<string> const& sorted_bbl_indices = {}*/, callee_rw_memlabels_t::get_callee_rw_memlabels_fn_t get_callee_rw_memlabels, map<graph_loc_id_t, graph_cp_location> const &llvm_locs = map<graph_loc_id_t, graph_cp_location>(), context::xml_output_format_t xml_output_format = context::XML_OUTPUT_FORMAT_TEXT_NOCOLOR) override;
-  void tfg_postprocess_after_pointsto_analysis(bool is_asm_tfg/*, map<call_context_ref, map<pc, pointsto_val_t>> const& vals*/, context::xml_output_format_t xml_output_format = context::XML_OUTPUT_FORMAT_TEXT_NOCOLOR) override;
+  void tfg_postprocess_after_pointsto_analysis(bool is_asm_tfg/*, map<call_context_ref, map<pc, pointsto_val_t>> const& vals*/, bool coarsen_ro_memlabels_to_rodata, context::xml_output_format_t xml_output_format = context::XML_OUTPUT_FORMAT_TEXT_NOCOLOR) override;
 
   callee_summary_t tfg_llvm_compute_callee_summary() const;
 
@@ -303,7 +303,8 @@ private:
   map<string_ref, string_ref> get_llvm_to_source_varname_map_at_pc(pc const& p) const;
   void tfg_llvm_compute_pc_to_llvm_to_source_varname_map();
 
-  void tfg_add_ghost_vars_for_local_allocations();
+  void tfg_llvm_add_ghost_vars_for_local_alloc_deallocs();
+  void tfg_llvm_add_alloca_ghost_vars_to_start_state();
 };
 
 struct make_dshared_enabler_for_tfg_llvm_t : public tfg_llvm_t { template <typename... Args> make_dshared_enabler_for_tfg_llvm_t(Args &&... args):tfg_llvm_t(std::forward<Args>(args)...) {} };

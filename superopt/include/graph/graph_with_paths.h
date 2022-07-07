@@ -1,12 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <cassert>
-#include <sstream>
-#include <set>
-#include <memory>
-
 #include "support/utils.h"
 #include "support/log.h"
 #include "support/globals_cpp.h"
@@ -95,11 +88,6 @@ public:
     ASSERT(ret);
     return ret;
   }
-  virtual bool is_llvm_graph() const
-  {
-    return false;
-  }
-
 
   virtual list<pair<graph_edge_composition_ref<pc, tfg_edge>, shared_ptr<T_PRED const>>> collect_assumes_around_path(T_PC const& from_pc, graph_edge_composition_ref<T_PC,T_E> const &ec) const
   {

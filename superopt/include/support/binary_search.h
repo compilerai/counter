@@ -1,7 +1,6 @@
 #ifndef EQCHECKBINARY_SEARCH_H
 #define EQCHECKBINARY_SEARCH_H
 
-#include <set>
 
 #include "support/debug.h"
 #include "support/dyn_debug.h"

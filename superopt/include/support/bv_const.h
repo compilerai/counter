@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-#include <string>
 #include <gmpxx.h>
 #include <set>
 
@@ -126,6 +124,5 @@ inline static bv_const DIV(bv_const const& dividend, bv_const const& divisor, bv
 
 
 map<bv_solve_var_idx_t, bv_const> read_point(string const& line);
-
 
 }

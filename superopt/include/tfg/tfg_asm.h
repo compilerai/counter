@@ -1,7 +1,8 @@
 #pragma once
 
 #include "gsupport/pc_local_sprel_expr_guesses.h"
-#include "tfg/sp_version_relations_dfa.h"
+//#include "graph/sp_version_relations_dfa.h"
+#include "graph/sp_version_relations.h"
 #include "tfg/tfg.h"
 //#include "tfg/tfg_ssa.h"
 
@@ -14,10 +15,13 @@ private:
   map<expr_ref,set<expr_ref>> m_sp_version_to_parent_sp_versions_map;
   map<pc,expr_ref> m_pc_to_sp_version_map;
   pc_local_sprel_expr_guesses_t<pclsprel_kind_t::alloc> m_pc_lsprel_assumes;
-  map<pc,sp_version_relations_val_t> m_pc_to_sp_version_relations;
+  sp_version_relations_t m_sp_version_relations;
+  map<memlabel_ref,expr_ref> m_ml_upper_bound_spv;
+  map<expr_ref,memlabel_ref> m_alloca_addr_to_ml;
 
 public:
-  tfg_asm_t(string const &name, string const& fname, context *ctx) : tfg(name, fname, ctx)
+  tfg_asm_t(string const &name, string const& fname, context *ctx) : tfg(name, fname, ctx),
+                                                                     m_sp_version_relations(sp_version_relations_t::bottom())
   { }
   void graph_to_stream(ostream& ss, string const& prefix) const override;
 
@@ -50,7 +54,15 @@ public:
   eqclasses_ref compute_expr_eqclasses_at_pc(pc const& p) const override;
   pc_local_sprel_expr_guesses_t<pclsprel_kind_t::alloc> tfg_asm_prune_implausible_pc_local_sprel_expr_assumes(map<local_sprel_expr_guesses_t,list<pc>> const& lsprels_to_potential_pcs) const;
   void tfg_asm_populate_sp_version_to_parent_sp_versions_map();
-  set<expr_ref> get_parent_sp_versions_of(expr_ref const& e) const;
+  set<expr_ref> get_parent_sp_versions_of(expr_ref const& e) const override;
+
+  void tfg_asm_set_upper_bound_spv_for_ml(memlabel_t const& ml, expr_ref const& spv);
+  expr_ref graph_get_upper_bound_spv_for_ml(memlabel_t const& ml) const override
+  {
+    auto mlr = mk_memlabel_ref(ml);
+    return (m_ml_upper_bound_spv.count(mlr)) ? m_ml_upper_bound_spv.at(mlr)
+                                             : nullptr;
+  }
 
   void tfg_asm_populate_pc_to_sp_version_map();
   map<pc,expr_ref> const& get_pc_to_sp_version_map() const;
@@ -73,8 +85,10 @@ public:
 
   bool tfg_asm_expr_represents_sp_derived_value(expr_ref const& e) const;
 
-  void tfg_asm_compute_sp_version_relations();
-  list<shared_ptr<predicate const>> get_sp_version_relations_preds_at_pc(pc const& p) const override;
+  void tfg_asm_set_sp_version_relations(sp_version_relations_t const& spvr);
+  //void tfg_asm_compute_sp_version_relations();
+  sp_version_relations_t const& tfg_asm_get_sp_version_relations() const { return m_sp_version_relations; }
+  set<shared_ptr<predicate const>> get_sp_version_relations_preds_at_pc(pc const& p) const override { return sp_version_relations_to_preds(m_sp_version_relations, this->get_locid2expr_map()); }
 
   static dshared_ptr<tfg_asm_t> tfg_asm_from_stream(istream& is, string const& name, context* ctx);
   static dshared_ptr<tfg_asm_t> tfg_asm_copy(tfg_asm_t const& other);
@@ -82,27 +96,23 @@ public:
   //static unique_ptr<tfg_asm_t> tfg_asm_copy_to_unique_ptr(tfg_asm_t const& other);
   //static unique_ptr<tfg_asm_t> tfg_asm_copy_to_unique_ptr(tfg const& other);
   void tfg_asm_populate_structs_after_construction();
-  set<string_ref> graph_get_externally_visible_variables() const override
-  {
-    set<string_ref> ret = graph_with_var_versions::graph_get_externally_visible_variables();
-    // add callee-preserved registers
-    //ret.insert(state::get_stack_pointer_regname());
-    for (auto const& regname : this->tfg_asm_get_callee_preserved_regs()) {
-      ret.insert(regname);
-    }
-    context* ctx = this->get_context();
-    for (auto const& allocsite : this->get_locals_map().graph_locals_map_get_allocsites()) {
-      string_ref local_size_key = ctx->get_local_size_key_for_id(allocsite, G_DST_KEYWORD);
-      if (this->get_start_state().start_state_has_expr(local_size_key)) {
-        ret.insert(local_size_key);
-      }
-    }
-    return ret;
-  }
+  set<string_ref> graph_get_externally_visible_variables() const override;
+
   virtual void tfg_add_ghost_vars() override
   {
-    tfg_asm_add_dst_local_size_vars_to_start_state();
+    this->tfg_add_alloca_ghost_vars_initialization_at_function_entry();
+    this->tfg_asm_add_alloca_ghost_vars_to_start_state();
   }
+
+  set<expr_ref> graph_get_all_sp_versions() const override;
+
+  bool graph_expr_refers_to_alloca_addr(expr_ref const& e) const override { return m_alloca_addr_to_ml.count(e); }
+
+  expr_ref tfg_asm_get_stack_pointer_expr_at_pc(pc const& pp) const;
+  list<predicate_ref> tfg_asm_get_alloca_well_formedness_conditions(shared_ptr<tfg_edge const> const& te) const;
+
+  //template<pclsprel_kind_t KIND>
+  list<pair<pc,expr_ref>> generate_sp_version_candidates(pc_local_sprel_expr_guesses_t<pclsprel_kind_t::alloc> const& lsprels, function<bool(pc const&)> is_valid_pc) const;
 
 protected:
   tfg_asm_t(istream& is, string const &name, context *ctx);
@@ -111,10 +121,14 @@ protected:
     m_sp_version_to_parent_sp_versions_map(other.m_sp_version_to_parent_sp_versions_map),
     m_pc_to_sp_version_map(other.m_pc_to_sp_version_map),
     m_pc_lsprel_assumes(other.m_pc_lsprel_assumes),
-    m_pc_to_sp_version_relations(other.m_pc_to_sp_version_relations)
+    m_sp_version_relations(other.m_sp_version_relations),
+    m_ml_upper_bound_spv(other.m_ml_upper_bound_spv),
+    m_alloca_addr_to_ml(other.m_alloca_addr_to_ml)
   { }
-  tfg_asm_t(tfg const &other) : tfg(other)
+  tfg_asm_t(tfg const &other) : tfg(other),
+                                m_sp_version_relations(sp_version_relations_t::bottom())
   { }
+
 
   void graph_ssa_copy(tfg_asm_t const& other)
   {
@@ -122,10 +136,15 @@ protected:
     m_sp_version_to_parent_sp_versions_map = other.m_sp_version_to_parent_sp_versions_map;
     m_pc_to_sp_version_map = other.m_pc_to_sp_version_map;
     m_pc_lsprel_assumes = other.m_pc_lsprel_assumes;
-    m_pc_to_sp_version_relations = other.m_pc_to_sp_version_relations;
+    m_sp_version_relations = other.m_sp_version_relations;
+    m_ml_upper_bound_spv = other.m_ml_upper_bound_spv;
+    m_alloca_addr_to_ml = other.m_alloca_addr_to_ml;
   }
   
 private:
+  //returns the spver-relative address guesses
+  set<expr_ref> identify_lsprel_guesses_from_compile_log(pc_local_sprel_expr_guesses_t<pclsprel_kind_t::alloc> const& lsprels, pc const& p, expr_ref const& spver) const;
+
   //void tfg_asm_add_dealloc_edges_in_path(shared_ptr<tfg_full_pathset_t const> const& dst_path, list<alloc_dealloc_t> const& alloc_dealloc_ls);
   //void tfg_asm_add_dealloc_edge_in_path(shared_ptr<tfg_full_pathset_t const> const& dst_path, alloc_dealloc_t const& dealloc, list<alloc_dealloc_t> const& alloc_dealloc_ls);
 
@@ -141,19 +160,8 @@ private:
   expr_ref find_closest_sp_version_equal_to_expr(pc const& pp, expr_ref const& target_expr, shared_ptr<tfg_edge_composition_t const> pth = tfg_edge_composition_t::mk_epsilon_ec()) const;
   set<expr_ref> get_sp_update_parent_sp_versions_of(map<expr_ref,set<expr_ref>> const& sp_version_to_parent_sp_versions, expr_ref const& e) const;
 
-  void tfg_asm_add_dst_local_size_vars_to_start_state()
-  {
-    context* ctx = this->get_context();
-    map<string_ref, expr_ref> new_start_state_keys; //the keys that would potentially need to be externally visible (e.g., in the CG)
-    for (auto const& allocsite : this->get_locals_map().graph_locals_map_get_allocsites()) {
-      if (local_id_refers_to_arg(allocsite, this->get_argument_regs(), this->get_locals_map()))
-        continue;
-      expr_ref lsp_size = ctx->get_local_size_expr_for_id(allocsite, ctx->get_addr_sort(), G_DST_KEYWORD);
-      string lsp_size_key = ctx->get_key_from_input_expr(lsp_size)->get_str();
-      new_start_state_keys.insert(make_pair(mk_string_ref(lsp_size_key), lsp_size));
-    }
-    this->graph_add_keys_and_exprs_to_start_state(new_start_state_keys);
-  }
+  void tfg_asm_add_alloca_ghost_vars_to_start_state();
+  void tfg_asm_introduce_identity_mappings_for_alloca_written_variables();
 };
 
 struct make_dshared_enabler_for_tfg_asm_t : public tfg_asm_t { template <typename... Args> make_dshared_enabler_for_tfg_asm_t(Args &&... args):tfg_asm_t(std::forward<Args>(args)...) {} };

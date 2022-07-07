@@ -1,7 +1,4 @@
 #pragma once
-#include <map>
-#include <string>
-#include <list>
 
 #include "graph/nodece.h"
 

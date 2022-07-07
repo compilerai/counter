@@ -19,7 +19,7 @@ typedef size_t tmp_stackslot_count_t;
 class typesystem_t
 {
 private:
-  typesystem_id_t m_id;
+  //typesystem_id_t m_id;
   use_types_t m_use_types;
   convert_addr_to_intaddr_t m_convert_addr_to_intaddr;
   make_non_poly_copyable_t m_make_non_poly_copyable;

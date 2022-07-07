@@ -4,15 +4,6 @@
 #include "support/debug.h"
 #include "support/types.h"
 
-#include <map>
-#include <list>
-#include <assert.h>
-#include <sstream>
-#include <set>
-#include <stack>
-#include <memory>
-#include <type_traits>
-
 using namespace std;
 
 template<typename T_N>

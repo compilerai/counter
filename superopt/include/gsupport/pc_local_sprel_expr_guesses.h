@@ -1,9 +1,5 @@
 #pragma once
 
-#include <map>
-#include <string>
-#include <iostream>
-
 #include "support/dyn_debug.h"
 
 #include "expr/local_sprel_expr_guesses.h"
@@ -20,6 +16,8 @@ class pc_local_sprel_expr_guesses_t
 {
   //map<allocsite_t,pair<pc,expr_ref>> m_allocsite_to_pc_expr;
   map<pc,local_sprel_expr_guesses_t> m_pc_lsprels;
+
+  map<variable_id_t, offset_t> m_local_offsets_from_compile_log; //offsets are w.r.t. input stack pointer (before pushing retaddr)
 
   // assumes well-formedness of pc_lsprels
   pc_local_sprel_expr_guesses_t(map<pc,local_sprel_expr_guesses_t> const& pc_lsprels) : m_pc_lsprels(pc_lsprels) {}
@@ -47,12 +45,15 @@ public:
     return ret;
   }
   map<pc,local_sprel_expr_guesses_t> const& get_map() const { return m_pc_lsprels; }
+  map<variable_id_t, offset_t> const& get_local_offsets_from_compile_log() const { return m_local_offsets_from_compile_log; }
 
   bool have_mapping_for_local(allocsite_t const& lid) const;
   vector<pair<pc,expr_ref>> get_mappings_for_local(allocsite_t const& lid) const;
   pc_local_sprel_expr_guesses_t get_pc_lsprels_for_locals(set<allocsite_t> const& lids) const;
 
   local_sprel_expr_guesses_t get_all_lsprels() const;
+
+  void read_guesses_from_compile_log(istream& is, context* ctx);
 
   bool add_pc_lsprel_guess(pc const& p, local_sprel_expr_guesses_t const& lsprels);
   bool pc_local_sprel_expr_guesses_union(pc_local_sprel_expr_guesses_t const& other);

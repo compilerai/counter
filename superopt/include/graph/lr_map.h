@@ -28,45 +28,45 @@ class graph_with_predicates;
 //lr_status_t compute_lr_status_for_expr(expr_ref e, eq::state const &from_state, int cs_addr_ref_id, map<int, lr_status_t> const &prev_lr, map<graph_loc_id_t, graph_cp_location> const &start_pc_locs, eq::consts_struct_t const &cs);
 
 
-class sort_cmp_on_loc_size {
-public:
-  sort_cmp_on_loc_size(map<graph_loc_id_t, graph_cp_location> const &locs) : m_locs(locs) {}
-  bool operator() (graph_loc_id_t i, graph_loc_id_t j)
-  {
-    graph_cp_location loc_i, loc_j;
-    //loc_i = m_graph->get_loc(m_pc, i);
-    loc_i = m_locs.at(i);
-    //loc_j = m_graph->get_loc(m_pc, j);
-    loc_j = m_locs.at(j);
-
-    if (loc_i.m_type < loc_j.m_type) {
-      return true;
-    } else if (loc_i.m_type > loc_j.m_type) {
-      return false;
-    }
-    ASSERT(loc_i.m_type == loc_j.m_type);
-    if (loc_i.m_type == GRAPH_CP_LOCATION_TYPE_REGMEM) {
-      return i < j;
-    }
-    if (loc_i.m_type == GRAPH_CP_LOCATION_TYPE_MEMSLOT) {
-      return loc_i.m_nbytes < loc_j.m_nbytes;
-    }
-    if (loc_i.m_type == GRAPH_CP_LOCATION_TYPE_MEMMASKED) {
-      if (memlabel_t::memlabel_less(&loc_i.m_memlabel->get_ml(), &loc_j.m_memlabel->get_ml())) {
-        return true;
-      }
-      if (memlabel_t::memlabel_less(&loc_j.m_memlabel->get_ml(), &loc_i.m_memlabel->get_ml())) {
-        return false;
-      }
-      return loc_i.m_nbytes < loc_j.m_nbytes;
-    }
-    NOT_REACHED();
-  }
-private:
-  //graph_with_predicates<T_PC, T_N, T_E, T_PRED> const *m_graph;
-  //T_PC const &m_pc;
-  map<graph_loc_id_t, graph_cp_location> const &m_locs;
-};
+//class sort_cmp_on_loc_size {
+//public:
+//  sort_cmp_on_loc_size(map<graph_loc_id_t, graph_cp_location> const &locs) : m_locs(locs) {}
+//  bool operator() (graph_loc_id_t i, graph_loc_id_t j)
+//  {
+//    graph_cp_location loc_i, loc_j;
+//    //loc_i = m_graph->get_loc(m_pc, i);
+//    loc_i = m_locs.at(i);
+//    //loc_j = m_graph->get_loc(m_pc, j);
+//    loc_j = m_locs.at(j);
+//
+//    if (loc_i.m_type < loc_j.m_type) {
+//      return true;
+//    } else if (loc_i.m_type > loc_j.m_type) {
+//      return false;
+//    }
+//    ASSERT(loc_i.m_type == loc_j.m_type);
+//    if (loc_i.m_type == GRAPH_CP_LOCATION_TYPE_REGMEM) {
+//      return i < j;
+//    }
+//    if (loc_i.m_type == GRAPH_CP_LOCATION_TYPE_MEMSLOT) {
+//      return loc_i.m_nbytes < loc_j.m_nbytes;
+//    }
+//    if (loc_i.m_type == GRAPH_CP_LOCATION_TYPE_MEMMASKED) {
+//      if (memlabel_t::memlabel_less(&loc_i.m_memlabel->get_ml(), &loc_j.m_memlabel->get_ml())) {
+//        return true;
+//      }
+//      if (memlabel_t::memlabel_less(&loc_j.m_memlabel->get_ml(), &loc_i.m_memlabel->get_ml())) {
+//        return false;
+//      }
+//      return loc_i.m_nbytes < loc_j.m_nbytes;
+//    }
+//    NOT_REACHED();
+//  }
+//private:
+//  //graph_with_predicates<T_PC, T_N, T_E, T_PRED> const *m_graph;
+//  //T_PC const &m_pc;
+//  map<graph_loc_id_t, graph_cp_location> const &m_locs;
+//};
 
 
 //long get_linearly_related_addr_ref_id_for_addr(map<cs_addr_ref_id_t, map<addr_id_t, lr_status_t>> const &addr2status_map, addr_id_t addr_id, eq::consts_struct_t const &cs);

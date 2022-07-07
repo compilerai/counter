@@ -1,9 +1,6 @@
 #ifndef EQCHECKLOG_H
 #define EQCHECKLOG_H
 
-#include <ostream>
-#include <cassert>
-
 //#define LOG_ENABLE
 #ifdef LOG_ENABLE
 #define LOG(str) do { std::cout << str << std::flush; } while(false)

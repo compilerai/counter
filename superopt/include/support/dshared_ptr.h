@@ -1,10 +1,8 @@
 #pragma once
 
-#include <memory>
-#include <cstddef>
-#include <type_traits>
-
 #include "support/debug.h"
+
+using namespace std;
 
 template <class Y, class T>
 struct __smartptr_compatible

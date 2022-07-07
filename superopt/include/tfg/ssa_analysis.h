@@ -10,6 +10,8 @@ class ssa_construction_analysis
 public:
   ssa_construction_analysis(tfg const& t, dshared_ptr<tfg const> const& src_tfg) : m_tfg(t.tfg_ssa_copy()) 
   {
+    {
+    autostop_timer ft(__func__);
     DYN_DEBUG(ssa_transform, cout << __func__ << " " << __LINE__ << ": Input TFG for SSA:\n" << t.graph_to_string() << endl); 
 //    tfg_rename_vars_to_non_ssa();
 //    DYN_DEBUG(ssa_transform, cout << __func__ << " " << __LINE__ << ": TFG After non-ssa renaming:\n" << m_tfg->graph_to_string() << endl); 
@@ -39,14 +41,8 @@ public:
 //    m_tfg->collapse_nop_edges();
 //    m_tfg->compute_regions();
 //    DYN_DEBUG(ssa_transform, cout << __func__ << " " << __LINE__ << ": After remove dead vars: TFG:\n" << m_tfg->graph_to_string() << endl);
-    if(src_tfg) {
-      // this is ssa for DST tfg
-      m_tfg->set_locs_map_start_loc_id(DST_TFG_SSA_START_LOC_ID);
-    } else {
-      // this is ssa for SRC tfg
-      m_tfg->set_locs_map_start_loc_id(SRC_TFG_SSA_START_LOC_ID);
-    }
     m_tfg->set_graph_as_ssa();
+    }
     m_tfg->tfg_populate_structs_after_ssa_construction(src_tfg);
     DYN_DEBUG(ssa_transform, cout << __func__ << " " << __LINE__ << ": Final SSA TFG:\n" << m_tfg->graph_to_string() << endl);
 //    } else {

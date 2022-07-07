@@ -1,7 +1,4 @@
 #pragma once
-#include <string>
-#include <map>
-#include <deque>
 #include "support/consts.h"
 #include "expr/expr.h"
 #include "tfg/tfg.h"

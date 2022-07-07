@@ -14,12 +14,15 @@ class correl_entry_ladder_t
 {
 public:
   typedef enum { LADDER_STARTPC_NODE = 0, LADDER_JUST_STARTED/*, LADDER_ENUM_IMPLYING_CHILDREN*/, LADDER_ENUM_IMPLIED_CHILDREN, LADDER_DONE } ladder_status_t;
-  correl_entry_ladder_t(tfg const &dst_tfg, ladder_status_t lstatus) : /*m_dst_tfg(dst_tfg), */m_ladder_status(lstatus)/*, m_ladder_impl(LADDER_IMPLYING)*/
+  correl_entry_ladder_t(/*tfg const &dst_tfg, */ladder_status_t lstatus) : /*m_dst_tfg(dst_tfg), */m_ladder_status(lstatus)/*, m_ladder_impl(LADDER_IMPLYING)*/
   {
     //m_just_started = true;
     //m_dst_anchor_pcs = m_dst_tfg.tfg_identify_anchor_pcs();
     //m_dst_anchor_pcs = m_dst_tfg.get_all_pcs();
   }
+
+  string correl_entry_ladder_to_string() const;
+  static correl_entry_ladder_t correl_entry_ladder_from_string(string const& s);
 
   ladder_status_t ladder_get_status() const { return m_ladder_status; }
   //ladder_impl_t ladder_get_impl() const { return m_ladder_impl; }
@@ -114,6 +117,9 @@ public:
   static string get_next_groupname(string const& correl_entry_name);
   string const& get_correl_entry_name() const { return m_correl_entry_name; }
   ce_propagation_status_t virtual get_ce_propagation_status() const  = 0;
+
+  void correl_entry_to_stream(ostream& os, string const& prefix = "") const;
+  static dshared_ptr<correl_entry_t> correl_entry_from_stream(istream& os, string const& prefix = "");
 
 protected:
   list<dshared_ptr<backtracker_node_t>> find_siblings_with_same_dst_ec_src_to_pc_higher_delta() const;

@@ -37,7 +37,7 @@ execute_process(COMMAND echo ${CMAKE_BUILD_TYPE} COMMAND grep -Eo "^[^_]+" COMMA
 execute_process(COMMAND echo ${CMAKE_BUILD_TYPE} COMMAND grep -Eo "[^_]+$" COMMAND tr -d '[:space:]' OUTPUT_VARIABLE DST_ARCH)
 set(SRC_DST_HYPHEN ${SRC_ARCH}-${DST_ARCH})
 
-find_package(Boost REQUIRED COMPONENTS system iostreams serialization)
+find_package(Boost 1.71 REQUIRED COMPONENTS system iostreams serialization filesystem)
 find_package(yaml-cpp REQUIRED)
 find_program(GIT git)
 

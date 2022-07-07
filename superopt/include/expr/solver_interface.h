@@ -19,7 +19,8 @@ public:
 
   virtual proof_result_t solver_satisfiable(expr_ref e, const query_comment& qc, relevant_memlabels_t const& relevant_memlabels/*, list<counter_example_t> &counter_example*/) = 0;
   virtual proof_result_t solver_provable(expr_ref e, const query_comment& qc, relevant_memlabels_t const& relevant_memlabels/*, list<counter_example_t> &counter_example*/) = 0;
-  virtual expr_ref solver_simplify(expr_ref e, consts_struct_t const &cs) = 0;
+  virtual expr_ref solver_simplify(expr_ref const& e) = 0;
+  virtual bool solver_prove_internal(expr_ref const&) = 0;
   virtual string stats() const = 0;
   //virtual void print_stats(void) const = 0;
   virtual void clear_cache(void) = 0;
@@ -74,6 +75,5 @@ public:
   proof_result_t expr_is_satisfiable(expr_ref const &e, query_comment const &comment, relevant_memlabels_t const& relevant_memlabels/*, list<counter_example_t> &counter_examples*/);
   proof_result_t expr_is_provable(expr_ref const &e, query_comment const &comment, relevant_memlabels_t const& relevant_memlabels/*, list<counter_example_t> &counter_examples*/);
 };
-
 
 }

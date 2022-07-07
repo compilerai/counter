@@ -1,6 +1,4 @@
 #pragma once
-#include <map>
-#include <string>
 
 #include "support/bv_const.h"
 #include "support/bv_const_ref.h"
@@ -368,37 +366,6 @@ private:
     preds = compute_preds_for_arr_points();
     return false;
   }
-
-  //static vector<addr_that_may_differ_t>
-  //compute_addrs_that_may_differ(expr_group_ref const& exprs_to_be_correlated, map<graph_loc_id_t, graph_cp_location> const& locs, context *ctx)
-  //{
-  //  ASSERT(exprs_to_be_correlated->expr_group_get_num_exprs() >= 2);
-  //  //ASSERT(exprs_to_be_correlated->expr_group_get_num_exprs() <= 2);
-  //  //if (exprs_to_be_correlated->expr_group_get_num_exprs() < 2) {
-  //  //  return vector<addr_that_may_differ_t>();
-  //  //}
-  //  map<expr_group_t::expr_idx_t, point_exprs_t> const& exprs = exprs_to_be_correlated->get_expr_vec();
-  //  ASSERT(exprs.at(expr_group_t::expr_idx_begin()).get_expr()->get_operation_kind() == expr::OP_MEMMASK);
-  //  memlabel_t const& ml = exprs.at(expr_group_t::expr_idx_begin()).get_expr()->get_args().at(OP_MEMMASK_ARGNUM_MEMLABEL)->get_memlabel_value();
-  //  set<addr_that_may_differ_t> ret_set;
-  //  vector<addr_that_may_differ_t> ret;
-  //  for (auto const& loc : locs) {
-  //    if (   loc.second.is_memslot()
-  //        && !memlabel_t::memlabel_intersection_is_empty(ml, loc.second.m_memlabel->get_ml())) {
-  //      addr_that_may_differ_t new_a = addr_that_may_differ_t(loc.second.m_addr, loc.second.m_memlabel, loc.second.m_nbytes);
-  //      bool is_unique = true;
-  //      for(auto const &a : ret){
-  //        if(a.equals(new_a)) {
-  //          is_unique = false;
-  //          break;
-  //        }
-  //      }
-  //      if(is_unique)
-  //        ret.push_back(new_a);
-  //    }
-  //  }
-  //  return ret;
-  //}
 
   static vector<addr_that_may_differ_t>
   get_addrs_that_may_differ(expr_group_ref const& exprs_to_be_correlated)

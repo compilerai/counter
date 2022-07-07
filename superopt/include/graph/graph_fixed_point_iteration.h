@@ -1,10 +1,5 @@
 #pragma once
 
-#include <set>
-#include <list>
-#include <memory>
-#include <functional>
-
 #include "graph/graph.h"
 
 using namespace std;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vector>
 
 #include "support/bv_const.h"
 #include "support/bv_const_ref.h"

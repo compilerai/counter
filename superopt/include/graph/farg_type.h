@@ -1,8 +1,6 @@
 #ifndef FARG_TYPE_H
 #define FARG_TYPE_H
 
-#include <vector>
-#include <string>
 #include "expr/expr.h"
 
 class farg_t {

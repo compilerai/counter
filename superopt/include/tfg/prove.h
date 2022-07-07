@@ -1,7 +1,5 @@
 #pragma once
 
-#include <list>
-
 #include "expr/expr.h"
 #include "expr/context.h"
 #include "expr/aliasing_constraints.h"
@@ -16,7 +14,6 @@ namespace eqspace {
 class tfg_llvm_t;
 
 
-expr_ref avail_exprs_and(map<graph_loc_id_t, expr_ref> const &avail_exprs, expr_ref const &in, tfg const &t);
 //bool expr_set_lhs_prove_src_dst(context *ctx, unordered_set<predicate_ref>const &lhs, edge_guard_t const &guard, expr_ref src, expr_ref dst, query_comment const &qc, bool timeout_res, counter_example_t &counter_example, consts_struct_t const &cs);
 //bool is_expr_equal_using_lhs_set_and_precond(context *ctx, list<predicate_ref> const &s, precond_t const &precond, sprel_map_pair_t const &sprel_map_pair, tfg_suffixpath_t const &src_suffixpath, avail_exprs_t const &avail_exprs, graph_memlabel_map_t const &memlabel_map, /*rodata_map_t const &rodata_map,*/ expr_ref const &e1, expr_ref const &e2, const query_comment& qc, bool timeout_res, list<counter_example_t> &counter_examples/*, std::set<cs_addr_ref_id_t> const &relevant_addr_refs, vector<memlabel_ref> const& relevant_memlabels*/, memlabel_assertions_t const& mlasserts, aliasing_constraints_t const& rhs_alias_cons, tfg_llvm_t const &src_tfg, consts_struct_t const &cs);
 void update_simplify_cache(context *ctx, expr_ref const &a, expr_ref const &b, list<predicate_ref> const &lhs);

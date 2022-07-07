@@ -18,7 +18,7 @@ bool expr_is_sp_version(expr_ref const& e);
 bool expr_is_sp_version_at_entry(expr_ref const& e);
 
 class graph_arg_regs_t;
-bool expr_contains_only_constants_or_arguments_or_sp_versions(expr_ref const& e, graph_arg_regs_t const &argument_regs);
-bool expr_contains_only_arguments_or_sp_versions(expr_ref const &e, graph_arg_regs_t const &argument_regs);
+bool expr_contains_only_constants_or_sp_versions(expr_ref const& e/*, graph_arg_regs_t const &argument_regs*/);
+bool expr_contains_only_sp_versions(expr_ref const &e/*, graph_arg_regs_t const &argument_regs*/);
 
 }

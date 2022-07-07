@@ -1,6 +1,4 @@
 #pragma once
-#include <map>
-#include <string>
 
 #include "graph/smallest_point_cover.h"
 
@@ -291,8 +289,9 @@ private:
   gen_preds_from_cur_bounds() const
   {
     unordered_set<shared_ptr<T_PRED const>> ret;
-    ASSERT(this->get_exprs_to_be_correlated()->expr_group_get_num_exprs() == 1);
-    expr_ref expr = this->get_exprs_to_be_correlated()->get_expr_vec().begin()->second.get_expr();
+    expr_group_ref eg = this->get_exprs_to_be_correlated();
+    ASSERT(eg->expr_group_get_num_exprs() == 1);
+    expr_ref expr = eg->get_expr_vec().begin()->second.get_expr();
     ASSERT(expr->is_bv_sort());
     unsigned bvlen = expr->get_sort()->get_size();
     context *ctx = this->m_ctx;
@@ -300,23 +299,23 @@ private:
       bv_const lb = m_lower_bound_signed_cur;
       expr_ref lb_expr = ctx->mk_bv_const(bvlen, lb);
       CPP_DBG_EXEC(EQCLASS_INEQ, cout << __func__ << " " << __LINE__ << ": lb signed = " << lb << endl);
-      predicate_ref pred = predicate::mk_predicate_ref(precond_t(), ctx->mk_bvsge(expr, lb_expr), expr_true(ctx), "lb-signed");
+      predicate_ref pred = predicate::mk_predicate_ref(precond_t(), ctx->mk_bvsge(expr, lb_expr), expr_true(ctx), eg->get_name() + ".lb-signed");
       ret.insert(pred);
     }
     if (m_upper_bound_signed_cur != m_max_upper_bound_signed) {
       CPP_DBG_EXEC(EQCLASS_INEQ, cout << __func__ << " " << __LINE__ << ": ub signed = " << m_upper_bound_signed_cur << endl);
-      predicate_ref pred = predicate::mk_predicate_ref(precond_t(), ctx->mk_bvsle(expr, ctx->mk_bv_const(bvlen, m_upper_bound_signed_cur)), expr_true(ctx), "ub-signed");
+      predicate_ref pred = predicate::mk_predicate_ref(precond_t(), ctx->mk_bvsle(expr, ctx->mk_bv_const(bvlen, m_upper_bound_signed_cur)), expr_true(ctx), eg->get_name() + ".ub-signed");
       ret.insert(pred);
     }
 
     if (m_lower_bound_unsigned_cur != m_min_lower_bound_unsigned) {
       CPP_DBG_EXEC(EQCLASS_INEQ, cout << __func__ << " " << __LINE__ << ": lb unsigned = " << m_lower_bound_unsigned_cur << endl);
-      predicate_ref pred = predicate::mk_predicate_ref(precond_t(), ctx->mk_bvuge(expr, ctx->mk_bv_const(bvlen, m_lower_bound_unsigned_cur)), expr_true(ctx), "lb-unsigned");
+      predicate_ref pred = predicate::mk_predicate_ref(precond_t(), ctx->mk_bvuge(expr, ctx->mk_bv_const(bvlen, m_lower_bound_unsigned_cur)), expr_true(ctx), eg->get_name() + ".lb-unsigned");
       ret.insert(pred);
     }
     if (m_upper_bound_unsigned_cur != m_max_upper_bound_unsigned) {
       CPP_DBG_EXEC(EQCLASS_INEQ, cout << __func__ << " " << __LINE__ << ": ub unsigned = " << m_upper_bound_unsigned_cur << endl);
-      predicate_ref pred = predicate::mk_predicate_ref(precond_t(), ctx->mk_bvule(expr, ctx->mk_bv_const(bvlen, m_upper_bound_unsigned_cur)), expr_true(ctx), "ub-unsigned");
+      predicate_ref pred = predicate::mk_predicate_ref(precond_t(), ctx->mk_bvule(expr, ctx->mk_bv_const(bvlen, m_upper_bound_unsigned_cur)), expr_true(ctx), eg->get_name() + ".ub-unsigned");
       ret.insert(pred);
     }
     return ret;

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <set>
-
 #include "expr/expr.h"
 #include "expr/expr_simplify.h"
 #include "expr/expr_utils.h"
@@ -254,7 +252,7 @@ public:
   expr_ref const &get_rhs_expr() const { return m_rhs_expr; }
   string const& get_comment() const    { return m_comment->get_str(); }
 
-  expr_ref predicate_get_expr(/*tfg const& t, */bool simplified) const;
+  expr_ref predicate_get_expr(/*tfg const& t, */bool simplified = true) const;
 
   predicate_ref pred_eliminate_constructs_that_the_solver_cannot_handle(context *ctx) const
   {

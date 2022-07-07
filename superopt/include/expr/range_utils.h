@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include "expr/range.h"
 
 namespace eqspace {

@@ -1,6 +1,4 @@
 #pragma once
-#include <map>
-#include <string>
 
 #include "graph/smallest_point_cover.h"
 

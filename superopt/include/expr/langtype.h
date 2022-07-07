@@ -1,9 +1,4 @@
 #pragma once
-#include <string>
-#include <memory>
-#include <vector>
-#include <list>
-using std::string;
 #include "support/consts.h"
 #include "support/manager.h"
 #include "support/utils.h"
@@ -12,6 +7,8 @@ using std::string;
 #include "expr/defs.h"
 
 namespace eqspace {
+
+using namespace std;
 
 class langtype_t;
 using langtype_ref = shared_ptr<langtype_t const>;
@@ -52,9 +49,9 @@ private:
   void from_string(string const &s);
 private:
   langtype_sort_t m_sort;
-  langtype_signedness_t m_signedness;
+  //langtype_signedness_t m_signedness;
   list<langtype_ref> m_referenced_types;
-  size_t          m_num_elems; //for array types
+  //size_t          m_num_elems; //for array types
   string          m_val; //for debugging
 
   bool            m_is_managed;

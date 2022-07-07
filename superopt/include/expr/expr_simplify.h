@@ -1,7 +1,5 @@
 #pragma once
 
-#include <map>
-
 #include "support/autostop_watch.h"
 #include "support/dyn_debug.h"
 
@@ -101,6 +99,7 @@ public:
   static expr_ref simplify_getfield(expr_ref const& e);
   static expr_ref simplify_increment_count(expr_ref const& e);
   static expr_ref simplify_memlabel_is_absent(expr_ref const& e);
+  static expr_ref simplify_issubsuming_memlabel_for(expr_ref const& e);
   //static expr_ref simplify_memsplice_arg(expr_ref e, consts_struct_t const &cs);
   //static expr_ref simplify_memsplice(expr_ref e, consts_struct_t const &cs);
   //static expr_ref simplify_ismemlabel(expr_ref e, consts_struct_t const &cs);
@@ -680,6 +679,9 @@ public:
 
       case expr::OP_MEMLABEL_IS_ABSENT:
         ret = expr_simplify::simplify_memlabel_is_absent(e);
+        break;
+      case expr::OP_ISSUBSUMING_MEMLABEL_FOR:
+        ret = expr_simplify::simplify_issubsuming_memlabel_for(e);
         break;
       /*case expr::OP_MEMJOIN:
         ret = expr_simplify::simplify_memjoin(e, cs);

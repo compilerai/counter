@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdio.h>
-#include <fstream>
 //struct context;
 
 extern char const *profile_name;

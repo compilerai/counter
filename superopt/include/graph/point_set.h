@@ -1,6 +1,4 @@
 #pragma once
-#include <map>
-#include <string>
 
 #include "support/types.h"
 #include "support/bv_const.h"
@@ -189,7 +187,6 @@ public:
     expr_ref const& e = exprs.begin()->second.get_expr();
     expr_group_t::expr_idx_t const& e_idx = exprs.begin()->first;
     ASSERT(e->is_bv_sort());
-    size_t bvlen = e->get_sort()->get_size();
     //ASSERT(!m_out_of_bound_exprs.count(e_idx));
     for (auto const& [ptname, pt] : m_points) {
       ASSERT(ptname == pt->get_point_name());

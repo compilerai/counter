@@ -7,7 +7,7 @@
 namespace eqspace {
 using namespace std;
 
-template<typename T_PC, typename T_N, typename T_E, typename T_PRED, typename T_VAL>
+template<typename T_VAL>
 class expr_loc_visitor
 {
 public:

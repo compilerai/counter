@@ -1,11 +1,4 @@
 #pragma once
-#include <fstream>
-#include <map>
-#include <list>
-#include <cassert>
-#include <sstream>
-#include <set>
-#include <memory>
 
 #include "support/timers.h"
 #include "support/utils.h"
@@ -149,6 +142,9 @@ public:
   bool check_wfconds_on_outgoing_edges(T_PC const &p) const;
 
   static void inc_well_formedness_check_failed_stats_counter(shared_ptr<T_PRED const> const& pred);
+  static void inc_edge_assumes_sat_failed_stats_counter(shared_ptr<T_PRED const> const& pred);
+
+  virtual set<shared_ptr<T_PRED const>> get_sp_version_relations_preds_at_pc(T_PC const &p) const { return {}; }
 
 protected:
   virtual predicate_ref check_preds_on_edge_compositions(T_PC const& from_pc, unordered_set<expr_ref> const& preconditions, map<src_dst_cg_path_tuple_t, unordered_set<shared_ptr<T_PRED const>>> const& ec_preds) const = 0;
@@ -317,7 +313,6 @@ private:
 
   //virtual tfg_suffixpath_t get_src_suffixpath_ending_at_pc(T_PC const &p) const = 0;
   virtual avail_exprs_t const &get_src_avail_exprs/*_at_pc*/(/*T_PC const &p*/) const = 0;
-  virtual list<shared_ptr<T_PRED const>> get_sp_version_relations_preds_at_pc(T_PC const &p) const = 0;
 
   template<typename T_PRECOND_TFG>
   proof_result_t prove_wrapper(list<pair<graph_edge_composition_ref<pc,tfg_edge>, shared_ptr<T_PRED const>>> const &lhs_in, precond_t const& precond, graph_edge_composition_ref<pc, tfg_edge> const& eg/*, local_sprel_expr_guesses_t const&local_sprel_expr_assumes_required_to_prove*/, aliasing_constraints_t const& alias_cons, expr_ref src, expr_ref dst, query_comment const &qc/*, bool timeout_res*//*, set<allocsite_t> const &src_locals*/, T_PC const &pp/*, list<counter_example_t> &counter_example*/) const;

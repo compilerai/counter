@@ -44,7 +44,7 @@ public:
       return false;
     }
     for (auto iter1 = m_stack.begin(), iter2 = other.m_stack.begin();
-         iter1 != m_stack.end(), iter2 != other.m_stack.end();
+         iter1 != m_stack.end() && iter2 != other.m_stack.end();
          iter1++, iter2++) {
       if (*iter1 != *iter2) {
         return false;

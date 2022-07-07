@@ -1,8 +1,6 @@
 #ifndef FSIGNATURE_H
 #define FSIGNATURE_H
 
-#include <vector>
-#include <string>
 #include "graph/farg_type.h"
 
 class fsignature_t {

@@ -1,10 +1,6 @@
 #ifndef CALLEE_SUMMARY_H
 #define CALLEE_SUMMARY_H
 #include "expr/memlabel.h"
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <map>
 #include "support/debug.h"
 #include "expr/consts_struct.h"
 

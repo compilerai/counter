@@ -147,6 +147,7 @@ private:
 
     summary_function_t summary_fn = this->compute_summary_function(caller_context, callee_context);
     if (summary_fn) {
+      DYN_DEBUG(ftmap_pointsto_debug, cout << _FNLN_ << ": caller " << caller_context->call_context_to_string() << ": callee " << callee_context->call_context_to_string() << ": calling the computed summary function across edge " << e->to_string_concise() << endl);
       return summary_fn(e/*, in*/, in_out);
     } else {
       ASSERT(this->m_vals.count(callee_rcc));

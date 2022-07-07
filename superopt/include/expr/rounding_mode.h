@@ -1,9 +1,4 @@
 #pragma once
-#include <stdlib.h>
-#include <set>
-#include <vector>
-#include <string>
-#include <map>
 #include <fenv.h>
 
 #include "support/types.h"

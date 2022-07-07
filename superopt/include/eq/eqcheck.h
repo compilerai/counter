@@ -33,7 +33,7 @@ class cg_with_failcond;
 class eqcheck
 {
 public:
-  eqcheck(string const& proof_filename, string const &function_name, dshared_ptr<tfg_ssa_t> const& src_tfg, dshared_ptr<tfg_ssa_t> const& dst_tfg, fixed_reg_mapping_t const &fixed_reg_mapping, rodata_map_t const &rodata_map, pc_local_sprel_expr_guesses_t<pclsprel_kind_t::alloc> const& pc_lsprels, vector<dst_insn_t> const& dst_iseq, vector<dst_ulong> const& dst_insn_pcs, context* ctx, string const& asm_filename/*, bool llvm2ir*/, const quota& max_quota, bool use_only_relocatable_memlabels, bool run_relocatable_memlabels_and_safety_check, context::xml_output_format_t xml_output_format, correl_hints_t const& correl_hints);
+  eqcheck(string const& proof_filename, string const &function_name, dshared_ptr<tfg_ssa_t> const& src_tfg, dshared_ptr<tfg_ssa_t> const& dst_tfg, fixed_reg_mapping_t const &fixed_reg_mapping, rodata_map_t const &rodata_map, pc_local_sprel_expr_guesses_t<pclsprel_kind_t::alloc> const& debug_header_pc_lsprels, vector<dst_insn_t> const& dst_iseq, vector<dst_ulong> const& dst_insn_pcs, context* ctx, string const& asm_filename/*, bool llvm2ir*/, const quota& max_quota, bool use_only_relocatable_memlabels, bool run_relocatable_memlabels_and_safety_check, context::xml_output_format_t xml_output_format, correl_hints_t const& correl_hints);
 
   eqcheck(istream& is, dshared_ptr<tfg_ssa_t> const& src_tfg, dshared_ptr<tfg_ssa_t> const& dst_tfg);
 

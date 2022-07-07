@@ -1,12 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <cassert>
-#include <sstream>
-#include <set>
-#include <memory>
-
 #include "graph/graph_with_guessing.h"
 #include "graph/dfa_over_paths.h"
 #include "graph/reason_for_counterexamples.h"

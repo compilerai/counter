@@ -6,11 +6,6 @@
 #include "gsupport/graph_ec.h"
 #include "gsupport/tfg_edge.h"
 
-#include <string>
-#include <list>
-#include <map>
-
-
 namespace eqspace {
 
 class gsupport_cache_t

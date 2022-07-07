@@ -1,9 +1,5 @@
 #pragma once
 
-#include <list>
-#include <map>
-#include <stack>
-
 #include "support/log.h"
 #include "support/types.h"
 #include "support/serpar_composition.h"
@@ -462,7 +458,7 @@ list<guarded_pred_t> get_potentially_out_of_bound_memory_accesses(shared_ptr<tfg
   void tfg_eliminate_memlabel_esp();
   void tfg_run_copy_propagation();
   void tfg_remove_dead_vars();
-  void tfg_add_global_assumes_for_string_contents(bool is_dst_tfg);
+  void tfg_add_global_assumes_for_string_contents(bool is_dst_tfg, bool coarsen_ro_memlabels_to_rodata= false);
   void tfg_eliminate_hidden_regs();
 
   void tfg_coarsen_readonly_memlabels_to_rodata_memlabel();
@@ -681,8 +677,6 @@ list<guarded_pred_t> get_potentially_out_of_bound_memory_accesses(shared_ptr<tfg
     return this->get_avail_exprs/*_at_pc*/(/*p*/);
   }
 
-  virtual list<shared_ptr<predicate const>> get_sp_version_relations_preds_at_pc(pc const &p) const override { return {}; }
-
   //edge_guard_t
   //graph_get_edge_guard_from_edge_composition(shared_ptr<tfg_edge_composition_t> const &ec) const override
   //{
@@ -707,7 +701,6 @@ list<guarded_pred_t> get_potentially_out_of_bound_memory_accesses(shared_ptr<tfg
 
   //virtual set<expr_ref> get_interesting_exprs_till_delta(pc const& p, delta_t const& delta) const;
   //set<expr_ref> get_live_loc_exprs_having_sprel_map_at_pc(pc const &p) const;
-  set<expr_ref> get_live_loc_exprs_ignoring_memslot_symbols_at_pc(pc const &p) const;
 
   void tfg_add_unknown_arg_to_fcalls();
   void tfg_identify_rodata_accesses_and_populate_string_contents(input_exec_t const& in);
@@ -717,7 +710,7 @@ list<guarded_pred_t> get_potentially_out_of_bound_memory_accesses(shared_ptr<tfg
   virtual list<tuple<graph_edge_composition_ref<pc,tfg_edge>, expr_ref, predicate_ref>> edge_composition_apply_trans_funs_on_pred(predicate_ref const &p, shared_ptr<tfg_edge_composition_t> const &ec) const override;
   void tfg_preprocess(bool is_asm_tfg/*, dshared_ptr<tfg_llvm_t const> src_llvm_tfg*//*, list<string> const& sorted_bbl_indices = {}, map<graph_loc_id_t, graph_cp_location> const &llvm_locs = map<graph_loc_id_t, graph_cp_location>()*/);
   //void tfg_run_pointsto_analysis(callee_rw_memlabels_t::get_callee_rw_memlabels_fn_t get_callee_rw_memlabels,  bool is_asm_tfg, dshared_ptr<tfg_llvm_t const> const& src_tfg, map<graph_loc_id_t, graph_cp_location> const &llvm_locs = map<graph_loc_id_t, graph_cp_location>());
-  virtual void tfg_postprocess_after_pointsto_analysis(bool is_asm_tfg/*, map<call_context_ref, map<pc, pointsto_val_t>> const& vals*/, context::xml_output_format_t xml_output_format = context::XML_OUTPUT_FORMAT_TEXT_NOCOLOR);
+  virtual void tfg_postprocess_after_pointsto_analysis(bool is_asm_tfg/*, map<call_context_ref, map<pc, pointsto_val_t>> const& vals*/, bool coarsen_ro_memlabels_to_rodata = false, context::xml_output_format_t xml_output_format = context::XML_OUTPUT_FORMAT_TEXT_NOCOLOR);
   void tfg_preprocess_before_eqcheck(dshared_ptr<tfg const> const& src_tfg, /*set<string> const &undef_behaviour_to_be_ignored, */predicate_set_t const& input_assumes, bool populate_interesting_exprs_for_invariant_inference, bool infer_tfg_invariants = false);
 
   //shared_ptr<tfg_full_pathset_t const> tfg_full_pathset_semantically_simplify(shared_ptr<tfg_full_pathset_t const> const& tfp) const;
@@ -802,7 +795,6 @@ list<guarded_pred_t> get_potentially_out_of_bound_memory_accesses(shared_ptr<tfg
   }
   
   set<expr_ref> const& get_path_wp_exprs_for_cg_invariant_inference(shared_ptr<tfg_edge_composition_t> const& ec) const { 
-    context *ctx = this->get_context();
     if(!m_path_wp_exprs_for_cg_invariant_inference.count(ec))
       this->populate_path_wp_exprs_for_cg_invariant_inference(ec);
     ASSERT(m_path_wp_exprs_for_cg_invariant_inference.count(ec));
@@ -850,6 +842,10 @@ protected:
     return ctx->get_input_expr_for_key(get_dst_regname(group, regnum), ctx->mk_bv_sort(DST_EXREG_LEN(group)));
   }
   src_dst_cg_path_tuple_t src_dst_cg_path_tuple_from_stream(istream& is, string const& prefix) const override;
+
+  void tfg_add_alloca_ghost_vars_initialization_at_function_entry();
+  state tfg_add_local_allocation_ghost_var_mappings_to_alloca_edge_state(state const& st, expr_ref const& local_addr) const;
+  state tfg_add_local_allocation_ghost_var_mappings_to_dealloc_edge_state(state const& st) const;
 
 private:
   state tfg_get_epsilon_ssa_renaming_state(pc const& from, pc const& to) const;

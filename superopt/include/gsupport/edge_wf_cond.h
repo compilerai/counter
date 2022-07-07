@@ -1,6 +1,4 @@
 #pragma once
-#include <map>
-#include <sstream>
 
 #include "gsupport/graph_ec.h"
 #include "gsupport/predicate.h"

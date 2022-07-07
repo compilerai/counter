@@ -1,6 +1,4 @@
 #pragma once
-#include <map>
-#include <string>
 
 #include "support/types.h"
 #include "graph/point_set.h"

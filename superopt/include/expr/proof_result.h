@@ -37,15 +37,15 @@ public:
   string get_comment_str() const
   {
     if (m_trivially_resolved) {
-      return "trivial";
+      return "-trivial";
     }
     string ret;
-    ret += (m_num_quantifiers > 0) ? "used-quantifiers" : "";
-    ret += m_involves_fp_to_ieee_bv ? "fp-to-ieee-bv" : "";
-    ret += m_stack_modeled_as_separate_mem ? "" : "stack-not-modeled-as-separate-mem";
-    ret += m_nonstack_modeled_as_common_mem ? "" : "nonstack-not-modeled-as-common-mem";
+    ret += (m_num_quantifiers > 0) ? "-used-quantifiers" : "";
+    ret += m_involves_fp_to_ieee_bv ? "-fp-to-ieee-bv" : "";
+    ret += m_stack_modeled_as_separate_mem ? "" : "-stack-not-modeled-as-separate-mem";
+    ret += m_nonstack_modeled_as_common_mem ? "" : "-nonstack-not-modeled-as-common-mem";
     if (ret == "") {
-      ret = "all-proof-path-optimizations";
+      ret = "-all-proof-path-optimizations";
     }
     return ret;
   }

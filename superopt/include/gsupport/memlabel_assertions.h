@@ -117,12 +117,14 @@ private:
   bool memlabel_refers_to_vararg_local(memlabel_t const& ml) const;
   bool memlabel_refers_to_rodata_mapped_src_ro_symbol(memlabel_t const& ml) const;
 
+  expr_pair ml_asserts_get_lb_ub_expr_for_memlabel(memlabel_t const& ml) const;
+
   expr_ref generate_non_overlapping_constraints(relevant_memlabels_t const& relevant_memlabels, bool consider_subsumed_memlabels, bool ignore_symbols_non_overlapping_constraints) const;
   expr_ref generate_subsumed_memlabels_constraints(relevant_memlabels_t const& relevant_memlabels) const;
   expr_ref get_subsume_constraints(memlabel_t const& needle, vector<memlabel_t> const& haystack) const;
   expr_ref generate_stack_subsumes_locals_constraints(relevant_memlabels_t const& relevant_memlabels, vector<expr_ref> const& mem_alloc_exprs) const;
+  expr_ref gen_memlabel_is_page_aligned_assertion(memlabel_t const& ml) const;
 
-  static expr_ref gen_memlabel_is_page_aligned_assertion(context *ctx, memlabel_t const& ml);
   static expr_ref gen_dst_symbol_addrs_assertion(context* ctx, relevant_memlabels_t const& relevant_memlabels);
   static expr_ref gen_alignment_constraint_for_addr(context *ctx, expr_ref const& addr, align_t const align);
 };
@@ -133,6 +135,6 @@ dshared_ptr<memlabel_assertions_t> mk_memlabel_assertions(string_ref const& fnam
 dshared_ptr<memlabel_assertions_t> mk_memlabel_assertions(dshared_ptr<memlabel_assertions_t> const other);
 dshared_ptr<memlabel_assertions_t> mk_memlabel_assertions(memlabel_assertions_t const& other);
 
-string_ref local_id_refers_to_arg(allocsite_t const& lid, graph_arg_regs_t const& arg_regs, graph_locals_map_t const& locals_map);
+string_ref allocsite_refers_to_arg(allocsite_t const& lid, graph_arg_regs_t const& arg_regs, graph_locals_map_t const& locals_map);
 
 }

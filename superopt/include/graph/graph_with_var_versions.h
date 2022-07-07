@@ -1,12 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <string>
-#include <cassert>
-#include <set>
-#include <memory>
-
 #include "support/utils.h"
 #include "support/log.h"
 #include "support/timers.h"
@@ -144,6 +137,7 @@ public:
 
   /*virtual */void populate_pc_var_versions() const;
 
+  virtual bool graph_expr_is_ssa_var(expr_ref const& e) const = 0;
 
 protected:
   map<T_PC,var_version_t> get_pc_to_var_version_map() const { return m_pc_to_var_version_map; }

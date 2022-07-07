@@ -12,13 +12,6 @@
 #include "gsupport/edge_id.h"
 #include "gsupport/tfg_edge.h"
 
-#include <map>
-#include <string>
-#include <cassert>
-#include <sstream>
-#include <set>
-#include <memory>
-
 namespace eqspace {
 
 using namespace std;
@@ -134,8 +127,6 @@ protected:
 
   map<edge_id_t<T_PC>, list<pair<graph_edge_composition_ref<pc,tfg_edge>, shared_ptr<T_PRED const>>>> const get_edge_to_assumes_around_edge_map() const { return m_edge_to_assumes_around_edge; }
   void set_edge_to_assumes_around_edge_map(map<edge_id_t<T_PC>, list<pair<graph_edge_composition_ref<pc,tfg_edge>, shared_ptr<T_PRED const>>>> const& m) { m_edge_to_assumes_around_edge = m; }
-
-  expr_ref graph_cp_location_get_value_simplified(/*T_PC const &p, */state const &s, graph_cp_location const& loc/*graph_loc_id_t loc_index*/, sprel_map_pair_t const& sprel_map_pair, graph_memlabel_map_t const& memlabel_map) const;
 
   //this function is the optimized version of graph_loc_get_value_simplified(); the additional MEM_SIMPLIFIED argument
   //allows us to avoid repeated simplifications of the memory expressions for memslot/memmasked locs

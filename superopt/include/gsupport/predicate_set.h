@@ -1,6 +1,5 @@
 #pragma once
 #include "gsupport/predicate.h"
-#include <set>
 
 namespace eqspace {
 

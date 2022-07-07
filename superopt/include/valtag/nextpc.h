@@ -4,6 +4,8 @@
 #include "support/types.h"
 #include "support/src_tag.h"
 
+using namespace std;
+
 class nextpc_t
 {
 private:

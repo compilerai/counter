@@ -9,6 +9,7 @@
 #include "expr/call_context.h"
 
 #include "graph/context_sensitive_ftmap_dfa_val.h"
+#include "graph/available_exprs_alias_analysis_combo.h"
 
 #include "tfg/tfg.h"
 #include "tfg/tfg_llvm.h"
@@ -44,7 +45,7 @@ public:
 
   tfg_alias_result_t ftmap_get_aliasing_relationship_between_memaccesses(string const& fname, string const& varA, uint64_t sizeA, string const& varB, uint64_t sizeB) const;
 
-  void ftmap_run_pointsto_analysis(/*callee_rw_memlabels_t::get_callee_rw_memlabels_fn_t get_callee_rw_memlabels, */bool is_asm_tfg, dshared_ptr<tfg_llvm_t const> const& src_tfg, map<graph_loc_id_t, graph_cp_location> const &llvm_locs, int call_context_depth, bool update_callee_memabels, context::xml_output_format_t xml_output_format = context::XML_OUTPUT_FORMAT_TEXT_NOCOLOR);
+  void ftmap_run_pointsto_analysis(/*callee_rw_memlabels_t::get_callee_rw_memlabels_fn_t get_callee_rw_memlabels, */bool is_asm_tfg, dshared_ptr<tfg_llvm_t const> const& src_tfg, map<graph_loc_id_t, graph_cp_location> const &llvm_locs, int call_context_depth, bool update_callee_memabels, bool coarsen_ro_memlabels_to_rodata = false, context::xml_output_format_t xml_output_format = context::XML_OUTPUT_FORMAT_TEXT_NOCOLOR);
   void ftmap_add_start_pc_preconditions_for_each_tfg();
 
   map<call_context_ref, dshared_ptr<tfg_ssa_t>> const& get_function_tfg_map() const { return m_fname_tfg_map; }
@@ -98,9 +99,10 @@ private:
   list<ftmap_call_graph_edge_t> ftmap_identify_call_edges_for_tfg(call_context_ref const& cc, dshared_ptr<tfg> const& t) const;
   list<ftmap_call_graph_edge_t> ftmap_identify_all_call_edges() const;
   //list<ftmap_call_loop_edge_t> ftmap_identify_back_call_edges() const;
+  void ftmap_clear_memlabel_maps_for_each_tfg(bool update_callee_memabels);
   void ftmap_set_relevant_memlabels_for_each_tfg(relevant_memlabels_t const& relevant_mls);
   void ftmap_populate_relevant_memlabels_for_each_tfg(int call_context_depth);
-  void ftmap_populate_non_memslot_locs_for_each_tfg(void);
+  void ftmap_populate_non_memslot_locs_for_each_tfg(map<call_context_ref,map<graph_loc_id_t,graph_cp_location>> const& old_flocs);
   set<memlabel_ref> ftmap_identify_heapalloc_and_local_memlabels(int call_context_depth) const;
   void ftmap_postprocess_after_pointsto_analysis_on_function(call_context_ref const& fname, set<string> const& func_call_chain, context::xml_output_format_t xml_outptut_format);
 

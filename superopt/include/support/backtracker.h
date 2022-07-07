@@ -1,7 +1,7 @@
 #ifndef SUPPORT_BACKTRACKER_H
 #define SUPPORT_BACKTRACKER_H
-#include <list>
-#include <functional>
+
+
 #include "support/debug.h"
 #include "support/dshared_ptr.h"
 

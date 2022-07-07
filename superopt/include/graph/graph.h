@@ -1844,7 +1844,8 @@ public:
     //this->get_edges(es);
     os << prefix << "=Edges:\n";
     for (auto const& e : this->get_edges()) {
-      os << prefix << e->get_from_pc().to_string() << " => " << e->get_to_pc().to_string() << endl;
+      os << prefix << e->get_from_pc().to_string() << " => " << e->get_to_pc().to_string()
+         << (e->is_back_edge() ? " (backedge) " : "") << '\n';
     }
     os << prefix << "=graph done\n";
   }
@@ -2214,7 +2215,7 @@ private:
   //  }
   //}
 
-  void get_sccs_forward_dfs(T_PC p, map<T_PC, bool>& visited, stack<T_PC>& st) const
+  void get_sccs_forward_dfs(T_PC p, map<T_PC, bool>& visited, std::stack<T_PC>& st) const
   {
     visited[p] = true;
 

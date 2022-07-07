@@ -1,6 +1,5 @@
 #pragma once
-#include <map>
-#include <string>
+
 
 #include "support/manager.h"
 #include "support/debug.h"
@@ -46,6 +45,8 @@ void bv_matrix_map_ref_to_stream(ostream& ss, map<bv_solve_var_idx_t, map<bv_sol
 map<bv_solve_var_idx_t, map<bv_solve_var_idx_t, bv_const_ref>> bv_matrix_map_ref_from_stream(istream& is);
 map<bv_solve_var_idx_t, bv_const_ref> bv_const_row_to_bv_const_ref_row(map<bv_solve_var_idx_t, bv_const> const& in);
 void bv_row_ref_to_stream(ostream& ss, map<bv_solve_var_idx_t, bv_const_ref> const& row);
+
+//bool expr_idx_has_non_zero_value_in_matrix_only_for_one_row(bv_solve_var_idx_t expr_idx, map<bv_solve_var_idx_t, map<bv_solve_var_idx_t, bv_const_ref>> const& bv_solve_output_matrix, bv_solve_var_idx_t row);
 
 }
 

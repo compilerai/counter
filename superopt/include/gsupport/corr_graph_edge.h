@@ -1,11 +1,5 @@
 #pragma once
 
-#include <list>
-#include <vector>
-#include <map>
-#include <deque>
-#include <set>
-
 #include "support/log.h"
 
 #include "expr/pc.h"

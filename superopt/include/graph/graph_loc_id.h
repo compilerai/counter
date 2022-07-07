@@ -2,9 +2,6 @@
 
 #include "support/types.h"
 
-#include <set>
-#include <string>
-
 namespace eqspace {
 
 using namespace std;

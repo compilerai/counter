@@ -1,9 +1,5 @@
 #pragma once
 
-#include <list>
-#include <map>
-#include <stack>
-
 #include "support/log.h"
 #include "support/types.h"
 #include "support/serpar_composition.h"
@@ -130,6 +126,8 @@ public:
   expr_ref tfg_edge_get_alloca_expr() const;
   expr_ref tfg_edge_get_dealloc_expr() const;
 
+  bool tfg_edge_is_post_sp_version_assignment_edge() const { return this->get_from_pc().is_sp_version_ext(); };
+  bool tfg_edge_is_sp_version_assignment_edge() const { return this->get_to_pc().is_sp_version_ext(); };
   bool tfg_edge_is_alloca_edge() const  { return tfg_edge_get_alloca_expr() != nullptr; }
   bool tfg_edge_is_dealloc_edge() const { return tfg_edge_get_dealloc_expr() != nullptr; }
 

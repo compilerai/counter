@@ -1,6 +1,7 @@
 #pragma once
 
 #include "support/string_ref.h"
+#include "support/str_utils.h"
 #include "expr/expr.h"
 
 class state_submap_t

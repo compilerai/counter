@@ -1,14 +1,12 @@
 #pragma once
 
-#include <string>
-#include <list>
-#include <map>
-
 #include "support/debug.h"
 #include "support/lru.h"
 
 #include "expr/expr.h"
 #include "expr/expr_eval_status.h"
+#include "expr/solver_interface.h"
+#include "expr/proof_status.h"
 
 //namespace std {
 //template<>
@@ -122,14 +120,15 @@ public:
   //expr_query_cache_t<bool> m_is_expr_equal_syntactic_using_lhs_set;
   lookup_cache_t<expr_id_t , pair<expr_ref, expr_ref>> m_simplify_solver;
   lookup_cache_t<pair<expr_id_t, bool>, pair<expr_ref, expr_ref>> m_simplify;
-  lookup_cache_t<expr_id_t, pair<expr_ref, expr_ref>> m_z3_solver_simplify_internal;
-  lookup_cache_t<expr_id_t, tuple<expr_vector,expr_vector,expr_ref,expr_ref>> m_z3_solver_simplify;
+  lookup_cache_t<expr_id_t, pair<expr_ref, expr_ref>> m_z3_solver_simplify;
+  lookup_cache_t<expr_id_t, pair<expr_ref, solver_res>> m_z3_solver_prove;
+  lookup_cache_t<expr_id_t, tuple<expr_ref,expr_ref,map<expr_id_t,expr_pair>>> m_z3_solver_substitution;
   lookup_cache_t<pair<unsigned, unsigned>, pair<pair<expr_ref, expr_ref>, expr_ref>> m_prune_obviously_false_branches_using_assume_clause;
   lookup_cache_t<expr_id_t, tuple<expr_ref, map<expr_id_t,pair<expr_ref, expr_ref>>, expr_ref>> m_replace_donotsimplify_using_solver_expressions_by_free_vars;
   lookup_cache_t<pair<expr_id_t, expr_id_t>, pair<pair<expr_ref, expr_ref>, bool>> m_is_expr_not_equal_syntactic;
 
   lookup_cache_t<expr_id_t, pair<expr_ref, size_t>> m_expr_size;
-  lookup_cache_t<pair<expr_ref, vector<expr_ref>>, bool> m_contains_only_constants_or_arguments_or_sp_versions;
+  lookup_cache_t<expr_ref, bool> m_contains_only_constants_or_sp_versions;
   lookup_cache_t<expr_id_t, pair<expr_ref,pair<expr_eval_status_t,expr_ref>>> m_expr_evaluates_to_constant_visitor;
 
   void clear() {
@@ -149,14 +148,15 @@ public:
     //m_is_expr_equal_syntactic_using_lhs_set.clear();
     m_simplify_solver.clear();
     m_simplify.clear();
-    m_z3_solver_simplify_internal.clear();
     m_z3_solver_simplify.clear();
+    m_z3_solver_prove.clear();
+    m_z3_solver_substitution.clear();
     m_prune_obviously_false_branches_using_assume_clause.clear();
     m_replace_donotsimplify_using_solver_expressions_by_free_vars.clear();
     m_is_expr_not_equal_syntactic.clear();
 
     m_expr_size.clear();
-    m_contains_only_constants_or_arguments_or_sp_versions.clear();
+    m_contains_only_constants_or_sp_versions.clear();
     m_expr_evaluates_to_constant_visitor.clear();
   }
 

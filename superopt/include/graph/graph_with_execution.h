@@ -1,12 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <cassert>
-#include <sstream>
-#include <set>
-#include <memory>
-
 #include "support/utils.h"
 #include "support/log.h"
 #include "support/timers.h"
@@ -72,9 +65,9 @@ protected:
 
   virtual failcond_t edge_well_formedness_conditions_falsified_by_counter_example(dshared_ptr<T_E const> const& e, counter_example_t const& ce, relevant_memlabels_t const& relevant_memlabels) const = 0;
 
-  bool counter_example_falsifies_preds( counter_example_t const &ce, list<pair<graph_edge_composition_ref<T_PC,T_E>, shared_ptr<predicate const>>> const& preds, counter_example_t &rand_vals, relevant_memlabels_t const& relevant_memlabels, shared_ptr<T_PRED const>& failed_pred) const;
+  bool counter_example_falsifies_preds( counter_example_t const &ce, list<pair<graph_edge_composition_ref<T_PC,T_E>, shared_ptr<T_PRED const>>> const& preds, counter_example_t &rand_vals, relevant_memlabels_t const& relevant_memlabels, shared_ptr<T_PRED const>& failed_pred) const;
 
-  bool counter_example_satisfies_preds(counter_example_t const &ce, list<pair<graph_edge_composition_ref<T_PC,T_E>, shared_ptr<predicate const>>> const& preds, counter_example_t &rand_vals, relevant_memlabels_t const& relevant_memlabels) const;
+  bool counter_example_satisfies_preds(counter_example_t const &ce, list<pair<graph_edge_composition_ref<T_PC,T_E>, shared_ptr<T_PRED const>>> const& preds, counter_example_t &rand_vals, relevant_memlabels_t const& relevant_memlabels, shared_ptr<T_PRED const>& failed_pred) const;
 
 // returns exec_success, eval_success
   virtual counterexample_translate_retval_t counter_example_translate_on_edge(counter_example_t &counter_example, dshared_ptr<T_E const> const &edge, counter_example_t &rand_vals, failcond_t& failcond, relevant_memlabels_t const& relevant_memlabels, bool ignore_assumes = false, bool ignore_wfconds = false) const = 0;

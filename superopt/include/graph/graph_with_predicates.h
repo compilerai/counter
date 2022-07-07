@@ -1,12 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <string>
-#include <cassert>
-#include <set>
-#include <memory>
-
 #include "support/utils.h"
 #include "support/log.h"
 #include "support/timers.h"
@@ -37,7 +30,7 @@ class graph_with_predicates : public graph_with_var_versions<T_PC, T_N, T_E>
 public:
   typedef list<shared_ptr<T_E const>> T_PATH;
 
-  graph_with_predicates(string const &name, string const& fname, context* ctx) : graph_with_var_versions<T_PC, T_N, T_E>(ctx), m_name(mk_string_ref(name)), m_function_name(mk_string_ref(fname)), /*m_ctx(ctx),*/ m_cs(ctx->get_consts_struct())
+  graph_with_predicates(string const &name, string const& fname, context* ctx) : graph_with_var_versions<T_PC, T_N, T_E>(ctx), m_name(mk_string_ref(name)), m_function_name(mk_string_ref(fname)), m_srcdst_keyword(mk_string_ref(srcdst_keyword_from_graph_name(name))), /*m_ctx(ctx),*/ m_cs(ctx->get_consts_struct())
   {
     PRINT_PROGRESS("%s() %d:\n", __func__, __LINE__);
   }
@@ -46,6 +39,7 @@ public:
                                                               m_memlabel_maps(other.m_memlabel_maps),
                                                               m_name(other.m_name),
                                                               m_function_name(other.m_function_name),
+                                                              m_srcdst_keyword(other.m_srcdst_keyword),
 //                                                              m_ctx(other.m_ctx),
                                                               m_cs(other.m_cs),
                                                               m_symbol_map(other.m_symbol_map),
@@ -75,6 +69,7 @@ public:
 
   string_ref const &get_name() const { return m_name; }
   string_ref const &get_function_name() const { return m_function_name; }
+  string_ref const &get_srcdst_keyword() const { return m_srcdst_keyword; }
   void graph_set_name(string const& name) { m_name = mk_string_ref(name); }
 //  context* get_context() const { return m_ctx; }
   consts_struct_t const &get_consts_struct() const { return m_cs; }
@@ -222,14 +217,13 @@ public:
   // in CG we return union of src and dst memlabel maps; hence cannot return by const ref
   virtual graph_memlabel_map_t get_memlabel_map(call_context_ref const& cc) const;
   graph_memlabel_map_t&        get_memlabel_map_ref(call_context_ref const& cc);
+  size_t get_memlabel_maps_size() const { return m_memlabel_maps.size(); }
+  void add_empty_memlabel_map_for_call_context_if_it_does_not_exist(call_context_ref const& cc);
   void clear_memlabel_maps();
+  void clear_non_callee_memlabels_in_memlabel_maps();
   void memlabel_maps_coarsen_readonly_memlabels_to_rodata_memlabel();
-  void memlabel_map_to_stream(ostream& os) const;
-  /*static */string read_memlabel_maps(istream& in, string const& line/*, graph_memlabel_map_t &memlabel_map*/);
-  static string read_memlabel_map(istream& in, string const& line, graph_memlabel_map_t &memlabel_map);
-
-  //string memlabel_map_to_string_for_eq() const { return memlabel_map_to_string(this->get_memlabel_map()); }
-  //void set_memlabel_map(graph_memlabel_map_t const &m) { NOT_IMPLEMENTED(); /*m_memlabel_map = m;*/ }
+  void memlabel_maps_to_stream(ostream& os) const;
+  string read_memlabel_maps(istream& in, string const& line);
 
   graph_arg_regs_t const& get_argument_regs() const { return m_arg_regs; }
   void set_argument_regs(graph_arg_regs_t const& args) { m_arg_regs = args; }
@@ -272,6 +266,13 @@ private:
   static set<T_PC> get_to_pcs_for_edges(list<dshared_ptr<T_E const>> const &edges);
   expr_ref setup_debug_probes(expr_ref e);
 
+  static string srcdst_keyword_from_graph_name(string const& name)
+  {
+    if (string_has_prefix(name, G_SRC_KEYWORD))
+      return string(G_SRC_KEYWORD);
+    return string(G_DST_KEYWORD);
+  }
+
 protected:
 
 private:
@@ -280,6 +281,7 @@ private:
 
   string_ref m_name;
   string_ref m_function_name;
+  string_ref m_srcdst_keyword;
 //  context* m_ctx;
   consts_struct_t const &m_cs;
 

@@ -1,10 +1,7 @@
-#ifndef EDGE_ID_H
-#define EDGE_ID_H
-
-#include <string>
-#include <memory>
+#pragma once
 
 #include "support/dyn_debug.h"
+#include "support/str_utils.h"
 
 #include "expr/state.h"
 #include "expr/pc.h"
@@ -57,6 +54,7 @@ public:
   string edge_id_to_string() const { return m_from.to_string() + "=>" + m_to.to_string(); }
   string to_string_for_eq(string const&) const { NOT_REACHED(); }
   string to_string_concise() const { return this->edge_id_to_string(); }
+  string to_string() const { return this->edge_id_to_string(); }
 
   expr_ref get_cond() const { NOT_REACHED(); }
   //expr_ref get_simplified_cond() const { NOT_REACHED(); }
@@ -93,5 +91,3 @@ struct hash<edge_id_t<T_PC>>
 };
 
 }
-
-#endif

@@ -1,13 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <assert.h>
-#include <sstream>
-#include <list>
-#include <stack>
-#include <memory>
-
 #include "graph/pc_list_val.h"
 #include "graph/graph.h"
 #include "graph/graph_bbl.h"

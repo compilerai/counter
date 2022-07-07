@@ -4,11 +4,6 @@
 #include "support/log.h"
 #include "support/mymemory.h"
 
-#include <list>
-#include <vector>
-#include <map>
-#include <deque>
-#include <set>
 #include "tfg/tfg.h"
 //#include "gsupport/edge_guard.h"
 #include "expr/counter_example.h"

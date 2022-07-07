@@ -17,7 +17,6 @@ public:
   expr_to_z3_expr(expr_ref const &e, relevant_memlabels_t const& relevant_memlabels);
 
   z3::expr compute_z3_expr();
-  z3::expr get_result() const;
   string get_logic_string(string const& solver_name) const;
   bool has_quantifiers() const;
   bool involves_fp_to_ieee_bv() const { return m_involves_fp_to_ieee_bv; }
@@ -46,7 +45,10 @@ private:
   z3::expr gen_memsplice_expr(memlabel_t const& ml, z3::expr mem_alloc, z3::expr mem_belonging_to_ml, z3::expr mem_outside_ml);
 
   z3::expr get_axioms_expr() const;
-  z3::expr get_supplement_expr() const;
+  z3::expr get_supplement_expr(z3::expr const& e) const;
+
+  void set_result_expr();
+  z3::expr get_result() const { return m_result; }
   //z3::expr get_axioms_expr_for_op(expr::operation_kind op) const;
   //z3::expr get_axioms_expr_for_islast_in_container(container_type_ref const& container_type) const;
   z3::expr get_z3_args(expr_ref e) const
@@ -81,12 +83,14 @@ private:
 
   static sort_ref compute_memlabel_solver_ids_and_sort(context* ctx, relevant_memlabels_t const& relevant_memlabels, map<memlabel_ref,unsigned>& ml_to_id, map<expr_ref,memlabel_ref>& id_to_ml);
 
+  z3::expr gen_alloca_eq_z3_expr_uf(expr_ref const& arg0, expr_ref const& arg1);
   z3::expr gen_alloca_z3_expr(z3::expr const& mem_alloc, memlabel_t const& ml, z3::expr const& addr, z3::expr const& size);
   z3::expr gen_dealloc_z3_expr(z3::expr const& mem_alloc, memlabel_t const& ml, z3::expr const& addr, z3::expr const& size);
   z3::expr gen_heap_alloc_z3_expr(z3::expr const& mem_alloc, memlabel_t const& ml, z3::expr const& addr, z3::expr const& size);
   z3::expr gen_heap_dealloc_z3_expr(z3::expr const& mem_alloc, memlabel_t const& ml, z3::expr const& addr, z3::expr const& size);
 
   z3::expr gen_memmasks_are_equal_z3_expr(z3::expr const& mem1, z3::expr const& mem_alloc1, z3::expr const& mem2_or_const_val, z3::expr const& mem_alloc2, memlabel_t const& ml, bool mem2_is_const);
+  z3::expr gen_memmasks_are_equal_z3_expr_uf(expr_ref const& mem1, expr_ref const& mem_alloc1, expr_ref const& mem2, expr_ref const& mem_alloc2, memlabel_t const& ml);
   z3::expr gen_memmasks_are_equal_else_z3_expr(z3::expr const& mem1, z3::expr const& mem_alloc1, z3::expr const& mem2, z3::expr const& mem_alloc2, memlabel_t const& ml, z3::expr const& defval);
   //z3::expr gen_ismemlabel_constraints_for_z3(z3::expr const& mem_alloc, z3::expr const& addr, z3::expr const& count, memlabel_t const &cml);
   z3::expr gen_iscontiguous_memlabel_constraints_for_z3(z3::expr const& mem_alloc, z3::expr const& lb, z3::expr const& ub, memlabel_t const &cml);
@@ -96,6 +100,8 @@ private:
   z3::expr gen_region_agrees_with_memlabel_constraints_for_z3(z3::expr const& mem_alloc, z3::expr const& lb, z3::expr const& count, memlabel_t const& mls) const;
   z3::expr gen_memlabel_is_absent_constraints_for_z3(z3::expr const& mem_alloc, memlabel_t const& ml);
   z3::expr gen_store_uninit_z3_expr(z3::expr const& mem, z3::expr const& addr, z3::expr const& count, z3::expr const& nonce);
+
+  z3::expr gen_function_call_z3_expr(expr_ref const& e);
 
   z3::expr get_z3_fp_from_floatx(expr_ref const& a);
   z3::expr get_z3_floatx_bv_from_fp(expr_ref const& a);
@@ -115,41 +121,54 @@ private:
   z3::expr gen_addr_constraint_for_preallocated_memlabel(z3::expr const& addr, memlabel_t const& aml) const;
   z3::expr gen_addr_range_constraint_for_preallocated_memlabel(z3::expr const& addr, z3::expr const& addr_last, memlabel_t const& aml) const;
 
-protected:
-  context* m_ctx;
-  relevant_memlabels_t const m_relevant_memlabels;
-  bool m_involves_fp_to_ieee_bv = false;
-
-  list<z3::expr> m_supplement_exprs;
+  void add_supplement_expr_for(z3::expr const& ez, z3::expr const& se);
 
 private:
+  z3::expr gen_alloca_dealloc_z3_expr_uf(z3::expr const& mem_alloc, memlabel_t const& from_ml, memlabel_t const& to_ml, z3::expr const& addr, z3::expr const& size);
   z3::expr gen_alloca_dealloc_z3_expr(z3::expr const& mem_alloc, memlabel_t const& from_ml, memlabel_t const& to_ml, z3::expr const& addr, z3::expr const& size);
+  z3::expr gen_alloca_z3_expr_uf(z3::expr const& mem_alloc, memlabel_t const& ml, z3::expr const& addr, z3::expr const& size);
+  z3::expr gen_dealloc_z3_expr_uf(z3::expr const& mem_alloc, memlabel_t const& ml, z3::expr const& addr, z3::expr const& size);
   z3::expr z3_expr_agrees_with_memlabel(z3::expr const& e, memlabel_t const &ml);
 
 private:
   static unsigned last_id;
-  map<sort_ref, pair<z3::func_decl, z3::func_decl_vector>> m_struct_constructors_and_getters;
 
+  context* m_ctx;
+  relevant_memlabels_t const m_relevant_memlabels;
+  bool m_involves_fp_to_ieee_bv = false;
+  map<sort_ref, pair<z3::func_decl, z3::func_decl_vector>> m_struct_constructors_and_getters;
+  map<unsigned,z3::expr> m_supplement_exprs;
   expr_ref const &m_expr;
+  z3::expr m_result;
   map<expr_id_t, z3::ast> m_map;
   map<memlabel_ref,unsigned> m_memlabel_to_id_in_solver;
   map<expr_ref,memlabel_ref> m_id_in_solver_to_memlabel;
   sort_ref m_memlabel_id_in_solver_sort;
 };
 
-class Z3_expr_metadata
+class Z3_expr_visitor
 {
-  z3::expr const& m_e;
+public:
+  Z3_expr_visitor() = default;
+  void visit_recursive(z3::expr const& e);
+protected:
+  virtual void visit(z3::expr const& e) = 0;
+private:
+  set<unsigned> m_visited;
+};
+
+class Z3_expr_metadata : public Z3_expr_visitor
+{
   bool m_has_array       = false;
   bool m_has_uf          = false;
   bool m_has_fp          = false;
   unsigned m_quantifiers = 0;
-
-  void visit(z3::expr const& te);
+protected:
+  virtual void visit(z3::expr const& e);
 public:
-  Z3_expr_metadata(z3::expr const& e) : m_e(e)
+  Z3_expr_metadata(z3::expr const& e)
   {
-    visit(m_e);
+    visit_recursive(e);
   }
   bool has_array() const { return m_has_array; }
   bool has_uf() const { return m_has_uf; }

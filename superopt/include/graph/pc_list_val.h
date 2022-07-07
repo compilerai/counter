@@ -1,13 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <assert.h>
-#include <sstream>
-#include <list>
-#include <stack>
-#include <memory>
-
 #include "graph/dfa_types.h"
 
 namespace eqspace {

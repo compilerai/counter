@@ -1,9 +1,7 @@
 #pragma once
 
 #include <atomic>
-#include <chrono>
 #include <thread>
-#include <string>
 
 #include "graph/prove.h"
 

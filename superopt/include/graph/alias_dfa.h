@@ -1,11 +1,11 @@
 #pragma once
-#include <map>
-#include <string>
 
 #include "support/types.h"
 #include "support/dyn_debug.h"
+
 #include "graph/dfa.h"
 #include "graph/lr_map.h"
+#include "graph/graph_locs_map.h"
 
 using namespace std;
 
@@ -98,19 +98,7 @@ public:
     return false;
   }
 
-  string to_string(context* ctx, map<graph_loc_id_t, graph_cp_location> const& locs, string prefix) const
-  {
-    stringstream ss;
-    for (map<graph_loc_id_t, lr_status_ref>::const_iterator it = m_loc_map.begin();
-         it != m_loc_map.end();
-         it++) {
-      //graph_cp_location const& loc = graph->get_loc(/*p, */it->first);
-      graph_cp_location const& loc = locs.at(/*p, */it->first);
-      lr_status_ref const &lrs = it->second;
-      ss << prefix << " loc" << it->first << ": " << loc.to_string() << ": " << lrs->lr_status_to_string(ctx->get_consts_struct()) << endl;
-    }
-    return ss.str();
-  }
+  string alias_val_to_string(context* ctx, graph_locs_map_t const& locs, string prefix) const;
 };
 
 //template<typename T_PC, typename T_N, typename T_E, typename T_PRED>

@@ -1,13 +1,5 @@
 #pragma once
 
-#include <map>
-#include <list>
-#include <string>
-#include <cassert>
-#include <sstream>
-#include <set>
-#include <memory>
-
 #include "support/utils.h"
 #include "support/log.h"
 #include "support/timers.h"
@@ -26,6 +18,8 @@
 #include "graph/locset.h"
 #include "graph/graph_locs_map.h"
 
+#include "graph/avail_exprs.h"
+
 namespace eqspace {
 
 using namespace std;
@@ -37,17 +31,15 @@ template <typename T_PC, typename T_N, typename T_E, typename T_PRED>
 class graph_with_locs : public graph_with_precondition<T_PC, T_N, T_E, T_PRED>
 {
 public:
-  graph_with_locs(string const &name, string const& fname, context* ctx) : graph_with_precondition<T_PC,T_N,T_E,T_PRED>(name, fname, ctx), m_graph_locs_map(make_dshared<graph_locs_map_t>(map<graph_loc_id_t, graph_cp_location>()))
+  graph_with_locs(string const &name, string const& fname, context* ctx) : graph_with_precondition<T_PC,T_N,T_E,T_PRED>(name, fname, ctx),
+                                                                           m_start_loc_id(start_loc_id_from_srcdst_keyword(this->get_srcdst_keyword())),
+                                                                           m_graph_locs_map(make_dshared<graph_locs_map_t>(graph_locs_map_t()))
   { }
 
   graph_with_locs(graph_with_locs const &other) : graph_with_precondition<T_PC,T_N,T_E,T_PRED>(other),
                                                   m_start_loc_id(other.m_start_loc_id),
                                                   m_avail_exprs(other.m_avail_exprs),
                                                   m_graph_locs_map(other.m_graph_locs_map),
-//                                                  m_orig_locid_to_cloned_locid_map(other.m_orig_locid_to_cloned_locid_map),
-                                                  //m_locs(other.m_locs),
-                                                  //m_locid2expr_map(other.m_locid2expr_map),
-                                                  //m_exprid2locid_map(other.m_exprid2locid_map),
                                                   m_loc_liveness(other.m_loc_liveness),
                                                   m_loc_definedness(other.m_loc_definedness),
                                                   m_var_definedness(other.m_var_definedness),
@@ -63,7 +55,7 @@ public:
     graph_with_precondition<T_PC, T_N, T_E, T_PRED>::graph_ssa_copy(other);
     m_relevant_memlabels = other.m_relevant_memlabels;
     m_start_loc_id = other.m_start_loc_id;
-//    ASSERT(m_orig_locid_to_cloned_locid_map.empty());
+    m_graph_locs_map = other.m_graph_locs_map;
   }
 
   graph_with_locs(istream& in, string const& name, std::function<dshared_ptr<T_E const> (istream&, string const&, string const&, context*)> read_edge_fn, context* ctx);
@@ -79,7 +71,9 @@ public:
   //expr_ref const& graph_loc_get_value_for_node(graph_loc_id_t loc_index) const { return m_locid2expr_map.at(loc_index); }
   expr_ref const& graph_loc_get_value_for_node(graph_loc_id_t loc_index) const { return m_graph_locs_map->graph_locs_map_get_expr_at_loc_id(loc_index); }
 
-  void set_locs(map<graph_loc_id_t, graph_cp_location> const &locs);
+  void set_locs(graph_locs_builder_t const& locs)                { m_graph_locs_map = make_dshared<graph_locs_map_t>(locs); }
+  void set_locs(graph_locs_map_t const& locs)                    { m_graph_locs_map = make_dshared<graph_locs_map_t>(locs); }
+  void set_locs(dshared_ptr<graph_locs_map_t const> const& locs) { m_graph_locs_map = locs; }
 
   dshared_ptr<graph_locs_map_t const> const& get_graph_locs_map() const { return m_graph_locs_map; }
   virtual map<graph_loc_id_t, graph_cp_location> get_locs() const { return m_graph_locs_map->graph_locs_map_get_locs(); }
@@ -116,51 +110,24 @@ public:
     }
   }
 
-  expr_ref get_loc_expr(graph_loc_id_t loc_id) const
-  {
-    graph_cp_location l;
+  void graph_locs_add_all_llvmvars(graph_locs_builder_t& new_locs) const;
+  void graph_locs_add_llvmvars_for_edge(dshared_ptr<T_E const> const& edge, graph_locs_builder_t& new_locs) const;
 
-    map<graph_loc_id_t, graph_cp_location> const &graph_locs = this->get_locs();
-    ASSERT(graph_locs.count(loc_id) > 0);
-    l = graph_locs.at(loc_id);
-    return l.graph_cp_location_get_value();
-  }
+  void graph_locs_add_local_vars_for_edge(dshared_ptr<T_E const> const& edge, graph_locs_builder_t& new_locs) const;
+  void graph_locs_add_all_local_vars(graph_locs_builder_t& new_locs) const;
 
-  //static graph_loc_id_t get_max_loc_id(map<graph_loc_id_t, graph_cp_location> const &old_locs, map<graph_loc_id_t, graph_cp_location> const &new_locs);
+  void graph_locs_add_rounding_modes_for_edge(dshared_ptr<T_E const> const& edge, graph_locs_builder_t& new_locs) const;
+  void graph_locs_add_all_rounding_modes(graph_locs_builder_t& new_locs) const;
 
-  //graph_loc_id_t get_loc_id_for_newloc(graph_cp_location const &newloc, map<graph_loc_id_t, graph_cp_location> const &new_locs, map<graph_loc_id_t, graph_cp_location> const &old_locs) const;
+  void graph_locs_add_bools_bitvectors_and_floats_for_edge(dshared_ptr<T_E const> const& edge, graph_locs_builder_t& new_locs) const;
+  void graph_locs_add_all_bools_bitvectors_and_floats(graph_locs_builder_t& new_locs) const;
+  void graph_locs_add_memmasks_for_pc(T_PC const& p, graph_locs_builder_t& new_locs) const;
 
-  //graph_loc_id_t graph_add_new_loc(map<graph_loc_id_t, graph_cp_location> &locs_map, graph_cp_location const &newloc, map<graph_loc_id_t, graph_cp_location> const &old_locs, graph_loc_id_t suggested_loc_id = -1) const;
-
-  //void graph_locs_add_location_memslot(map<graph_loc_id_t, graph_cp_location> &new_locs, map<graph_loc_id_t, expr_ref>& locid2expr_map, map<expr_id_t, graph_loc_id_t>& exprid2locid_map, expr_ref const &memvar, expr_ref const& mem_allocvar, expr_ref addr, int nbytes, bool bigendian, memlabel_t const& ml) const;
-
-  void graph_locs_add_location_llvmvar(map<graph_loc_id_t, graph_cp_location> &new_locs, string const& varname, sort_ref const &sort, map<graph_loc_id_t, graph_cp_location> const &old_locs) const;
-
-  void graph_locs_add_location_reg(map<graph_loc_id_t, graph_cp_location> &new_locs, string const& name, sort_ref const &sort, map<graph_loc_id_t, graph_cp_location> const &old_locs) const;
-
-  void graph_locs_add_all_llvmvars(map<graph_loc_id_t, graph_cp_location> &new_locs/*, map<graph_loc_id_t, graph_cp_location> const &old_locs*/) const;
-  void graph_locs_add_llvmvars_for_edge(dshared_ptr<T_E const> const& edge, map<graph_loc_id_t, graph_cp_location> &new_locs, map<graph_loc_id_t, graph_cp_location> const &old_locs) const;
-
-  void graph_locs_add_local_vars_for_edge(dshared_ptr<T_E const> const& edge, map<graph_loc_id_t, graph_cp_location> &new_locs, map<graph_loc_id_t, graph_cp_location> const &old_locs) const;
-  void graph_locs_add_all_local_vars(map<graph_loc_id_t, graph_cp_location> &new_locs) const;
-
-  void graph_locs_add_rounding_modes_for_edge(dshared_ptr<T_E const> const& edge, map<graph_loc_id_t, graph_cp_location> &new_locs, map<graph_loc_id_t, graph_cp_location> const &old_locs) const;
-  void graph_locs_add_all_rounding_modes(map<graph_loc_id_t, graph_cp_location> &new_locs) const;
-
-  void graph_locs_add_bools_bitvectors_and_floats_for_edge(dshared_ptr<T_E const> const& edge, map<graph_loc_id_t, graph_cp_location> &new_locs, map<graph_loc_id_t, graph_cp_location> const &old_locs) const;
-  void graph_locs_add_all_bools_bitvectors_and_floats(map<graph_loc_id_t, graph_cp_location> &new_locs/*, map<graph_loc_id_t, graph_cp_location> const &old_locs*/) const;
-  void graph_locs_add_memmasks_for_pc(T_PC const& p, map<graph_loc_id_t, graph_cp_location> &new_locs, map<graph_loc_id_t, graph_cp_location> const &old_locs) const;
-
-  graph_cp_location graph_mk_memslot_loc(expr_ref const& memvar/*string const &memname*/,expr_ref const& mem_allocvar, memlabel_ref const& ml, expr_ref addr, size_t nbytes, bool bigendian) const;
-
-  void graph_locs_add_all_exvregs(map<graph_loc_id_t, graph_cp_location> &new_locs/*, map<graph_loc_id_t, graph_cp_location> const &old_locs*/) const;
-  void graph_locs_add_exvregs_for_edge(dshared_ptr<T_E const> const& edge, map<graph_loc_id_t, graph_cp_location> &new_locs, map<graph_loc_id_t, graph_cp_location> const &old_locs) const;
-
-  void graph_locs_add_location_memmasked(map<graph_loc_id_t, graph_cp_location> &new_locs, expr_ref const& memvar/*string const &memname*/, expr_ref const& mem_allocvar, memlabel_ref const& ml, expr_ref addr, size_t memsize, map<graph_loc_id_t, graph_cp_location> const &old_locs) const;
-
+  void graph_locs_add_all_exvregs(graph_locs_builder_t& new_locs) const;
+  void graph_locs_add_exvregs_for_edge(dshared_ptr<T_E const> const& edge, graph_locs_builder_t& new_locs) const;
 
   string graph_locs_to_string(map<graph_loc_id_t, graph_cp_location> const &graph_locs) const;
-  void graph_add_location_slots_and_memmasked_using_llvm_locs(map<graph_loc_id_t, graph_cp_location> &new_locs, map<graph_loc_id_t, graph_cp_location> const &llvm_locs) const;
+  //void graph_add_location_slots_and_memmasked_using_llvm_locs(graph_locs_builder_t& new_locs, map<graph_loc_id_t, graph_cp_location> const &llvm_locs) const;
 
   void graph_locs_remove_duplicates_mod_comments_for_pc(map<graph_loc_id_t, graph_cp_location> const &graph_locs, map<graph_loc_id_t, bool> &is_redundant) const;
 
@@ -258,7 +225,7 @@ public:
   }
 
   virtual void graph_to_stream(ostream& ss, string const& prefix="") const override;
-  string read_locs(istream& in, string line);
+  void read_locs(istream& in);
 
   void set_loc_liveness(map<T_PC, set<graph_loc_id_t>> const& loc_liveness) { m_loc_liveness = loc_liveness; }
   //void set_var_definedness_at_pc(T_PC const& p, set<string_ref> const& var_definedness) {
@@ -277,7 +244,6 @@ public:
   //virtual void graph_init_memlabels_to_top(bool update_callee_memlabels) = 0;
   void print_loc_avail_expr(/*map<T_PC,*/avail_exprs_t/*>*/ const& avail_exprs, string const& prefix = "") const;
 
-  void graph_locs_to_stream(ostream& ss) const;
   graph_loc_id_t get_locid_for_varname(string_ref const& varname) const { return m_graph_locs_map->graph_locs_map_get_locid_for_varname(varname); }
   graph_loc_id_t get_locs_map_start_loc_id() const
   {
@@ -323,8 +289,6 @@ public:
     }
     return m_bavlocs.at(pp);
   }
-
-//  expr_ref graph_loc_get_value(T_PC const &p, state const &s, graph_loc_id_t loc_index) const;
 
   size_t get_num_graph_locs() const { return this->get_locs().size(); }
 
@@ -480,12 +444,10 @@ public:
   graph_loc_id_t get_loc_id_for_masked_mem_expr(expr_ref const &e) const
   {
     for (auto const& loc : this->get_locs()) {
-      if (loc.second.m_type != GRAPH_CP_LOCATION_TYPE_MEMMASKED) {
+      if (!loc.second.is_memmask()) {
         continue;
       }
-      //expr_ref le = this->get_loc_expr(loc.first);
       expr_ref le = this->graph_loc_get_value_for_node(loc.first);
-      //cout << __func__ << " " << __LINE__ << ": le = " << expr_string(le) << endl;
       if (e == le) {
         return loc.first;
       }
@@ -549,65 +511,17 @@ public:
     return ret;
   }
 
-  virtual set<graph_loc_id_t> graph_get_defined_locids_at_entry(T_PC const& entry_pc) const
-  {
-    context* ctx = this->get_context();
-    // add input args
-    set<graph_loc_id_t> ret = this->get_argument_regs_locids();
-    expr_ref memvar = this->get_memvar_version_at_pc(entry_pc);
-    expr_ref mem_allocvar = this->get_memallocvar_version_at_pc(entry_pc);
-    map<graph_loc_id_t, graph_cp_location> const &locs = this->get_locs();
-    for (auto const& l : locs) {
-      if (  (   l.second.m_type == GRAPH_CP_LOCATION_TYPE_MEMSLOT
-             || l.second.m_type == GRAPH_CP_LOCATION_TYPE_MEMMASKED)
-          && l.second.m_memvar == memvar && l.second.m_mem_allocvar == mem_allocvar) {
-        auto const& ml = l.second.m_memlabel->get_ml();
-        if (   !ml.memlabel_is_stack()
-            && (   !ml.memlabel_is_local()
-                || (   ml.memlabel_get_local_id().allocstack_get_last_fname() == this->get_function_name()
-                    && local_id_refers_to_arg(ml.memlabel_get_local_id().allocstack_get_last_allocsite(), this->get_argument_regs(), this->get_locals_map())))) {
-          // only locals corresponding to args are defined at entry
-          ret.insert(l.first);
-        }
-      }
-    }
-    // add start state regs
-    // In assembly TFG, there can be read only registers. These registers should be defined at the pCs where they are used
-    // Using start state for adding definedness for all such registers
-    for(auto const& m : this->get_start_state().get_state().get_value_expr_map_ref()) {
-      auto const& name =  m.first;
-      expr_ref var_expr = ctx->get_input_expr_for_key(name, m.second->get_sort());
-      graph_loc_id_t l = this->graph_expr_to_locid(var_expr);
-      if(l != GRAPH_LOC_ID_INVALID) {
-        ret.insert(l);
-      }
-    }
-    // add regs live at exit minus the ret-reg
-    //set_union(ret, gp->get_return_regs_locids());
-    //graph_loc_id_t ret_reg_locid = gp->get_ret_reg_locid();
-    //if (ret_reg_locid != -1)
-    //  ret.erase(ret_reg_locid);
-    return ret;
-  }
+  virtual set<graph_loc_id_t> graph_get_defined_locids_at_entry(T_PC const& entry_pc) const;
 
   graph_loc_id_t get_ret_reg_locid() const
   {
     for (auto const& loc : this->get_locs()) {
-      if (   loc.second.m_type == GRAPH_CP_LOCATION_TYPE_REGMEM
+      if (   loc.second.is_reg()
           && loc.second.to_string().find(G_LLVM_RETURN_REGISTER_NAME) != string::npos) {
         return loc.first;
       }
     }
     return -1;
-  }
-
-  static void expand_locset_to_include_all_memmasks(set<graph_loc_id_t> &locset, map<graph_loc_id_t, graph_cp_location> const& locs)
-  {
-    for (const auto &loc : locs) {
-      if (loc.second.m_type == GRAPH_CP_LOCATION_TYPE_MEMMASKED) {
-        locset.insert(loc.first);
-      }
-    }
   }
 
   static void relevant_memlabels_add(vector<memlabel_ref> &relevant_memlabels, memlabel_ref const &ml_input)
@@ -623,22 +537,21 @@ public:
     }
   }
 
-  static void expand_locset_to_include_slots_for_memmask(set<graph_loc_id_t> &locset, map<graph_loc_id_t, graph_cp_location> const& locs);
-
   set<graph_loc_id_t> get_locs_potentially_read_in_expr(expr_ref const &e) const;
 
   static bool expr_indicates_definite_write(graph_loc_id_t loc_id, expr_ref const &new_expr, map<graph_loc_id_t, graph_cp_location> const& locs)
   {
-    if (locs.at(loc_id).m_type == GRAPH_CP_LOCATION_TYPE_MEMMASKED) {
+    if (locs.at(loc_id).is_memmask()) {
       return false;
     }
-    if (locs.at(loc_id).m_type == GRAPH_CP_LOCATION_TYPE_MEMSLOT) {
+    if (locs.at(loc_id).is_memslot()) {
       expr_find_op expr_stores_visitor(new_expr, expr::OP_STORE);
       expr_vector expr_stores = expr_stores_visitor.get_matched_expr();
       expr_find_op expr_uninit_stores_visitor(new_expr, expr::OP_STORE_UNINIT);
       expr_vector expr_uninit_stores = expr_uninit_stores_visitor.get_matched_expr();
-      return expr_stores.empty() && expr_uninit_stores.empty(); // can make this even more precise by looking at target addr of store; if the target addr is different from slot's addr then return true
-      //return false; //can make this more precise by looking at new_expr; e.g., if new_expr does not contain a store, we can return true
+      // since we can have unaliasing stores, if the memslot is assigned an expr w/o stores (but the expr is not identity) then it is defintely a write
+      // can make this even more precise by looking at target addr of store; if the target addr is guaranteed to be different from slot's addr then return false (NB: this check has to be more precise than simplification using sprels)
+      return expr_stores.empty() && expr_uninit_stores.empty();
     }
     return true;
   }
@@ -646,8 +559,7 @@ public:
 
   static map<graph_loc_id_t, expr_ref> compute_locs_definitely_written_on_edge(map<graph_loc_id_t, expr_ref> const& potentially_written, map<graph_loc_id_t, graph_cp_location> const& locs)
   {
-    stopwatch_run(&compute_locs_definitely_written_on_edge_timer);
-    //autostop_timer func(__func__);
+    autostop_watch aw(&compute_locs_definitely_written_on_edge_timer);
     //this function only needs to be over-approximate. i.e., the returned locs must be definitely written-to;
     //but perhaps some more locs (that are not returned) are also written to
     //map<graph_loc_id_t, expr_ref> all = this->get_locs_potentially_written_on_edge(e);
@@ -657,7 +569,6 @@ public:
         ret.insert(le);
       }
     }
-    stopwatch_stop(&compute_locs_definitely_written_on_edge_timer);
     return ret;
   }
 
@@ -696,8 +607,8 @@ public:
   {
     set<expr_ref> ret;
     for (auto const& loc : this->get_live_locs(pp)) {
-      if (loc.second.m_type == GRAPH_CP_LOCATION_TYPE_REGMEM) {
-        ret.insert(this->get_loc_expr(loc.first));
+      if (loc.second.is_var()) {
+        ret.insert(loc.second.get_var());
       }
     }
     return ret;
@@ -706,7 +617,6 @@ public:
   set<expr_ref> get_live_loc_exprs_at_pc(T_PC const& p) const;
   //set<expr_ref> get_live_loc_exprs_having_sprel_map_at_pc(T_PC const &p) const;
   //map<graph_loc_id_t, graph_cp_location> get_live_locs_across_pcs(T_PC const& from_pc, T_PC const& to_pc) const;
-  set<graph_loc_id_t> get_locs_potentially_read_in_expr_using_locs_map(expr_ref const &e, map<graph_loc_id_t, graph_cp_location> const &locs, map<expr_id_t, graph_loc_id_t> const& exprid2locid_map) const;
   relevant_memlabels_t const& graph_get_relevant_memlabels() const { ASSERT(m_relevant_memlabels); return *m_relevant_memlabels; }
   void graph_set_relevant_memlabels(relevant_memlabels_t const& rm) const { m_relevant_memlabels = make_dshared<relevant_memlabels_t>(rm); }
 
@@ -715,11 +625,6 @@ public:
   sprel_map_t get_sprel_map_from_avail_exprs(avail_exprs_t const& avail_exprs, map<graph_loc_id_t, graph_cp_location> const& locs, map<graph_loc_id_t, expr_ref> const& locid2expr_map) const;
 
   void populate_var_definedness();
-  void set_locs_map_start_loc_id(graph_loc_id_t const& start_loc_id)
-  {
-    m_start_loc_id = start_loc_id;
-  }
-
 //  graph_loc_id_t get_cloned_loc_for_input_loc_at_pc (T_PC const& cloned_pc, graph_loc_id_t orig_loc_id) const
 //  {
 //    ASSERT(cloned_pc.is_cloned_pc());
@@ -752,37 +657,25 @@ public:
 
 
 private:
-  void set_locs_within_constructor(map<graph_loc_id_t, graph_cp_location> const &locs);
+  void set_locs_within_constructor(graph_locs_map_t const& locs) { m_graph_locs_map = make_dshared<graph_locs_map_t>(locs); }
   //map<T_PC, avail_exprs_t> compute_loc_avail_exprs() const;
   void collect_memory_accesses(set<T_PC> const &nodes_changed, map<T_PC, set<eqspace::state::mem_access>> &state_mem_acc_map) const;
-  //void refresh_graph_locs(map<graph_loc_id_t, graph_cp_location> const &llvm_locs);
 
-  string read_loc(istream& in, graph_cp_location &loc) const;
-  set<T_PC> get_nodes_where_live_locs_added(map<T_PC, set<graph_loc_id_t>> const &orig, map<T_PC, set<graph_loc_id_t>> const &cur);
-  static bool loc_is_atomic(graph_cp_location const &loc);
-  void eliminate_unused_loc_in_start_state_and_all_edges(graph_cp_location const &loc);
-  void graph_locs_visit_exprs(std::function<expr_ref (T_PC const &, const string&, expr_ref)> f, map<graph_loc_id_t, graph_cp_location> &locs_map);
-  //template<typename T_MAP_VALUETYPE>
-  //static void edgeloc_map_eliminate_unused_loc(map<pair<edge_id_t<T_PC>, graph_loc_id_t>, T_MAP_VALUETYPE> &elmap, graph_loc_id_t loc_id);
-  static bool expr_is_possible_loc(expr_ref e);
   map<graph_loc_id_t, sprel_status_t> get_sprel_status_mapping_from_avail_exprs(avail_exprs_t const &avail_exprs, map<graph_loc_id_t, graph_cp_location> const& locs, set<graph_loc_id_t> const& arg_locids) const;
-//  void set_orig_locid_to_new_locid_for_pc(T_PC const& cloned_pc, map<graph_loc_id_t, graph_loc_id_t> const& old_locid_to_new_locid_map)
-//  {
-//    ASSERT(!m_orig_locid_to_cloned_locid_map.count(cloned_pc));
-//    m_orig_locid_to_cloned_locid_map.insert(make_pair(cloned_pc, old_locid_to_new_locid_map));
-//  }
-//protected:
-  //map<expr_id_t, pair<expr_ref, expr_ref>> avail_exprs_get_submap(avail_exprs_t const& avail_exprs) const;
-  //dshared_ptr<map<graph_loc_id_t, graph_cp_location> const> m_locs;
-  //map<graph_loc_id_t, expr_ref>  m_locid2expr_map;
-  //map<expr_id_t, graph_loc_id_t> m_exprid2locid_map;
+
+  static graph_loc_id_t start_loc_id_from_srcdst_keyword(string_ref const& srcdst_keyword)
+  {
+    if (srcdst_keyword->get_str() == G_SRC_KEYWORD)
+      return SRC_TFG_SSA_START_LOC_ID;
+    return DST_TFG_SSA_START_LOC_ID;
+  }
+
 
 private:
 
   graph_loc_id_t m_start_loc_id;
   mutable avail_exprs_t m_avail_exprs;      //for each PC, the available expressions at each loc-id
   dshared_ptr<graph_locs_map_t const> m_graph_locs_map;
-//  map<T_PC, map<graph_loc_id_t, graph_loc_id_t>> m_orig_locid_to_cloned_locid_map;   //for each cloned PC, the map from orig locid to the new cloned locid to be used for renaming
   mutable map<T_PC, set<graph_loc_id_t>> m_loc_liveness;     //for each PC, the set of live locs
   mutable map<T_PC, set<graph_loc_id_t>> m_loc_definedness;  //for each PC, the set of defined locs
   mutable map<T_PC, set<string_ref>> m_var_definedness;  //for each PC, the set of defined locs

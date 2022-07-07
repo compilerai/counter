@@ -1,8 +1,5 @@
 #pragma once
 
-#include <map>
-#include <unordered_set>
-
 #include "expr/expr.h"
 //#include "gsupport/precond.h"
 #include "gsupport/predicate_set.h"
