@@ -30,7 +30,7 @@ Follow these steps for building and running the equivalence checker based on Cou
    git checkout static-persist
    ```
 3. [Install Docker Engine](https://docs.docker.com/engine/install/) and set it up.  Make sure you are able to run the [hello-world example](https://docs.docker.com/get-started/#test-docker-installation).
-4. Bild the Docker image.  Note that internet connectivity is required in this step.
+4. Build the Docker image.  Note that internet connectivity is required in this step.
    ```
    docker build -t static-persist .
    ```
