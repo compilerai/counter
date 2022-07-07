@@ -28,6 +28,7 @@ PACKAGE_REVISION=0
 PACKAGE_NAME=qcc_$(MAJOR_VERSION).$(MINOR_VERSION)-$(PACKAGE_REVISION)
 
 build::
+	-ln -s counter ../superopt-project
 	$(MAKE) -C $(SUPEROPT_PROJECT_DIR)/binlibs
 	cd $(SUPEROPT_PROJECT_DIR)/superopt && ./configure && cd -
 	$(MAKE) -C $(SUPEROPT_PROJECT_DIR)/superopt libs
