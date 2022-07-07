@@ -48,7 +48,7 @@ Follow these steps for building and running the equivalence checker based on Cou
 
 1. (Inside the container) Run the compile-time analysis tool on a C or C++ file while supplying a tunable `call-context-depth` parameter
    ```
-   /home/sbansal/counter/superopt/build/etfg_x64/identify_durables --call-context-depth 2 /home/sbansal/couunter/tests/c/linked_list.c
+   /home/sbansal/counter/superopt/build/etfg_x64/identify_durables --call-context-depth 2 /home/sbansal/counter/tests/c/linked_list.c
    ```
 
 ## Understanding the output of the tool <a name="understand"></a>
