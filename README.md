@@ -29,6 +29,10 @@ Follow these steps for building and running the equivalence checker based on Cou
    ```
    git checkout static-persist
    ```
+
+You have two options: either build inside a Docker container (in which case you will not have to worry about dependency issues, etc.) or build on a your own machine which has Ubuntu-20.04 installed on it.  In the latter case, you need to ensure that you have cloned this repository at `/home/sbansal/counter` (path of the repository).
+
+### Build Using Docker
 3. [Install Docker Engine](https://docs.docker.com/engine/install/) and set it up.  Make sure you are able to run the [hello-world example](https://docs.docker.com/get-started/#test-docker-installation).
 4. Build the Docker image.  Note that internet connectivity is required in this step.
    ```
@@ -40,6 +44,12 @@ Follow these steps for building and running the equivalence checker based on Cou
    docker run -it static-persist
    ```
 6. (Inside the container) Build the artifact and install the equivalence checker.
+   ```
+   make
+   ```
+
+### Build on Ubuntu 20.04 in /home/sbansal/counter
+3. Build the artifact and install the equivalence checker.
    ```
    make
    ```
